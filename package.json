@@ -1,0 +1,5 @@
+{
+  "name": "haulvisor",
+  "private": true,
+  "workspaces": ["frontend"]
+}

@@ -1,0 +1,14 @@
+.superpowers/
+.env
+.env.local
+.env.*
+!.env.example
+node_modules/
+dist/
+*.tsbuildinfo
+.DS_Store
+.idea/
+.vscode/
+.worktrees/
+.next/
+out/
