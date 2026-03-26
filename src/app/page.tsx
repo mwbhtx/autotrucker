@@ -85,7 +85,7 @@ export default function HomePage() {
           reflection={0.1}
           rotationX={0}
           rotationY={0}
-          rotationZ={225}
+          rotationZ={235}
           shader="defaults"
           type="waterPlane"
           uAmplitude={0}
