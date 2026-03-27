@@ -194,4 +194,10 @@ html {
   padding-right: 0.75rem;
 }
 
+/* Onborda overlay must sit above all fixed UI elements (e.g. filter bar z-10, interaction
+   blocker z-900) so the shadow and card are never obscured by the filter bar on narrow screens. */
+[data-name="onborda-overlay"] {
+  z-index: 901;
+}
+
 

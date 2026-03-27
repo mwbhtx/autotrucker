@@ -110,7 +110,7 @@ export const tourSteps: Tour[] = [
           </p>
         ),
         selector: "#onborda-all-filters",
-        side: "bottom-right",
+        side: "bottom",
         showControls: true,
         pointerPadding: 4,
         pointerRadius: 24,
