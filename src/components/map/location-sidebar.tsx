@@ -729,7 +729,7 @@ function RoundTripChainCard({
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); setShowInspector(true); }}
-          className="flex items-center justify-center w-7 shrink-0 rounded-r-xl bg-[#161616] hover:bg-[#1a1a1a] border-l border-white/[0.05] transition-colors"
+          className="flex items-center justify-center w-7 shrink-0 rounded-r-xl bg-[#161616] hover:bg-[#1e1e1e] border-l border-white/[0.05] transition-colors"
           title="View segment breakdown"
         >
           <ChevronLeftIcon className="h-4 w-4 text-[#cdcdcd]" />
@@ -749,10 +749,10 @@ function RoundTripChainCard({
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); setShowInspector(false); }}
-            className="flex items-center justify-center w-6 shrink-0 bg-[#111111] hover:bg-[#1a1a1a] border-r border-white/[0.05] transition-colors"
+            className="flex items-center justify-center w-7 shrink-0 bg-[#111111] hover:bg-[#1e1e1e] border-r border-white/[0.05] transition-colors"
             title="Back to route"
           >
-            <ChevronRightIcon className="h-4 w-4 text-[#ff5601]" />
+            <ChevronRightIcon className="h-4 w-4 text-[#cdcdcd]" />
           </button>
           {/* Inspector content */}
           <div className="flex-1 min-w-0 overflow-hidden">
