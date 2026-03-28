@@ -222,7 +222,6 @@ export function MobileRoutesView() {
           searchText={searchText}
           chains={chains}
           isRoundTrip={isRoundTrip}
-          costPerMile={costPerMile}
           isLoading={activeQuery.isLoading}
           onSearchBarTap={handleSearchBarTap}
           onFiltersTap={handleFiltersTap}

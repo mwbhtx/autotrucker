@@ -9,7 +9,6 @@ interface ResultsScreenProps {
   searchText: string;
   chains: (RouteChain | RoundTripChain)[];
   isRoundTrip: boolean;
-  costPerMile: number;
   isLoading: boolean;
   onSearchBarTap: () => void;
   onFiltersTap: () => void;
@@ -20,7 +19,6 @@ export function ResultsScreen({
   searchText,
   chains,
   isRoundTrip,
-  costPerMile,
   isLoading,
   onSearchBarTap,
   onFiltersTap,
@@ -30,10 +28,12 @@ export function ResultsScreen({
     <div className="flex flex-col h-full bg-background">
       {/* Search bar */}
       <div className="px-4 pt-4 pb-2">
-        <button
-          type="button"
+        <div
+          role="button"
+          tabIndex={0}
           onClick={onSearchBarTap}
-          className="flex w-full items-center gap-3 rounded-full border border-white/10 bg-card px-4 py-3 text-left"
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onSearchBarTap(); }}
+          className="flex w-full items-center gap-3 rounded-full border border-white/10 bg-card px-4 py-3 text-left cursor-pointer"
         >
           <Search className="h-4 w-4 text-muted-foreground shrink-0" />
           <span className="flex-1 text-sm truncate">{searchText}</span>
@@ -47,7 +47,7 @@ export function ResultsScreen({
           >
             <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
           </button>
-        </button>
+        </div>
       </div>
 
       {/* Results */}
@@ -74,7 +74,6 @@ export function ResultsScreen({
               key={i}
               chain={chain}
               isRoundTrip={isRoundTrip}
-              costPerMile={costPerMile}
               onClick={() => onRouteSelect(i)}
             />
           ))}

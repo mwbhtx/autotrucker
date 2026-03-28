@@ -7,7 +7,6 @@ import type { RouteChain, RoundTripChain } from "@/core/types";
 interface RouteCardProps {
   chain: RouteChain | RoundTripChain;
   isRoundTrip: boolean;
-  costPerMile: number;
   onClick: () => void;
   className?: string;
 }
@@ -29,8 +28,8 @@ function getTotalMiles(chain: RouteChain | RoundTripChain): number {
 }
 
 function getDailyProfit(chain: RouteChain | RoundTripChain): number | null {
-  if ("daily_profit" in chain && typeof chain.daily_profit === "number") {
-    return chain.daily_profit;
+  if ("daily_net_profit" in chain && typeof chain.daily_net_profit === "number") {
+    return chain.daily_net_profit;
   }
   return null;
 }
@@ -42,7 +41,7 @@ function getDeadheadPct(chain: RouteChain | RoundTripChain): number | null {
   return null;
 }
 
-export function RouteCard({ chain, isRoundTrip, costPerMile, onClick, className }: RouteCardProps) {
+export function RouteCard({ chain, isRoundTrip, onClick, className }: RouteCardProps) {
   const origin = getOriginCity(chain);
   const dest = getDestCity(chain);
   const miles = getTotalMiles(chain);
