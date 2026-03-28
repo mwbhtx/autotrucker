@@ -23,7 +23,7 @@ This is a public repository. Never include company names, company-specific URLs,
 
 Shared TypeScript types, constants, and utility functions live in the standalone [`haulvisor-core`](https://github.com/mwbhtx/haulvisor-core) repo and are consumed as `@mwbhtx/haulvisor-core`. Both frontend and backend import from this package — do NOT duplicate type definitions, constants, or cost-model logic locally.
 
-After editing haulvisor-core locally, rebuild it (`cd ../haulvisor-core && npm run build`) then reinstall in this repo (`rm -rf node_modules/@mwbhtx/haulvisor-core && npm install`).
+After editing haulvisor-core locally, rebuild it (`cd ../haulvisor-core && npm run build`). Changes are picked up immediately through the symlink — just restart your dev server if types changed.
 
 ## Architecture
 
