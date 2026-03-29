@@ -65,7 +65,7 @@ export function SearchSheet({
             onClick={() => setTripMode("one-way")}
             className={`flex-1 py-3.5 text-lg font-medium transition-colors ${
               tripMode === "one-way"
-                ? "bg-white/10 text-foreground"
+                ? "bg-primary/15 border border-primary/30 text-primary"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -76,7 +76,7 @@ export function SearchSheet({
             onClick={() => setTripMode("round-trip")}
             className={`flex-1 py-3.5 text-lg font-medium transition-colors ${
               tripMode === "round-trip"
-                ? "bg-white/10 text-foreground"
+                ? "bg-primary/15 border border-primary/30 text-primary"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
