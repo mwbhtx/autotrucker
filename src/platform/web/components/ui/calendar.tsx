@@ -12,14 +12,14 @@ function Calendar({ className, classNames, ...props }: CalendarProps) {
       className={cn("p-3", className)}
       classNames={{
         months: "flex flex-col sm:flex-row gap-2",
-        month: "flex flex-col gap-4",
-        month_caption: "flex justify-center pt-1 relative items-center",
+        month: "relative flex flex-col gap-4",
+        month_caption: "flex justify-center pt-1 items-center h-10",
         caption_label: "text-sm font-medium",
-        nav: "flex items-center gap-1",
+        nav: "absolute top-3 left-0 right-0 flex items-center justify-between px-14 pointer-events-none",
         button_previous:
-          "absolute left-20 top-1 h-9 w-9 inline-flex items-center justify-center rounded-full bg-white text-black hover:bg-white/80 transition-colors",
+          "h-9 w-9 inline-flex items-center justify-center rounded-full bg-white text-black hover:bg-white/80 transition-colors pointer-events-auto",
         button_next:
-          "absolute right-20 top-1 h-9 w-9 inline-flex items-center justify-center rounded-full bg-white text-black hover:bg-white/80 transition-colors",
+          "h-9 w-9 inline-flex items-center justify-center rounded-full bg-white text-black hover:bg-white/80 transition-colors pointer-events-auto",
         month_grid: "w-full border-collapse",
         weekdays: "flex justify-center",
         weekday:
