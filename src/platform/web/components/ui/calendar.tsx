@@ -13,13 +13,13 @@ function Calendar({ className, classNames, ...props }: CalendarProps) {
       classNames={{
         months: "flex flex-col sm:flex-row gap-2",
         month: "flex flex-col gap-4",
-        month_caption: "flex justify-center pt-1 items-center relative",
+        month_caption: "flex justify-center pt-1 relative items-center",
         caption_label: "text-sm font-medium",
-        nav: "flex items-center gap-2",
+        nav: "flex items-center gap-1",
         button_previous:
-          "h-8 w-8 inline-flex items-center justify-center rounded-full bg-white text-black hover:bg-white/80 transition-colors",
+          "absolute left-1 h-7 w-7 inline-flex items-center justify-center rounded-full bg-white text-black hover:bg-white/80 transition-colors",
         button_next:
-          "h-8 w-8 inline-flex items-center justify-center rounded-full bg-white text-black hover:bg-white/80 transition-colors",
+          "absolute right-1 h-7 w-7 inline-flex items-center justify-center rounded-full bg-white text-black hover:bg-white/80 transition-colors",
         month_grid: "w-full border-collapse",
         weekdays: "flex justify-center",
         weekday:
@@ -43,10 +43,6 @@ function Calendar({ className, classNames, ...props }: CalendarProps) {
           ) : (
             <ChevronRight className="h-4 w-4" />
           ),
-        MonthCaption: ({ calendarMonth }) => {
-          const label = calendarMonth.date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
-          return <div className="text-sm font-medium text-center py-1">{label}</div>;
-        },
       }}
       {...props}
     />
