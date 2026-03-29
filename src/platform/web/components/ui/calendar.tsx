@@ -17,14 +17,14 @@ function Calendar({ className, classNames, ...props }: CalendarProps) {
         caption_label: "text-sm font-medium",
         nav: "flex items-center gap-1",
         button_previous:
-          "absolute left-20 h-9 w-9 inline-flex items-center justify-center rounded-full bg-white text-black hover:bg-white/80 transition-colors",
+          "absolute left-20 top-1 h-9 w-9 inline-flex items-center justify-center rounded-full bg-white text-black hover:bg-white/80 transition-colors",
         button_next:
-          "absolute right-20 h-9 w-9 inline-flex items-center justify-center rounded-full bg-white text-black hover:bg-white/80 transition-colors",
+          "absolute right-20 top-1 h-9 w-9 inline-flex items-center justify-center rounded-full bg-white text-black hover:bg-white/80 transition-colors",
         month_grid: "w-full border-collapse",
-        weekdays: "flex",
+        weekdays: "flex justify-center",
         weekday:
           "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
-        week: "flex w-full mt-2",
+        week: "flex justify-center w-full mt-2",
         day: "h-9 w-9 text-center text-sm p-0 relative flex items-center justify-center",
         day_button:
           "h-9 w-9 p-0 font-normal rounded-md hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground inline-flex items-center justify-center transition-colors",
