@@ -18,6 +18,8 @@ interface RouteMapProps {
   tripMode?: "one-way" | "round-trip";
   /** Callback ref for imperative leg hover highlighting */
   onHoverLegRef?: React.MutableRefObject<((legIndex: number | null) => void) | null>;
+  /** When true, map fills full container with even padding (no bottom card overlay) */
+  fullScreen?: boolean;
 }
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
@@ -31,6 +33,7 @@ export function RouteMap({
   destCoords,
   tripMode = "round-trip",
   onHoverLegRef,
+  fullScreen = false,
 }: RouteMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -291,12 +294,12 @@ export function RouteMap({
         bounds.extend([ne.lng + lngPad, ne.lat + latPad]);
       }
 
-      // Mobile: fit route into visible map area (above cards at 40vh)
+      // Fit route into visible map area with appropriate padding
       const vh = mobile ? window.innerHeight : 0;
-      const mobileBotPad = mobile ? Math.round(vh * 0.60) : 50;
+      const mobileBotPad = fullScreen ? 60 : Math.round(vh * 0.60);
       map.fitBounds(bounds, {
         padding: mobile
-          ? { top: 80, bottom: mobileBotPad, left: 30, right: 30 }
+          ? { top: 60, bottom: mobileBotPad, left: 40, right: 40 }
           : { top: 60, bottom: 50, left: 700, right: 50 },
         maxZoom: 10,
         duration: 500,

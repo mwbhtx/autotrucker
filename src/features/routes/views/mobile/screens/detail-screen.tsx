@@ -169,6 +169,7 @@ export function DetailScreen({ chain, isRoundTrip, originCity, onBack }: DetailS
               selectedRoute={{ legs: chain.legs }}
               originCoords={originCoords}
               tripMode={isRoundTrip ? "round-trip" : "one-way"}
+              fullScreen
             />
           </div>
         </TabsContent>
