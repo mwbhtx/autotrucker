@@ -50,8 +50,8 @@ export function SearchSheet({
     >
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10">
-        <button type="button" onClick={onBack} className="rounded-full p-1 hover:bg-white/10 transition-colors">
-          <ArrowLeft className="h-5 w-5" />
+        <button type="button" onClick={onBack} className="flex items-center justify-center h-9 w-9 rounded-full bg-white shrink-0">
+          <ArrowLeft className="h-5 w-5 text-black" />
         </button>
         <h1 className="text-base font-semibold">Plan Your Route</h1>
       </div>

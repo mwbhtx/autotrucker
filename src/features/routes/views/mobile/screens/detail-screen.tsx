@@ -71,8 +71,8 @@ export function DetailScreen({ chain, isRoundTrip, originCity, onBack }: DetailS
       {/* Header */}
       <div className="px-4 py-3 border-b border-white/10">
         <div className="flex items-center gap-3 mb-1">
-          <button type="button" onClick={onBack} className="rounded-full p-1 hover:bg-white/10 transition-colors">
-            <ArrowLeft className="h-5 w-5" />
+          <button type="button" onClick={onBack} className="flex items-center justify-center h-9 w-9 rounded-full bg-white shrink-0">
+            <ArrowLeft className="h-5 w-5 text-black" />
           </button>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 text-sm font-semibold">

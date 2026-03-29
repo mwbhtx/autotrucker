@@ -74,14 +74,14 @@ export function ResultsScreen({
 
       {/* Sort bar */}
       {!isLoading && chains.length > 0 && (
-        <div className="flex items-center gap-1.5 px-4 py-2">
-          <span className="text-xs text-muted-foreground mr-1">Sort</span>
+        <div className="flex items-center gap-2 px-4 py-2">
+          <span className="text-sm text-muted-foreground mr-0.5">Sort</span>
           {SORT_OPTIONS.map((opt) => (
             <button
               key={opt.key}
               type="button"
               onClick={() => setSortBy(opt.key)}
-              className={`rounded-full px-2.5 py-1 text-xs transition-colors ${
+              className={`rounded-full px-3.5 py-1.5 text-sm transition-colors ${
                 sortBy === opt.key
                   ? "bg-primary text-primary-foreground"
                   : "border border-input hover:bg-accent hover:text-accent-foreground"
@@ -93,9 +93,9 @@ export function ResultsScreen({
           <button
             type="button"
             onClick={onFiltersTap}
-            className="ml-auto flex items-center justify-center h-7 w-7 rounded-full bg-white"
+            className="ml-auto flex items-center justify-center h-9 w-9 rounded-full bg-white shrink-0"
           >
-            <SlidersHorizontal className="h-3.5 w-3.5 text-black" />
+            <SlidersHorizontal className="h-4 w-4 text-black" />
           </button>
         </div>
       )}
