@@ -43,5 +43,6 @@ yarn-error.log*
 # ide / tools
 .idea/
 .vscode/
+.claude/
 .superpowers/
 .worktrees/

@@ -14,7 +14,10 @@ import {
 import { Input } from "@/platform/web/components/ui/input";
 import { Separator } from "@/platform/web/components/ui/separator";
 import { Skeleton } from "@/platform/web/components/ui/skeleton";
-import { CheckIcon } from "lucide-react";
+import { CheckIcon, LogOut, Shield } from "lucide-react";
+import { useAuth } from "@/core/services/auth-provider";
+import { Button } from "@/platform/web/components/ui/button";
+import Link from "next/link";
 
 /** Debounce hook — returns a function that delays calling `fn` */
 function useDebouncedSave(delayMs = 800) {
@@ -43,6 +46,7 @@ function useDebouncedSave(delayMs = 800) {
 
 export function DesktopSettingsView() {
   const { data: settings, isLoading } = useSettings();
+  const { user, logout } = useAuth();
   const save = useDebouncedSave();
 
   // Local state for form fields
@@ -587,6 +591,32 @@ export function DesktopSettingsView() {
           </div>
 
           <Separator />
+
+          {/* Admin */}
+          {user?.role === "admin" && (
+            <Link
+              href="/admin"
+              className="flex w-full items-center justify-between rounded-lg border px-4 py-3 text-sm font-medium transition-colors hover:bg-accent/50"
+            >
+              <span className="flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                Admin Panel
+              </span>
+              <span className="text-muted-foreground">&#8250;</span>
+            </Link>
+          )}
+
+          {/* Sign Out */}
+          <div className="space-y-3">
+            <Button
+              variant="destructive"
+              onClick={logout}
+              className="w-full gap-2 h-12 text-base"
+            >
+              <LogOut className="h-4 w-4" />
+              Sign Out
+            </Button>
+          </div>
 
         </CardContent>
       </Card>

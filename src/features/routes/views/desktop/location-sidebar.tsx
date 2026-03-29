@@ -162,8 +162,6 @@ export function LocationSidebar({ location, selectedIndex, onSelectIndex, onClos
     } catch { return new Set(); }
   });
   const [showWatchlistOnly, setShowWatchlistOnly] = useState(false);
-  const [showSingleLeg, setShowSingleLeg] = useState(false);
-
   const toggleWatchlist = useCallback((key: string) => {
     setWatchlist((prev) => {
       const next = new Set(prev);
@@ -187,12 +185,8 @@ export function LocationSidebar({ location, selectedIndex, onSelectIndex, onClos
     ? allSortedRoutes.filter((r) => watchlist.has(routeKey(r.legs)))
     : allSortedRoutes;
 
-  // Split round-trip results into multi-leg and single-leg groups
-  const multiLegChains = sortedRoundTrips.filter((c) => c.legs.length > 1);
-  const singleLegChains = sortedRoundTrips.filter((c) => c.legs.length === 1);
-
   const itemCount = isRoundTripMode
-    ? (showSingleLeg ? sortedRoundTrips.length : multiLegChains.length)
+    ? sortedRoundTrips.length
     : sortedRoutes.length;
 
   return (
@@ -273,61 +267,24 @@ export function LocationSidebar({ location, selectedIndex, onSelectIndex, onClos
             )}
           </div>
         ) : isRoundTripMode
-          ? (() => {
-              const visible = showSingleLeg ? [...multiLegChains, ...singleLegChains] : multiLegChains;
-              const items: React.ReactNode[] = [];
-              visible.forEach((chain, i) => {
-                if (showSingleLeg && i === multiLegChains.length && singleLegChains.length > 0) {
-                  items.push(
-                    <button
-                      key="single-leg-divider"
-                      type="button"
-                      onClick={() => setShowSingleLeg(false)}
-                      className="w-full flex items-center gap-3 py-2 px-1 group"
-                    >
-                      <div className="flex-1 h-px bg-border" />
-                      <span className="text-xs font-medium text-muted-foreground whitespace-nowrap group-hover:text-foreground transition-colors">
-                        Single Load Routes &times;
-                      </span>
-                      <div className="flex-1 h-px bg-border" />
-                    </button>,
-                  );
-                }
-                items.push(
-                  <RoundTripChainCard
-                    key={`${chain.legs[0]?.order_id ?? i}-${i}`}
-                    chain={chain}
-                    rank={i + 1}
-                    routeIdx={i}
-                    isSelected={i === selectedIndex}
-                    onClick={() => onSelectIndex(i, chain.legs)}
-                    maxWeight={maxWeight}
-                    originCity={location.city}
-                    isWatchlisted={watchlist.has(routeKey(chain.legs))}
-                    onToggleWatchlist={() => toggleWatchlist(routeKey(chain.legs))}
-                    orderUrlTemplate={orderUrlTemplate}
-                    onShowComments={handleShowComments}
-                    onHoverLeg={onHoverLeg}
-                    costPerMile={costPerMile}
-                  />,
-                );
-              });
-              // Show reveal button for single-leg results
-              if (singleLegChains.length > 0 && !showSingleLeg) {
-                items.push(
-                  <button
-                    key="show-single-leg"
-                    type="button"
-                    onClick={() => setShowSingleLeg(true)}
-                    className="w-full rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 px-5 py-5 text-center transition-colors"
-                  >
-                    <p className="text-base font-semibold text-foreground">Show Single Load Routes</p>
-                    <p className="text-sm text-muted-foreground mt-1">{singleLegChains.length} single load route{singleLegChains.length !== 1 ? "s" : ""} with return analysis</p>
-                  </button>,
-                );
-              }
-              return items;
-            })()
+          ? sortedRoundTrips.map((chain, i) => (
+              <RoundTripChainCard
+                key={`${chain.legs[0]?.order_id ?? i}-${i}`}
+                chain={chain}
+                rank={i + 1}
+                routeIdx={i}
+                isSelected={i === selectedIndex}
+                onClick={() => onSelectIndex(i === selectedIndex ? -1 : i, i === selectedIndex ? undefined : chain.legs)}
+                maxWeight={maxWeight}
+                originCity={location.city}
+                isWatchlisted={watchlist.has(routeKey(chain.legs))}
+                onToggleWatchlist={() => toggleWatchlist(routeKey(chain.legs))}
+                orderUrlTemplate={orderUrlTemplate}
+                onShowComments={handleShowComments}
+                onHoverLeg={onHoverLeg}
+                costPerMile={costPerMile}
+              />
+            ))
           : sortedRoutes.map((route, i) => (
               <RoundTripChainCard
                 key={`${route.legs[0]?.order_id ?? i}-${i}`}
@@ -335,7 +292,7 @@ export function LocationSidebar({ location, selectedIndex, onSelectIndex, onClos
                 rank={i + 1}
                 routeIdx={i}
                 isSelected={i === selectedIndex}
-                onClick={() => onSelectIndex(i, routeChainToRoundTrip(route).legs)}
+                onClick={() => onSelectIndex(i === selectedIndex ? -1 : i, i === selectedIndex ? undefined : routeChainToRoundTrip(route).legs)}
                 originCity={originFilter?.city}
                 destCity={destFilter?.city}
                 isWatchlisted={watchlist.has(routeKey(route.legs))}
@@ -557,9 +514,12 @@ function RoundTripChainCard({
           )}
         </div>
 
-        {/* Date range row */}
+        {/* Date range + load count row */}
         {dateRange && (
-          <div className="flex items-center justify-end px-4 py-2">
+          <div className="flex items-center justify-between px-4 py-2">
+            <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs tabular-nums text-muted-foreground">
+              {chain.legs.length} {chain.legs.length === 1 ? "load" : "loads"}
+            </span>
             <span className="text-sm" style={{ color: "rgba(205,205,205,0.5)" }}>{dateRange}</span>
           </div>
         )}

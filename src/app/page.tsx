@@ -105,7 +105,7 @@ export default function HomePage() {
         {/* ── Hero ── */}
         <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-6">
           <h1 className="font-normal tracking-wide leading-[0.85] text-white" style={{ fontFamily: 'var(--font-bebas-neue)', fontSize: '95px' }}>
-            HAULVISOR
+            haulvisor
           </h1>
           <p className="text-white font-normal whitespace-nowrap" style={{ fontSize: '25px', marginTop: '15px' }}>
             The load board that doesn&apos;t suck.
@@ -174,7 +174,7 @@ export default function HomePage() {
           <div className="flex flex-col sm:flex-row gap-12 sm:gap-8">
             <div className="sm:w-40 shrink-0">
               <span className="text-3xl tracking-wide leading-none" style={{ fontFamily: 'var(--font-bebas-neue)' }}>
-                HAULVISOR
+                Haulvisor
               </span>
             </div>
             <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-8">

@@ -171,10 +171,6 @@ export function DesktopRoutesView() {
     const homeRoutes = roundTripResults?.routes ?? [];
     if (homeRoutes.length === 0 || roundTripParams === null) return;
     const origin = roundTripResults!.origin;
-    // Order multi-leg first so initial selection matches sidebar rendering
-    const multiLeg = homeRoutes.filter((c) => c.legs.length > 1);
-    const singleLeg = homeRoutes.filter((c) => c.legs.length === 1);
-    const ordered = [...multiLeg, ...singleLeg];
     setSelectedLocation({
       city: origin.city,
       state: origin.state,
@@ -182,10 +178,10 @@ export function DesktopRoutesView() {
       lng: origin.lng,
       orders: [],
       routeChains: [],
-      roundTripChains: ordered,
+      roundTripChains: homeRoutes,
     });
     setSelectedItemIndex(0);
-    setSelectedRouteLegs(ordered[0]?.legs ?? null);
+    setSelectedRouteLegs(homeRoutes[0]?.legs ?? null);
   }, [roundTripResults, roundTripParams]);
 
   // Populate sidebar when one-way results arrive

@@ -20,7 +20,7 @@ import { ChevronDown, ChevronUpIcon, LocateIcon, SlidersHorizontal, XIcon } from
 import { BorderBeam } from "@/platform/web/components/ui/border-beam";
 import { Calendar } from "@/platform/web/components/ui/calendar";
 import { useSettings, useUpdateSettings } from "@/core/hooks/use-settings";
-import { TRAILER_CATEGORIES, expandTrailerCodes, codesToLabels } from "@mwbhtx/haulvisor-core";
+import { TRAILER_CATEGORIES, expandTrailerCodes, codesToLabels, DEFAULT_LEGS_ONE_WAY, DEFAULT_LEGS_ROUND_TRIP, DEFAULT_MAX_DEADHEAD_PCT, DEFAULT_MAX_IDLE_HOURS, MIN_DEADHEAD_PCT, MAX_DEADHEAD_PCT } from "@mwbhtx/haulvisor-core";
 import type { RouteSearchParams, RoundTripSearchParams } from "@/core/hooks/use-routes";
 
 export type SearchParams = RouteSearchParams;
@@ -236,13 +236,13 @@ function DeadheadPctPill({ value, onChange }: { value: number; onChange: (v: num
           <Slider
             value={[draft]}
             onValueChange={([v]) => setDraft(v)}
-            min={5}
-            max={20}
+            min={MIN_DEADHEAD_PCT}
+            max={MAX_DEADHEAD_PCT}
             step={1}
           />
           <div className="flex justify-between text-xs text-muted-foreground">
-            <span>5%</span>
-            <span>20%</span>
+            <span>{MIN_DEADHEAD_PCT}%</span>
+            <span>{MAX_DEADHEAD_PCT}%</span>
           </div>
           <p className="text-xs text-muted-foreground">
             Total deadhead miles must not exceed {draft}% of total miles driven
@@ -519,10 +519,10 @@ export function SearchFilters({
   const [originPopoverOpen, setOriginPopoverOpen] = useState(false);
   const [destination, setDestination] = useState<PlaceResult | null>(r.destination ?? null);
   const [homeBy, setHomeBy] = useState<string>(r.homeBy ?? "");
-  const [maxDeadheadPct, setMaxDeadheadPct] = useState(r.maxDeadheadPct ?? 15);
-  const [maxIdle, setMaxIdle] = useState<number>(r.maxIdle ?? settings?.max_idle_hours ?? 48);
+  const [maxDeadheadPct, setMaxDeadheadPct] = useState(r.maxDeadheadPct ?? DEFAULT_MAX_DEADHEAD_PCT);
+  const [maxIdle, setMaxIdle] = useState<number>(r.maxIdle ?? settings?.max_idle_hours ?? DEFAULT_MAX_IDLE_HOURS);
   const [workDays, setWorkDays] = useState<string[]>(r.workDays ?? settings?.work_days ?? []);
-  const [legs, setLegs] = useState<number>(r.legs ?? (initialOrders === "one-way" ? 1 : 2));
+  const [legs, setLegs] = useState<number>(r.legs ?? (initialOrders === "one-way" ? DEFAULT_LEGS_ONE_WAY : DEFAULT_LEGS_ROUND_TRIP));
   const [defaultsLoaded, setDefaultsLoaded] = useState(!!r.origin);
 
   const hasHomeLocation =
@@ -555,7 +555,7 @@ export function SearchFilters({
     if (resetKey === undefined || resetKey === 0) return;
     const resetMode = initialTripType ?? "round-trip";
     setOrders(resetMode);
-    setLegs(resetMode === "one-way" ? 1 : 2);
+    setLegs(resetMode === "one-way" ? DEFAULT_LEGS_ONE_WAY : DEFAULT_LEGS_ROUND_TRIP);
     setOrigin(null);
     setDestination(null);
     setHomeBy("");

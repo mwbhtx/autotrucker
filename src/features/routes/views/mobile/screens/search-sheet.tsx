@@ -96,21 +96,21 @@ export function SearchSheet({
           />
         </div>
 
-        {/* Destination */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            Destination
-          </label>
-          <PlaceAutocomplete
-            placeholder="Where are you heading?"
-            value={destination}
-            onSelect={setDestination}
-          />
-        </div>
-      </div>
+        {/* Destination — one-way only */}
+        {tripMode === "one-way" && (
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              Destination
+            </label>
+            <PlaceAutocomplete
+              placeholder="Where are you heading?"
+              value={destination}
+              onSelect={setDestination}
+            />
+          </div>
+        )}
 
-      {/* Search button */}
-      <div className="px-4 pb-6 pt-2">
+        {/* Search button — inline below inputs */}
         <Button
           onClick={handleSearch}
           disabled={!canSearch}

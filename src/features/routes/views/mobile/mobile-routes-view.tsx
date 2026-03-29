@@ -7,7 +7,7 @@ import { useSettings } from "@/core/hooks/use-settings";
 import { useRouteSearch, useRoundTripSearch, type RouteSearchParams, type RoundTripSearchParams } from "@/core/hooks/use-routes";
 import { useMobileRouteNav } from "@/features/routes/hooks/use-mobile-route-nav";
 import { useSaveRecentSearch, type RecentSearch } from "@/features/routes/hooks/use-recent-searches";
-import { DEFAULT_COST_PER_MILE } from "@mwbhtx/haulvisor-core";
+import { DEFAULT_COST_PER_MILE, DEFAULT_LEGS_ROUND_TRIP, DEFAULT_MAX_DEADHEAD_PCT, DEFAULT_MAX_IDLE_HOURS } from "@mwbhtx/haulvisor-core";
 import type { PlaceResult } from "@/features/routes/components/search-form";
 import type { AdvancedFilters } from "./screens/filters-sheet";
 import { HomeScreen } from "./screens/home-screen";
@@ -17,7 +17,7 @@ import { ResultsScreen } from "./screens/results-screen";
 import { DetailScreen } from "./screens/detail-screen";
 
 export function MobileRoutesView() {
-  const { activeCompanyId } = useAuth();
+  const { activeCompanyId, logout } = useAuth();
   const { data: settings } = useSettings();
   const { currentScreen, push, pop, goToResults } = useMobileRouteNav();
   const saveRecent = useSaveRecentSearch();
@@ -27,11 +27,12 @@ export function MobileRoutesView() {
   const [origin, setOrigin] = useState<PlaceResult | null>(null);
   const [destination, setDestination] = useState<PlaceResult | null>(null);
   const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>({
-    legs: 3,
-    maxDeadheadPct: 30,
-    maxIdleHours: 48,
+    legs: DEFAULT_LEGS_ROUND_TRIP,
+    maxDeadheadPct: DEFAULT_MAX_DEADHEAD_PCT,
+    maxIdleHours: settings?.max_idle_hours ?? DEFAULT_MAX_IDLE_HOURS,
     homeBy: "",
     trailerType: "",
+    risk: "any",
   });
 
   // Query params
@@ -40,6 +41,24 @@ export function MobileRoutesView() {
 
   const costPerMile = (settings?.cost_per_mile as number | undefined) ?? DEFAULT_COST_PER_MILE;
 
+  // Build driver profile from settings (mirrors desktop search-form.tsx)
+  const driverProfile = settings ? {
+    trailer_types: settings.trailer_types?.length ? settings.trailer_types.join('|') : undefined,
+    max_weight: settings.max_weight ?? undefined,
+    hazmat_certified: settings.hazmat_certified ?? undefined,
+    twic_card: settings.twic_card ?? undefined,
+    team_driver: settings.team_driver ?? undefined,
+    max_assigned_orders: settings.max_assigned_orders ?? undefined,
+    cost_per_mile: costPerMile,
+    diesel_price_per_gallon: settings.diesel_price_per_gallon ?? undefined,
+    maintenance_per_mile: settings.maintenance_per_mile ?? undefined,
+    tires_per_mile: settings.tires_per_mile ?? undefined,
+    truck_payment_per_day: settings.truck_payment_per_day ?? undefined,
+    insurance_per_day: settings.insurance_per_day ?? undefined,
+    per_diem_per_day: settings.per_diem_per_day ?? undefined,
+    avg_mpg: settings.avg_mpg ?? undefined,
+  } : { cost_per_mile: costPerMile };
+
   // Fire queries
   const oneWayQuery = useRouteSearch(activeCompanyId ?? "", searchParams);
   const roundTripQuery = useRoundTripSearch(activeCompanyId ?? "", roundTripParams);
@@ -47,13 +66,13 @@ export function MobileRoutesView() {
   const isRoundTrip = tripMode === "round-trip";
   const activeQuery = isRoundTrip ? roundTripQuery : oneWayQuery;
 
-  // Build chain list from results
+  // Build chain list from results, sorted by daily earnings (highest first)
   const chains = useMemo(() => {
     if (isRoundTrip && roundTripQuery.data) {
-      return roundTripQuery.data.routes ?? [];
+      return [...(roundTripQuery.data.routes ?? [])].sort((a, b) => b.daily_net_profit - a.daily_net_profit);
     }
     if (!isRoundTrip && oneWayQuery.data) {
-      return oneWayQuery.data.routes ?? [];
+      return [...(oneWayQuery.data.routes ?? [])].sort((a, b) => b.daily_net_profit - a.daily_net_profit);
     }
     return [];
   }, [isRoundTrip, roundTripQuery.data, oneWayQuery.data]);
@@ -79,13 +98,15 @@ export function MobileRoutesView() {
         const params: RoundTripSearchParams = {
           origin_lat: orig.lat,
           origin_lng: orig.lng,
-          origin_city: orig.name,
+          origin_city: orig.name.split(",")[0],
           legs: filters.legs,
+          risk: filters.risk,
           max_deadhead_pct: filters.maxDeadheadPct,
-          max_layover_hours: filters.maxIdleHours,
+          ...(filters.maxIdleHours > 0 ? { max_layover_hours: filters.maxIdleHours } : {}),
           home_by: filters.homeBy || undefined,
-          trailer_types: filters.trailerType || undefined,
-          cost_per_mile: costPerMile,
+          ...driverProfile,
+          // Override trailer_types from filters if user specified one
+          ...(filters.trailerType ? { trailer_types: filters.trailerType } : {}),
         };
         setRoundTripParams(params);
         setSearchParams(null);
@@ -97,14 +118,14 @@ export function MobileRoutesView() {
           dest_lng: dest?.lng,
           legs: filters.legs,
           cost_per_mile: costPerMile,
-          trailer_types: filters.trailerType || undefined,
-          max_layover_hours: filters.maxIdleHours,
+          trailer_types: filters.trailerType || driverProfile.trailer_types,
+          ...(filters.maxIdleHours > 0 ? { max_layover_hours: filters.maxIdleHours } : {}),
         };
         setSearchParams(params);
         setRoundTripParams(null);
       }
     },
-    [activeCompanyId, costPerMile],
+    [activeCompanyId, costPerMile, driverProfile],
   );
 
   // Handlers
@@ -154,11 +175,12 @@ export function MobileRoutesView() {
       const orig: PlaceResult = { name: search.origin.label, lat: search.origin.coordinates[0], lng: search.origin.coordinates[1] };
       const dest: PlaceResult = { name: search.destination.label, lat: search.destination.coordinates[0], lng: search.destination.coordinates[1] };
       const filters: AdvancedFilters = {
-        legs: search.filters.legs ?? 3,
-        maxDeadheadPct: search.filters.deadheadPercent ?? 30,
-        maxIdleHours: search.filters.maxIdle ?? 48,
+        legs: search.filters.legs ?? DEFAULT_LEGS_ROUND_TRIP,
+        maxDeadheadPct: search.filters.deadheadPercent ?? DEFAULT_MAX_DEADHEAD_PCT,
+        maxIdleHours: search.filters.maxIdle ?? DEFAULT_MAX_IDLE_HOURS,
         homeBy: search.filters.homeBy ?? "",
         trailerType: search.filters.trailerType ?? "",
+        risk: "any",
       };
 
       setTripMode(mode);
@@ -194,10 +216,16 @@ export function MobileRoutesView() {
   // No company assigned edge case
   if (!activeCompanyId) {
     return (
-      <div className="flex h-full items-center justify-center p-6 text-center">
+      <div className="flex h-full flex-col items-center justify-center gap-4 p-6 text-center">
         <p className="text-sm text-muted-foreground">
           No company assigned to your account. Please contact your administrator.
         </p>
+        <button
+          onClick={logout}
+          className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors"
+        >
+          Sign Out
+        </button>
       </div>
     );
   }
