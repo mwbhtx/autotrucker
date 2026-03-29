@@ -9,13 +9,13 @@ export type CalendarProps = React.ComponentProps<typeof DayPicker>;
 function Calendar({ className, classNames, ...props }: CalendarProps) {
   return (
     <DayPicker
-      className={cn("p-3", className)}
+      className={cn("p-3 flex flex-col", className)}
       classNames={{
         months: "flex flex-col sm:flex-row gap-2",
         month: "flex flex-col gap-4",
         month_caption: "flex justify-center pt-1 items-center",
         caption_label: "text-sm font-medium",
-        nav: "flex items-center justify-center gap-6 pb-1",
+        nav: "flex items-center justify-center gap-6 pb-1 order-first",
         button_previous:
           "h-9 w-9 inline-flex items-center justify-center rounded-full bg-white text-black hover:bg-white/80 transition-colors",
         button_next:
