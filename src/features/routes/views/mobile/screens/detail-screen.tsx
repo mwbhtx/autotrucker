@@ -94,7 +94,6 @@ export function DetailScreen({ chain, isRoundTrip, originCity, onBack }: DetailS
       <Tabs defaultValue="overview" className="flex-1 flex flex-col min-h-0">
         <TabsList className="mx-4 mt-2 w-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="segments">Segments</TabsTrigger>
           <TabsTrigger value="map">Map</TabsTrigger>
         </TabsList>
 
@@ -125,41 +124,21 @@ export function DetailScreen({ chain, isRoundTrip, originCity, onBack }: DetailS
             />
           </div>
 
-          {/* Route path summary */}
-          <div className="space-y-0">
-            <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-              Route Path
-            </h3>
+          {/* Segment details */}
+          <div className="space-y-3">
             {chain.legs.map((leg, i) => (
-              <div key={i} className="flex items-center gap-2.5 py-2 border-b border-white/[0.05] last:border-0">
-                <div className="flex items-center justify-center h-5 w-5 rounded-full bg-white/10 text-[10px] font-bold shrink-0">
-                  {i + 1}
-                </div>
-                <span className="text-sm">
-                  {leg.origin_city} → {leg.destination_city}
-                </span>
-                <span className="ml-auto text-xs text-muted-foreground tabular-nums">
-                  {leg.miles.toLocaleString()} mi
-                </span>
-              </div>
+              <SegmentCard key={i} leg={leg} index={i} />
             ))}
+
+            {/* Collapsible timeline details */}
+            {isRoundTrip && (chain as RoundTripChain).trip_summary && (
+              <SegmentDetailsCollapsible
+                chain={chain as RoundTripChain}
+                originCity={originCity}
+                onBack={onBack}
+              />
+            )}
           </div>
-        </TabsContent>
-
-        {/* Segments tab */}
-        <TabsContent value="segments" className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-          {chain.legs.map((leg, i) => (
-            <SegmentCard key={i} leg={leg} index={i} />
-          ))}
-
-          {/* Segment Details — collapsible, shows RouteInspector timeline */}
-          {isRoundTrip && (chain as RoundTripChain).trip_summary && (
-            <SegmentDetailsCollapsible
-              chain={chain as RoundTripChain}
-              originCity={originCity}
-              onBack={onBack}
-            />
-          )}
         </TabsContent>
 
         {/* Map tab */}
