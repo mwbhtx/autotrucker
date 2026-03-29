@@ -15,7 +15,7 @@ function Calendar({ className, classNames, ...props }: CalendarProps) {
         month: "flex flex-col gap-4",
         month_caption: "flex justify-center pt-1 items-center",
         caption_label: "text-sm font-medium",
-        nav: "flex items-center justify-between px-4 pb-1",
+        nav: "flex items-center justify-center gap-6 pb-1",
         button_previous:
           "h-9 w-9 inline-flex items-center justify-center rounded-full bg-white text-black hover:bg-white/80 transition-colors",
         button_next:
