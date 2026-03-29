@@ -189,6 +189,16 @@ export function LocationSidebar({ location, selectedIndex, onSelectIndex, onClos
     ? sortedRoundTrips.length
     : sortedRoutes.length;
 
+  // Sync the map to show the correct sorted route when index is 0
+  // (parent can't know sort order, so sidebar pushes the sorted legs)
+  useEffect(() => {
+    if (selectedIndex !== 0 || isLoading) return;
+    const firstChain = isRoundTripMode ? sortedRoundTrips[0] : sortedRoutes[0];
+    if (firstChain) {
+      onSelectIndex(0, firstChain.legs);
+    }
+  }, [selectedIndex, isLoading, sortBy, sortedRoundTrips, sortedRoutes, isRoundTripMode, onSelectIndex]);
+
   return (
     <div className="flex h-full w-full bg-[#111111e8] border border-white/10 rounded-2xl flex-col overflow-hidden relative">
 
@@ -468,13 +478,12 @@ function RoundTripChainCard({
     >
       {/* Route details */}
       <div
-        onClick={onClick}
-        className={`flex-1 min-w-0 cursor-pointer transition-colors ${
+        className={`flex-1 min-w-0 transition-colors ${
           isSelected ? "bg-[#111111]" : "rounded-xl bg-[#111111] hover:bg-[#161616]"
         }`}
       >
-        {/* Key metrics + bookmark */}
-        <div className="flex justify-around text-center items-start px-4 py-3 border-b border-white/[0.05]">
+        {/* Key metrics + bookmark — click here to toggle selection */}
+        <div onClick={onClick} className="flex justify-around text-center items-start px-4 py-3 border-b border-white/[0.05] cursor-pointer">
           <div>
             <p className="text-sm uppercase tracking-wide" style={{ color: "rgba(205,205,205,0.5)" }}>$/Day</p>
             <p className={`text-xl font-bold tabular-nums ${routeProfitColor(chain.daily_net_profit)}`}>
@@ -514,9 +523,9 @@ function RoundTripChainCard({
           )}
         </div>
 
-        {/* Date range + load count row */}
+        {/* Date range + load count row — also toggles selection */}
         {dateRange && (
-          <div className="flex items-center justify-between px-4 py-2">
+          <div onClick={onClick} className="flex items-center justify-between px-4 py-2 cursor-pointer">
             <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs tabular-nums text-muted-foreground">
               {chain.legs.length} {chain.legs.length === 1 ? "load" : "loads"}
             </span>

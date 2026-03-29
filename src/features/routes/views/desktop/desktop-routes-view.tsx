@@ -143,27 +143,19 @@ export function DesktopRoutesView() {
     return EMPTY_LOCATION;
   }, [roundTripParams, roundTripResults, searchParams, routes]);
 
-  // Derive selected route for the map
+  // Derive selected route for the map — only use legs provided by the sidebar
+  // (sidebar handles sort order, so index-based lookup would be wrong)
   const selectedRoute = useMemo<{ legs: DrawableRouteLeg[] } | null>(() => {
     if (selectedRouteLegs) return { legs: selectedRouteLegs };
-    if (displayLocation.roundTripChains.length > 0) {
-      const chain = displayLocation.roundTripChains[selectedItemIndex];
-      return chain ? { legs: chain.legs } : null;
-    }
-    if (displayLocation.routeChains.length > 0) {
-      const chain = displayLocation.routeChains[selectedItemIndex];
-      return chain ? { legs: chain.legs } : null;
-    }
     return null;
-  }, [displayLocation, selectedItemIndex, selectedRouteLegs]);
+  }, [selectedRouteLegs]);
 
-  // Reset selection when results change
+  // Reset selection when results change (sidebar sync effect will set the correct legs)
   const prevResultsRef = useRef(displayLocation);
   useEffect(() => {
     if (prevResultsRef.current !== displayLocation) {
       prevResultsRef.current = displayLocation;
       setSelectedItemIndex(0);
-      setSelectedRouteLegs(null);
     }
   }, [displayLocation]);
 
