@@ -1,25 +1,46 @@
 "use client";
 
-import { DayPicker } from "react-day-picker";
+import { DayPicker, useDayPicker } from "react-day-picker";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/core/utils";
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>;
 
+function CustomCaption({ calendarMonth }: { calendarMonth: { date: Date } }) {
+  const { goToMonth, previousMonth, nextMonth } = useDayPicker();
+  const label = calendarMonth.date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+
+  return (
+    <div className="flex items-center justify-between px-1 py-1">
+      <button
+        type="button"
+        onClick={() => previousMonth && goToMonth(previousMonth)}
+        disabled={!previousMonth}
+        className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-white text-black hover:bg-white/80 transition-colors disabled:opacity-30"
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </button>
+      <span className="text-sm font-medium">{label}</span>
+      <button
+        type="button"
+        onClick={() => nextMonth && goToMonth(nextMonth)}
+        disabled={!nextMonth}
+        className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-white text-black hover:bg-white/80 transition-colors disabled:opacity-30"
+      >
+        <ChevronRight className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}
+
 function Calendar({ className, classNames, ...props }: CalendarProps) {
   return (
     <DayPicker
       className={cn("p-3", className)}
+      hideNavigation
       classNames={{
         months: "flex flex-col sm:flex-row gap-2",
         month: "flex flex-col gap-4",
-        month_caption: "flex justify-center pt-1 relative items-center",
-        caption_label: "text-sm font-medium",
-        nav: "flex items-center gap-1",
-        button_previous:
-          "absolute left-1 h-7 w-7 inline-flex items-center justify-center rounded-full bg-white text-black hover:bg-white/80 transition-colors",
-        button_next:
-          "absolute right-1 h-7 w-7 inline-flex items-center justify-center rounded-full bg-white text-black hover:bg-white/80 transition-colors",
         month_grid: "w-full border-collapse",
         weekdays: "flex justify-center",
         weekday:
@@ -37,12 +58,7 @@ function Calendar({ className, classNames, ...props }: CalendarProps) {
         ...classNames,
       }}
       components={{
-        Chevron: ({ orientation }) =>
-          orientation === "left" ? (
-            <ChevronLeft className="h-4 w-4" />
-          ) : (
-            <ChevronRight className="h-4 w-4" />
-          ),
+        MonthCaption: CustomCaption,
       }}
       {...props}
     />
