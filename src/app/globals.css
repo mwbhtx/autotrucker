@@ -265,4 +265,11 @@ html {
   border-color: #111111 !important;
 }
 
-
+/* Force calendar nav buttons above the month grid */
+.rdp-root {
+  display: flex !important;
+  flex-direction: column !important;
+}
+.rdp-root > .rdp-nav {
+  order: -1 !important;
+}
