@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, SlidersHorizontal, ArrowRight, Clock } from "lucide-react";
+import { Search, SlidersHorizontal, Clock } from "lucide-react";
 import { useRecentSearches, type RecentSearch } from "@/features/routes/hooks/use-recent-searches";
 
 interface HomeScreenProps {
@@ -11,6 +11,11 @@ interface HomeScreenProps {
 
 function formatTripMode(mode: "one_way" | "round_trip"): string {
   return mode === "round_trip" ? "Round trip" : "One way";
+}
+
+/** Strip country from place label — "Houston, Texas, United States" → "Houston, Texas" */
+function shortLabel(label: string): string {
+  return label.split(",").slice(0, 2).map(s => s.trim()).join(", ");
 }
 
 export function HomeScreen({ onSearchBarTap, onFiltersTap, onRecentTap }: HomeScreenProps) {
@@ -51,7 +56,7 @@ export function HomeScreen({ onSearchBarTap, onFiltersTap, onRecentTap }: HomeSc
         {isLoading && (
           <div className="space-y-3">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="h-14 animate-pulse rounded-xl bg-muted" />
+              <div key={i} className="h-20 animate-pulse rounded-xl bg-muted" />
             ))}
           </div>
         )}
@@ -64,24 +69,27 @@ export function HomeScreen({ onSearchBarTap, onFiltersTap, onRecentTap }: HomeSc
         )}
 
         {!isLoading && recentSearches && recentSearches.length > 0 && (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {recentSearches.map((search) => (
               <button
                 key={search.id}
                 type="button"
                 onClick={() => onRecentTap(search)}
-                className="flex w-full items-center gap-3 rounded-xl border border-white/10 bg-card p-3 text-left transition-colors active:bg-muted/50"
+                className="flex w-full rounded-xl border border-white/10 bg-card p-4 text-left transition-colors active:bg-muted/50"
               >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="shrink-0 rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                      {formatTripMode(search.tripMode)}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-sm">
-                    <span className="truncate">{search.origin.label}</span>
-                    <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground" />
-                    <span className="truncate">{search.destination.label}</span>
+                <div className="flex-1 min-w-0 space-y-2">
+                  <span className="shrink-0 rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    {formatTripMode(search.tripMode)}
+                  </span>
+                  <div className="text-base">
+                    <div>
+                      <span className="text-muted-foreground">Origin: </span>
+                      <span className="font-medium">{shortLabel(search.origin.label)}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Destination: </span>
+                      <span className="font-medium">{shortLabel(search.destination.label)}</span>
+                    </div>
                   </div>
                 </div>
               </button>
