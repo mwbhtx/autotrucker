@@ -63,20 +63,24 @@ export function RouteCard({ chain, isRoundTrip, onClick, className }: RouteCardP
           {isRoundTrip ? "Round trip" : "One way"}
         </span>
       </div>
-      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+      <div className="flex items-center gap-4 text-sm">
         {dailyProfit !== null && (
           <span className="flex items-center gap-1.5">
-            <TrendingUp className="h-4 w-4" />
+            <TrendingUp className={cn("h-4 w-4", routeProfitColor(dailyProfit))} />
             <span className={cn("font-semibold", routeProfitColor(dailyProfit))}>
               ${Math.round(dailyProfit)}/day
             </span>
           </span>
         )}
         {netProfit !== null && (
-          <span>${Math.round(netProfit).toLocaleString()}</span>
+          <span className={cn("font-semibold", dailyProfit !== null ? routeProfitColor(dailyProfit) : "text-muted-foreground")}>
+            ${Math.round(netProfit).toLocaleString()}
+          </span>
         )}
         {netPerMile !== null && (
-          <span>${netPerMile.toFixed(2)}/mi</span>
+          <span className={cn("font-semibold", dailyProfit !== null ? routeProfitColor(dailyProfit) : "text-muted-foreground")}>
+            ${netPerMile.toFixed(2)}/mi
+          </span>
         )}
       </div>
     </button>
