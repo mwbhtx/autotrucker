@@ -238,7 +238,7 @@ function DeadheadPctPill({ value, onChange }: { value: number; onChange: (v: num
             onValueChange={([v]) => setDraft(v)}
             min={MIN_DEADHEAD_PCT}
             max={MAX_DEADHEAD_PCT}
-            step={1}
+            step={5}
           />
           <div className="flex justify-between text-xs text-muted-foreground">
             <span>{MIN_DEADHEAD_PCT}%</span>

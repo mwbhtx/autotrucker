@@ -3,6 +3,7 @@
 import { MapPin, TrendingUp } from "lucide-react";
 import { cn } from "@/core/utils";
 import { routeProfitColor } from "@/core/utils/rate-color";
+import { getOriginCity, getDestCity, getDailyProfit, getNetProfit, getNetPerMile, formatCurrency, formatRpm } from "@/core/utils/route-helpers";
 import type { RouteChain, RoundTripChain } from "@/core/types";
 
 interface RouteCardProps {
@@ -12,38 +13,13 @@ interface RouteCardProps {
   className?: string;
 }
 
-function getOriginCity(chain: RouteChain | RoundTripChain): string {
-  return chain.legs[0]?.origin_city ?? "Unknown";
-}
-
-function getDestCity(chain: RouteChain | RoundTripChain): string {
-  return chain.legs[chain.legs.length - 1]?.destination_city ?? "Unknown";
-}
-
-function getDailyProfit(chain: RouteChain | RoundTripChain): number | null {
-  if ("daily_net_profit" in chain && typeof chain.daily_net_profit === "number") {
-    return chain.daily_net_profit;
-  }
-  return null;
-}
-
-function getNetProfit(chain: RouteChain | RoundTripChain): number | null {
-  if ("firm_profit" in chain && typeof chain.firm_profit === "number") return chain.firm_profit;
-  if ("profit" in chain && typeof chain.profit === "number") return chain.profit;
-  return null;
-}
-
-function getNetPerMile(chain: RouteChain | RoundTripChain): number | null {
-  if ("effective_rpm" in chain && typeof chain.effective_rpm === "number") return chain.effective_rpm;
-  return null;
-}
-
 export function RouteCard({ chain, isRoundTrip, onClick, className }: RouteCardProps) {
   const origin = getOriginCity(chain);
   const dest = getDestCity(chain);
   const dailyProfit = getDailyProfit(chain);
   const netProfit = getNetProfit(chain);
   const netPerMile = getNetPerMile(chain);
+  const color = dailyProfit !== null ? routeProfitColor(dailyProfit) : "text-muted-foreground";
 
   return (
     <button
@@ -66,20 +42,20 @@ export function RouteCard({ chain, isRoundTrip, onClick, className }: RouteCardP
       <div className="flex items-center gap-4 text-sm">
         {dailyProfit !== null && (
           <span className="flex items-center gap-1.5">
-            <TrendingUp className={cn("h-4 w-4", routeProfitColor(dailyProfit))} />
-            <span className={cn("font-semibold", routeProfitColor(dailyProfit))}>
-              ${Math.round(dailyProfit)}/day
+            <TrendingUp className={cn("h-4 w-4", color)} />
+            <span className={cn("font-semibold", color)}>
+              {formatCurrency(dailyProfit)}/day
             </span>
           </span>
         )}
         {netProfit !== null && (
-          <span className={cn("font-semibold", dailyProfit !== null ? routeProfitColor(dailyProfit) : "text-muted-foreground")}>
-            ${Math.round(netProfit).toLocaleString()}
+          <span className={cn("font-semibold", color)}>
+            {formatCurrency(netProfit)}
           </span>
         )}
         {netPerMile !== null && (
-          <span className={cn("font-semibold", dailyProfit !== null ? routeProfitColor(dailyProfit) : "text-muted-foreground")}>
-            ${netPerMile.toFixed(2)}/mi
+          <span className={cn("font-semibold", color)}>
+            {formatRpm(netPerMile)}
           </span>
         )}
       </div>

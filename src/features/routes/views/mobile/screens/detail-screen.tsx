@@ -2,12 +2,16 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, TrendingUp, Truck, MapPin, Gauge, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronDown, ChevronUp } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/platform/web/components/ui/tabs";
 import { RouteMap } from "@/features/routes/components/route-map";
 import { RouteInspector } from "@/features/routes/components/route-inspector";
 import { routeProfitColor } from "@/core/utils/rate-color";
 import { LEG_COLORS } from "@/core/utils/route-colors";
+import {
+  getOriginCity, getDestCity, getDailyProfit, getNetProfit, getNetPerMile,
+  getDeadheadPct, formatCurrency, formatDateTime, formatRpm,
+} from "@/core/utils/route-helpers";
 import type { RouteChain, RoundTripChain, RoundTripLeg, RouteLeg } from "@/core/types";
 
 interface DetailScreenProps {
@@ -17,45 +21,17 @@ interface DetailScreenProps {
   onBack: () => void;
 }
 
-function getOriginCity(chain: RouteChain | RoundTripChain): string {
-  return chain.legs[0]?.origin_city ?? "Unknown";
-}
-
-function getDestCity(chain: RouteChain | RoundTripChain): string {
-  return chain.legs[chain.legs.length - 1]?.destination_city ?? "Unknown";
-}
-
-function getDailyProfit(chain: RouteChain | RoundTripChain): number {
-  if ("daily_net_profit" in chain) return chain.daily_net_profit;
-  return 0;
-}
-
-function getDeadheadPct(chain: RouteChain | RoundTripChain): number {
-  return chain.deadhead_pct ?? 0;
-}
-
-function formatDateTime(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" }) +
-    " " + d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-}
-
-function formatDateRange(early?: string, late?: string): string {
-  if (!early) return "";
-  const e = formatDateTime(early);
-  if (!late || late === early) return e;
-  const l = formatDateTime(late);
-  return `${e} – ${l}`;
-}
-
 export function DetailScreen({ chain, isRoundTrip, originCity, onBack }: DetailScreenProps) {
   const origin = getOriginCity(chain);
   const dest = getDestCity(chain);
-  const dailyProfit = getDailyProfit(chain);
+  const dailyProfit = getDailyProfit(chain) ?? 0;
+  const netProfit = getNetProfit(chain) ?? 0;
+  const netPerMile = getNetPerMile(chain) ?? 0;
   const deadhead = getDeadheadPct(chain);
   const legCount = chain.legs.length;
   const totalMiles = chain.total_miles;
   const totalPay = chain.total_pay;
+  const color = routeProfitColor(dailyProfit);
 
   const originCoords = chain.legs[0]
     ? { lat: chain.legs[0].origin_lat, lng: chain.legs[0].origin_lng }
@@ -100,28 +76,39 @@ export function DetailScreen({ chain, isRoundTrip, originCity, onBack }: DetailS
 
         {/* Overview tab */}
         <TabsContent value="overview" className="flex-1 overflow-y-auto px-4 py-4">
-          {/* Metrics grid */}
+          {/* Key metrics — matches desktop card layout: $/Day, Profit, Net/mi, Miles */}
+          <div className="grid grid-cols-2 gap-3 mb-2">
+            <MetricCard
+              label="$/Day"
+              value={`${formatCurrency(dailyProfit)}/day`}
+              valueClassName={color}
+            />
+            <MetricCard
+              label="Profit"
+              value={formatCurrency(netProfit)}
+              valueClassName={color}
+            />
+            <MetricCard
+              label="Net/mi"
+              value={formatRpm(netPerMile)}
+              valueClassName={color}
+            />
+            <MetricCard
+              label="Miles"
+              value={`${totalMiles.toLocaleString()}`}
+            />
+          </div>
           <div className="grid grid-cols-2 gap-3 mb-5">
             <MetricCard
-              icon={<TrendingUp className="h-4 w-4" />}
-              label="Daily Profit"
-              value={`$${Math.round(dailyProfit)}/day`}
-              valueClassName={routeProfitColor(dailyProfit)}
+              label="Total Gross"
+              value={formatCurrency(totalPay)}
+              sub
             />
             <MetricCard
-              icon={<Truck className="h-4 w-4" />}
-              label="Total Miles"
-              value={`${totalMiles.toLocaleString()} mi`}
-            />
-            <MetricCard
-              icon={<MapPin className="h-4 w-4" />}
-              label="Total Pay"
-              value={`$${totalPay.toLocaleString()}`}
-            />
-            <MetricCard
-              icon={<Gauge className="h-4 w-4" />}
               label="Deadhead"
               value={`${Math.round(deadhead)}%`}
+              valueClassName={deadhead > 30 ? "text-yellow-500" : undefined}
+              sub
             />
           </div>
 
@@ -159,23 +146,20 @@ export function DetailScreen({ chain, isRoundTrip, originCity, onBack }: DetailS
 }
 
 function MetricCard({
-  icon,
   label,
   value,
   valueClassName,
+  sub,
 }: {
-  icon: React.ReactNode;
   label: string;
   value: string;
   valueClassName?: string;
+  sub?: boolean;
 }) {
   return (
     <div className="rounded-xl border border-white/10 bg-card p-3">
-      <div className="flex items-center gap-2 text-muted-foreground mb-1">
-        {icon}
-        <span className="text-[10px] font-medium uppercase tracking-wider">{label}</span>
-      </div>
-      <p className={`text-lg font-semibold tabular-nums ${valueClassName ?? ""}`}>{value}</p>
+      <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">{label}</p>
+      <p className={`${sub ? "text-base" : "text-lg"} font-semibold tabular-nums ${valueClassName ?? ""}`}>{value}</p>
     </div>
   );
 }
@@ -194,11 +178,12 @@ function SegmentCard({ leg, index }: { leg: RouteLeg | RoundTripLeg; index: numb
           {leg.origin_city}, {leg.origin_state} → {leg.destination_city}, {leg.destination_state}
         </span>
       </div>
+
       {/* Two-column section: key metrics */}
       <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm text-muted-foreground">
         <div className="flex justify-between">
           <span>Pay</span>
-          <span className="font-medium text-foreground">${leg.pay.toLocaleString()}</span>
+          <span className="font-medium text-foreground">{formatCurrency(leg.pay)}</span>
         </div>
         <div className="flex justify-between">
           <span>Miles</span>

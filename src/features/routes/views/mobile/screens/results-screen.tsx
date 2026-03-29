@@ -5,34 +5,7 @@ import { Search, SlidersHorizontal } from "lucide-react";
 import { Skeleton } from "@/platform/web/components/ui/skeleton";
 import { RouteCard } from "@/features/routes/components/route-card";
 import type { RouteChain, RoundTripChain } from "@/core/types";
-
-type SortKey = "profit" | "daily_profit" | "net_per_mile";
-
-const SORT_OPTIONS: { key: SortKey; label: string }[] = [
-  { key: "daily_profit", label: "$/Day" },
-  { key: "profit", label: "Profit" },
-  { key: "net_per_mile", label: "Net/mi" },
-];
-
-function sortChains(chains: (RouteChain | RoundTripChain)[], sortBy: SortKey): (RouteChain | RoundTripChain)[] {
-  const sorted = [...chains];
-  switch (sortBy) {
-    case "profit":
-      sorted.sort((a, b) => {
-        const ap = "firm_profit" in a ? a.firm_profit : a.profit;
-        const bp = "firm_profit" in b ? b.firm_profit : b.profit;
-        return bp - ap;
-      });
-      break;
-    case "daily_profit":
-      sorted.sort((a, b) => b.daily_net_profit - a.daily_net_profit);
-      break;
-    case "net_per_mile":
-      sorted.sort((a, b) => b.effective_rpm - a.effective_rpm);
-      break;
-  }
-  return sorted;
-}
+import { type SortKey, SORT_OPTIONS, sortRouteChains, sortRoundTripChains } from "@/features/routes/utils/sort-options";
 
 interface ResultsScreenProps {
   searchText: string;
@@ -54,7 +27,10 @@ export function ResultsScreen({
   onRouteSelect,
 }: ResultsScreenProps) {
   const [sortBy, setSortBy] = useState<SortKey>("daily_profit");
-  const sortedChains = useMemo(() => sortChains(chains, sortBy), [chains, sortBy]);
+  const sortedChains = useMemo(() => {
+    if (isRoundTrip) return sortRoundTripChains(chains as RoundTripChain[], sortBy);
+    return sortRouteChains(chains as RouteChain[], sortBy);
+  }, [chains, sortBy, isRoundTrip]);
 
   return (
     <div className="flex flex-col h-full bg-background">

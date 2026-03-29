@@ -184,7 +184,7 @@ export function FiltersSheet({ onBack, onApply, initialFilters }: FiltersSheetPr
               onValueChange={(v) => setMaxDeadheadPct(v[0])}
               min={MIN_DEADHEAD_PCT}
               max={MAX_DEADHEAD_PCT}
-              step={1}
+              step={5}
             />
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>{MIN_DEADHEAD_PCT}%</span>

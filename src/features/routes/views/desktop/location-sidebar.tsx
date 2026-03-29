@@ -13,35 +13,13 @@ import { RouteInspector } from "@/features/routes/components/route-inspector";
 import { DEFAULT_COST_PER_MILE, calcAvgLoadedRpm } from "@mwbhtx/haulvisor-core";
 import { LEG_COLORS } from "@/core/utils/route-colors";
 import { rateColor, netRateColor, routeProfitColor } from "@/core/utils/rate-color";
+import { formatCurrency, formatDateTime, formatDateRange, formatDate, formatRpm } from "@/core/utils/route-helpers";
+import { type SortKey, SORT_OPTIONS, sortRouteChains, sortRoundTripChains } from "@/features/routes/utils/sort-options";
 
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
-}
-
-
-
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
-
-function formatDateTime(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" }) +
-    " " + d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-}
-
-function formatDateRange(early?: string, late?: string): string {
-  if (!early) return "";
-  const e = formatDateTime(early);
-  if (!late || late === early) return e;
-  const l = formatDateTime(late);
-  return `${e} – ${l}`;
+function ConfidenceBadge({ score }: { score: number }) {
+  if (score >= 70) return <Badge variant="default">High confidence</Badge>;
+  if (score >= 40) return <Badge variant="secondary">Moderate</Badge>;
+  return <Badge variant="outline">Low confidence</Badge>;
 }
 
 function formatPickupDates(early?: string, late?: string): string {
@@ -51,30 +29,6 @@ function formatPickupDates(early?: string, late?: string): string {
   const l = formatDate(late);
   return e === l ? e : `${e}–${l}`;
 }
-
-function ConfidenceBadge({ score }: { score: number }) {
-  if (score >= 70) return <Badge variant="default">High confidence</Badge>;
-  if (score >= 40) return <Badge variant="secondary">Moderate</Badge>;
-  return <Badge variant="outline">Low confidence</Badge>;
-}
-
-function RouteScoreBadge({ score }: { score: number }) {
-  const color = score >= 70
-    ? "bg-green-500/15 border-green-500/30 text-green-500"
-    : score >= 40
-    ? "bg-yellow-500/15 border-yellow-500/30 text-yellow-500"
-    : "bg-red-500/15 border-red-500/30 text-red-500";
-  return (
-    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-bold tabular-nums ${color}`}>
-      {score}
-    </span>
-  );
-}
-
-function formatRpm(value: number): string {
-  return `$${value.toFixed(2)}/mi`;
-}
-
 
 interface LocationSidebarProps {
   location: LocationGroup;
@@ -90,34 +44,6 @@ interface LocationSidebarProps {
   costPerMile?: number;
   orderUrlTemplate?: string;
   onHoverLeg?: (legIndex: number | null) => void;
-}
-
-type SortKey = "profit" | "daily_profit" | "net_per_mile";
-
-const SORT_OPTIONS: { key: SortKey; label: string }[] = [
-  { key: "daily_profit", label: "$/Day" },
-  { key: "profit", label: "Profit" },
-  { key: "net_per_mile", label: "Net/mi" },
-];
-
-function sortRouteChains(chains: RouteChain[], sortBy: SortKey): RouteChain[] {
-  const sorted = [...chains];
-  switch (sortBy) {
-    case "profit": sorted.sort((a, b) => b.profit - a.profit); break;
-    case "daily_profit": sorted.sort((a, b) => b.daily_net_profit - a.daily_net_profit); break;
-    case "net_per_mile": sorted.sort((a, b) => b.effective_rpm - a.effective_rpm); break;
-  }
-  return sorted;
-}
-
-function sortRoundTripChains(chains: RoundTripChain[], sortBy: SortKey): RoundTripChain[] {
-  const sorted = [...chains];
-  switch (sortBy) {
-    case "profit": sorted.sort((a, b) => b.firm_profit - a.firm_profit); break;
-    case "daily_profit": sorted.sort((a, b) => b.daily_net_profit - a.daily_net_profit); break;
-    case "net_per_mile": sorted.sort((a, b) => b.effective_rpm - a.effective_rpm); break;
-  }
-  return sorted;
 }
 
 /** Unique key for a route chain based on its leg order IDs */
