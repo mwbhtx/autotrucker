@@ -53,7 +53,7 @@ export function SearchSheet({
         <button type="button" onClick={onBack} className="flex items-center justify-center h-9 w-9 rounded-full bg-white shrink-0">
           <ArrowLeft className="h-5 w-5 text-black" />
         </button>
-        <h1 className="text-base font-semibold">Plan Your Route</h1>
+        <h1 className="text-lg font-semibold">Plan Your Route</h1>
       </div>
 
       {/* Content */}
@@ -63,7 +63,7 @@ export function SearchSheet({
           <button
             type="button"
             onClick={() => setTripMode("one-way")}
-            className={`flex-1 py-2.5 text-base font-medium transition-colors ${
+            className={`flex-1 py-3.5 text-lg font-medium transition-colors ${
               tripMode === "one-way"
                 ? "bg-white/10 text-foreground"
                 : "text-muted-foreground hover:text-foreground"
@@ -74,7 +74,7 @@ export function SearchSheet({
           <button
             type="button"
             onClick={() => setTripMode("round-trip")}
-            className={`flex-1 py-2.5 text-base font-medium transition-colors ${
+            className={`flex-1 py-3.5 text-lg font-medium transition-colors ${
               tripMode === "round-trip"
                 ? "bg-white/10 text-foreground"
                 : "text-muted-foreground hover:text-foreground"
@@ -93,6 +93,7 @@ export function SearchSheet({
             placeholder="Where are you starting?"
             value={origin}
             onSelect={setOrigin}
+            large
           />
         </div>
 
@@ -106,6 +107,7 @@ export function SearchSheet({
               placeholder="Where are you heading?"
               value={destination}
               onSelect={setDestination}
+              large
             />
           </div>
         )}
@@ -114,7 +116,7 @@ export function SearchSheet({
         {canSearch && (
           <Button
             onClick={handleSearch}
-            className="w-full h-12 rounded-xl text-base font-semibold"
+            className="w-full h-14 rounded-xl text-lg font-semibold"
           >
             Search Routes
           </Button>

@@ -60,12 +60,15 @@ export function PlaceAutocomplete({
   onSelect,
   trailing,
   onTyping,
+  large,
 }: {
   placeholder: string;
   value: PlaceResult | null;
   onSelect: (place: PlaceResult | null) => void;
   trailing?: React.ReactNode;
   onTyping?: (hasText: boolean) => void;
+  /** Use larger sizing for mobile touch targets */
+  large?: boolean;
 }) {
   const [query, setQuery] = useState(value?.name ?? "");
   const [results, setResults] = useState<PlaceResult[]>([]);
@@ -126,7 +129,7 @@ export function PlaceAutocomplete({
           value={query}
           onChange={handleChange}
           onFocus={() => results.length > 0 && setOpen(true)}
-          className="flex-1"
+          className={large ? "flex-1 h-12 text-base px-4" : "flex-1"}
         />
         {trailing}
       </div>
@@ -136,7 +139,7 @@ export function PlaceAutocomplete({
             <button
               key={i}
               type="button"
-              className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors"
+              className={`w-full text-left hover:bg-accent transition-colors ${large ? "px-4 py-3 text-base" : "px-3 py-2 text-sm"}`}
               onClick={() => handleSelect(place)}
             >
               {place.name}
