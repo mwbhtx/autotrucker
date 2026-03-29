@@ -28,32 +28,34 @@ export function OnbordaCard({
     closeOnborda();
   };
 
-  // Nudge card back into viewport if it overflows — preserves onborda's
-  // positioning and arrow, just shifts enough to stop clipping.
+  // Nudge card back into viewport if it overflows — uses margin to avoid
+  // conflicting with onborda's own transform-based positioning.
+  // Runs multiple times to catch async repositioning by onborda.
   useEffect(() => {
     const el = cardRef.current;
     if (!el) return;
-    el.style.transform = "";
+    el.style.marginLeft = "";
+    el.style.marginTop = "";
 
-    const timer = setTimeout(() => {
+    const nudge = () => {
       const rect = el.getBoundingClientRect();
       const vw = window.innerWidth;
       const vh = window.innerHeight;
+      const pad = 12;
       let dx = 0;
       let dy = 0;
 
-      // Only nudge if actually clipped (negative position or past viewport)
-      if (rect.left < 0) dx = -rect.left + 8;
-      else if (rect.right > vw) dx = vw - rect.right - 8;
-      if (rect.top < 0) dy = -rect.top + 8;
-      else if (rect.bottom > vh) dy = vh - rect.bottom - 8;
+      if (rect.left < pad) dx = pad - rect.left;
+      else if (rect.right > vw - pad) dx = (vw - pad) - rect.right;
+      if (rect.top < pad) dy = pad - rect.top;
+      else if (rect.bottom > vh - pad) dy = (vh - pad) - rect.bottom;
 
-      if (dx !== 0 || dy !== 0) {
-        el.style.transform = `translate(${dx}px, ${dy}px)`;
-      }
-    }, 100);
+      if (dx !== 0) el.style.marginLeft = `${dx}px`;
+      if (dy !== 0) el.style.marginTop = `${dy}px`;
+    };
 
-    return () => clearTimeout(timer);
+    const timers = [100, 300, 600].map((ms) => setTimeout(nudge, ms));
+    return () => timers.forEach(clearTimeout);
   }, [currentStep]);
 
   return (
