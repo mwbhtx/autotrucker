@@ -132,6 +132,9 @@ function RouteDetailContent({
   const firmLegs = chain.legs.filter((leg) => leg.type === "firm");
   const profit = hasSpeculative ? chain.estimated_total_profit : chain.firm_profit;
   const avgLoadedRpm = calcAvgLoadedRpm(firmLegs);
+  const needsTarp = chain.legs.some(
+    (l) => l.tarp_height != null && parseInt(l.tarp_height, 10) > 0,
+  );
 
   const costPerDhMile =
     chain.total_deadhead_miles > 0
@@ -165,22 +168,18 @@ function RouteDetailContent({
               </button>
             )}
           </div>
-          <div className="text-sm">
+          <div className="text-sm grid grid-cols-4 gap-x-3">
             {[
               { label1: "$/Day", value1: formatCurrency(chain.daily_net_profit), color1: routeProfitColor(chain.daily_net_profit), label2: "Profit", value2: formatCurrency(profit), color2: routeProfitColor(chain.daily_net_profit) },
               { label1: "Net/mi", value1: formatRpm(chain.effective_rpm), color1: routeProfitColor(chain.daily_net_profit), label2: "Gross", value2: formatCurrency(chain.total_pay), color2: "" },
               { label1: "Miles", value1: chain.total_miles.toLocaleString(), color1: "", label2: "DH %", value2: `${chain.deadhead_pct.toFixed(0)}%`, color2: "" },
-              { label1: "Days", value1: chain.estimated_days.toFixed(1), color1: "", label2: avgLoadedRpm !== null ? "$/mi loaded" : "", value2: avgLoadedRpm !== null ? `$${avgLoadedRpm.toFixed(2)}` : "", color2: "" },
+              { label1: "Days", value1: chain.estimated_days.toFixed(1), color1: "", label2: "$/mi loaded", value2: avgLoadedRpm !== null ? `$${avgLoadedRpm.toFixed(2)}` : "—", color2: "" },
+              { label1: "Tarp", value1: needsTarp ? "Yes" : "No", color1: needsTarp ? "text-negative" : "", label2: "Loads", value2: String(chain.legs.filter(l => l.type === "firm").length), color2: "" },
             ].map((row, i) => (
-              <div
-                key={i}
-                className={`grid grid-cols-[auto_1fr_auto_1fr] gap-x-3 px-3 py-1.5 ${
-                  i % 2 === 0 ? "bg-[#ebeced] dark:bg-[#232323]" : ""
-                }`}
-              >
-                <span className="text-text-secondary">{row.label1}</span>
+              <div key={i} className={`grid grid-cols-subgrid col-span-4 px-3 py-1.5 ${i % 2 === 0 ? "bg-[#ebeced] dark:bg-[#232323]" : ""}`}>
+                <span className="text-text-secondary text-left">{row.label1}</span>
                 <span className="text-right">{row.color1 ? <span className={`tabular-nums font-medium ${row.color1} bg-black px-1.5 py-0.5`}>{row.value1}</span> : <span className="tabular-nums font-medium text-text-body">{row.value1}</span>}</span>
-                <span className="text-text-secondary">{row.label2}</span>
+                <span className="text-text-secondary text-left">{row.label2}</span>
                 <span className="text-right">{row.color2 ? <span className={`tabular-nums font-medium ${row.color2} bg-black px-1.5 py-0.5`}>{row.value2}</span> : <span className="tabular-nums font-medium text-text-body">{row.value2}</span>}</span>
               </div>
             ))}

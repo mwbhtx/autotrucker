@@ -79,6 +79,7 @@ export function DesktopRoutesView() {
   useEffect(() => {
     if (tourStarted.current) return;
     if (settingsLoading) return;
+    if (!activeCompanyId) return;
     if (hasHomeBase && !isDemoUser()) return;
     if (hasActiveSearch) return;
     if (settings?.onboarding_completed) return;

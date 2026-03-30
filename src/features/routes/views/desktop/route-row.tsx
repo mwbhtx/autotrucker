@@ -27,10 +27,6 @@ export function RouteRow({
   const firmLegs = chain.legs.filter((leg) => leg.type === "firm");
   const profit = hasSpeculative ? chain.estimated_total_profit : chain.firm_profit;
   const avgLoadedRpm = calcAvgLoadedRpm(firmLegs);
-  const needsTarp = chain.legs.some(
-    (l) => l.tarp_height != null && parseInt(l.tarp_height, 10) > 0,
-  );
-
   const suggestedDep = chain.suggested_departure
     ? new Date(chain.suggested_departure)
     : null;
@@ -77,12 +73,6 @@ export function RouteRow({
           <p className="text-sm uppercase tracking-wide text-text-secondary">Miles</p>
           <p className="text-lg font-bold tabular-nums">{chain.total_miles.toLocaleString()}</p>
           <p className="text-xs tabular-nums mt-0.5 text-text-tertiary">{chain.deadhead_pct.toFixed(0)}% DH</p>
-        </div>
-        <div>
-          <p className="text-sm uppercase tracking-wide text-text-secondary">Tarp</p>
-          <p className={`text-lg font-bold ${needsTarp ? "text-amber-400" : "text-text-tertiary"}`}>
-            {needsTarp ? "Yes" : "No"}
-          </p>
         </div>
       </div>
     </div>

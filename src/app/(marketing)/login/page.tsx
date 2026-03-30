@@ -9,7 +9,7 @@ import { BackgroundBeams } from "@/platform/web/components/ui/beams";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { user, login, completeNewPasswordChallenge } = useAuth();
+  const { user, noCompanyAccess, login, completeNewPasswordChallenge, logout } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -17,12 +17,13 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [needsNewPassword, setNeedsNewPassword] = useState(false);
+  const [showNoCompany, setShowNoCompany] = useState(false);
 
   useEffect(() => {
-    if (user) router.replace("/routes");
-  }, [user, router]);
+    if (user && !noCompanyAccess) router.replace("/routes");
+  }, [user, noCompanyAccess, router]);
 
-  if (user) return null;
+  if (user && !noCompanyAccess) return null;
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,6 +33,8 @@ export default function LoginPage() {
       const result = await login(email, password);
       if (result === "NEW_PASSWORD_REQUIRED") {
         setNeedsNewPassword(true);
+      } else if (result === "NO_COMPANY") {
+        setShowNoCompany(true);
       } else {
         router.push("/routes");
       }
@@ -55,8 +58,12 @@ export default function LoginPage() {
     }
     setLoading(true);
     try {
-      await completeNewPasswordChallenge(newPassword);
-      router.push("/routes");
+      const result = await completeNewPasswordChallenge(newPassword);
+      if (result === "NO_COMPANY") {
+        setShowNoCompany(true);
+      } else {
+        router.push("/routes");
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to set password");
     } finally {
@@ -64,7 +71,43 @@ export default function LoginPage() {
     }
   };
 
+  const handleNoCompanyDismiss = () => {
+    setShowNoCompany(false);
+    logout();
+  };
+
   const isDev = process.env.NODE_ENV === "development";
+
+  if (showNoCompany) {
+    return (
+      <>
+        <div className="fixed inset-0 z-[1] bg-black/40 backdrop-blur-xl" />
+        <div className="fixed inset-0 z-[2] opacity-0 animate-[fade-in_1s_ease-in_forwards] pointer-events-none">
+          <BackgroundBeams />
+        </div>
+        <div className="relative z-[3]">
+          <MarketingNav variant="light" hideAuth />
+        </div>
+        <div className="relative z-[3] flex flex-col items-center justify-center px-6 pt-20 sm:pt-28 pb-20">
+          <div className="w-full max-w-sm rounded-2xl bg-black/30 border border-white/[0.08] backdrop-blur-md p-8 text-center space-y-4">
+            <h2 className="font-display text-2xl font-normal tracking-wide text-white">
+              No Company Assigned
+            </h2>
+            <p className="text-sm text-white/60">
+              Your account is not associated with a company. Please contact your administrator to get access.
+            </p>
+            <button
+              type="button"
+              onClick={handleNoCompanyDismiss}
+              className="w-full h-11 mt-2 rounded-lg bg-white/[0.1] border border-white/[0.12] text-white text-sm font-semibold hover:bg-white/[0.15] transition-colors"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   if (loading) {
     return (
