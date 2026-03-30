@@ -79,7 +79,9 @@ npm install
 npm run dev        # Starts on localhost:3001
 ```
 
-Requires the API running on `localhost:3100` (proxied via Next.js rewrites).
+Requires the API running on `localhost:3100` (proxied via Next.js rewrites). Also requires a `GITHUB_PACKAGES_AUTH_TOKEN` env var for pulling `@mwbhtx/haulvisor-core` from GitHub Packages (see `.npmrc`).
+
+The `predev` script automatically checks for the latest `@mwbhtx/haulvisor-core` version on each `npm run dev`.
 
 ## License
 
