@@ -61,7 +61,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#ff5601] text-foreground">
+    <div className="min-h-screen bg-brand text-foreground">
       <ShaderGradientCanvas
         style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0, opacity: 0, animation: "fade-in 0.5s ease-in 0.5s forwards" }}
         pixelDensity={1}
@@ -104,8 +104,8 @@ export default function HomePage() {
 
         {/* ── Hero ── */}
         <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-6">
-          <h1 className="font-display font-normal tracking-wide leading-[0.85] text-white text-[95px]">
-            haulvisor
+          <h1 className="font-display tracking-wide leading-[0.85] text-white text-[56px] sm:text-[95px]">
+            Haulvisor
           </h1>
           <p className="text-white font-normal whitespace-nowrap" style={{ fontSize: '25px', marginTop: '15px' }}>
             Stop guessing. Start hauling.
@@ -117,9 +117,9 @@ export default function HomePage() {
       </div>
 
       {/* ── Value prop + Feature sections (joined for beam effect) ── */}
-      <BackgroundBeamsWithCollision className="relative z-10 border-t border-white/[0.06] !bg-[#0b090c] !h-auto flex-col items-center">
+      <BackgroundBeamsWithCollision className="relative z-10 border-t border-white/[0.06] !bg-surface-deep !h-auto flex-col items-center">
         <div className="relative max-w-4xl mx-auto px-6 py-16 sm:py-20 text-center w-full">
-          <p className="text-xl sm:text-2xl md:text-[1.7rem] leading-relaxed text-[#d6d6d6]">
+          <p className="text-xl sm:text-2xl md:text-[1.7rem] leading-relaxed text-text-body">
             Built for owner-operators who'd rather drive than stare at a load board. We analyze every route, calculate your real profit, and find the
             fastest way home — so you don&apos;t have to.
           </p>
@@ -130,13 +130,13 @@ export default function HomePage() {
             {FEATURES.map((feature, i) => (
               <motion.div
                 key={feature.title}
-                className="rounded-2xl bg-[#0f0d0f] p-8 sm:p-10 flex flex-col"
+                className="rounded-2xl bg-surface-deep p-8 sm:p-10 flex flex-col"
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-50px" }}
                 transition={{ duration: 0.5, delay: i * 0.1, ease: "easeOut" }}
               >
-                <feature.icon className="h-7 w-7 text-[#ff5601] mb-6" />
+                <feature.icon className="h-7 w-7 text-brand mb-6" />
                 <h3 className="text-xl sm:text-2xl font-bold text-foreground leading-snug whitespace-pre-line">
                   {feature.hook}
                 </h3>
@@ -169,7 +169,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Footer ── */}
-      <footer className="relative z-10 border-t border-white/[0.06] bg-[#0b090c]">
+      <footer className="relative z-10 border-t border-white/[0.06] bg-surface-deep">
         <div className="max-w-6xl mx-auto px-6 pt-14 pb-10">
           <div className="flex flex-col sm:flex-row gap-12 sm:gap-8">
             <div className="sm:w-40 shrink-0">

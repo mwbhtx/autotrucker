@@ -80,7 +80,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0b090c] text-foreground relative">
+    <div className="min-h-screen bg-surface-deep text-foreground relative">
       <div className="opacity-0 animate-[fade-in_1s_ease-in_forwards]">
         <BackgroundBeams />
       </div>
@@ -94,15 +94,15 @@ export default function LoginPage() {
 
           {needsNewPassword ? (
             <form onSubmit={handleNewPassword} className="flex flex-col gap-3">
-              <Input type="password" placeholder="New password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="h-11 bg-white/[0.06] border-white/[0.1] text-sm px-4 text-white placeholder:text-white/30 focus-visible:!border-[#ff5601] focus-visible:!ring-[#ff5601]/50" required autoFocus />
-              <Input type="password" placeholder="Confirm password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="h-11 bg-white/[0.06] border-white/[0.1] text-sm px-4 text-white placeholder:text-white/30 focus-visible:!border-[#ff5601] focus-visible:!ring-[#ff5601]/50" required />
+              <Input type="password" placeholder="New password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="h-11 bg-white/[0.06] border-white/[0.1] text-sm px-4 text-white placeholder:text-white/30 focus-visible:!border-brand focus-visible:!ring-brand/50" required autoFocus />
+              <Input type="password" placeholder="Confirm password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="h-11 bg-white/[0.06] border-white/[0.1] text-sm px-4 text-white placeholder:text-white/30 focus-visible:!border-brand focus-visible:!ring-brand/50" required />
               {error && <p className="text-xs text-destructive">{error}</p>}
-              <button type="submit" className="w-full h-11 mt-1 rounded-lg bg-[#0b090c] text-white text-sm font-semibold hover:bg-[#0b090c]/80 transition-colors">Set password</button>
+              <button type="submit" className="w-full h-11 mt-1 rounded-lg bg-surface-deep text-white text-sm font-semibold hover:bg-surface-deep/80 transition-colors">Set password</button>
             </form>
           ) : (
             <form onSubmit={handleLogin} className="flex flex-col gap-3">
-              <Input type={isDev ? "text" : "email"} placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="h-11 bg-white/[0.06] border-white/[0.1] text-sm px-4 text-white placeholder:text-white/30 focus-visible:!border-[#ff5601] focus-visible:!ring-[#ff5601]/50" autoFocus {...(!isDev ? { required: true } : {})} />
-              <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} className="h-11 bg-white/[0.06] border-white/[0.1] text-sm px-4 text-white placeholder:text-white/30 focus-visible:!border-[#ff5601] focus-visible:!ring-[#ff5601]/50" {...(!isDev ? { required: true } : {})} />
+              <Input type={isDev ? "text" : "email"} placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="h-11 bg-white/[0.06] border-white/[0.1] text-sm px-4 text-white placeholder:text-white/30 focus-visible:!border-brand focus-visible:!ring-brand/50" autoFocus {...(!isDev ? { required: true } : {})} />
+              <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} className="h-11 bg-white/[0.06] border-white/[0.1] text-sm px-4 text-white placeholder:text-white/30 focus-visible:!border-brand focus-visible:!ring-brand/50" {...(!isDev ? { required: true } : {})} />
               {error && <p className="text-xs text-destructive">{error}</p>}
               <button type="submit" className="w-full h-11 mt-1 rounded-lg bg-white/[0.1] border border-white/[0.12] text-white text-sm font-semibold hover:bg-white/[0.15] transition-colors">Log in</button>
             </form>
