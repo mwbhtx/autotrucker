@@ -9,7 +9,7 @@ export default function ShaderGradientButton({ onClick }: { onClick: () => void 
       <button
         type="button"
         onClick={onClick}
-        className="mt-10 h-14 px-10 rounded-full bg-white/[0.12] backdrop-blur-sm hover:bg-white/[0.2] transition-all inline-flex items-center gap-2.5 text-lg font-semibold text-white"
+        className="mt-10 h-14 px-10 rounded-full bg-primary/30 backdrop-blur-sm hover:bg-primary/40 transition-all inline-flex items-center gap-2.5 text-lg font-semibold text-white"
       >
         Try Demo
         <ArrowRight className="h-5 w-5" />
