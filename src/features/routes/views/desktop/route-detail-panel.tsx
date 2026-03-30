@@ -331,6 +331,14 @@ function RouteDetailContent({
                             </span>
                           </>
                         )}
+                        {leg.tarp_height != null && parseInt(leg.tarp_height, 10) > 0 && (
+                          <>
+                            {" "}
+                            <span className="text-negative bg-black px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide">
+                              TARP
+                            </span>
+                          </>
+                        )}
                         {" · "}{formatCurrency(leg.pay)}
                       </p>
                       {(leg.pickup_date_early || leg.delivery_date_early) && (
