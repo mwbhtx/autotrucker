@@ -1108,7 +1108,7 @@ export function SearchFilters({
         {showNudge && (
           <div className={`absolute left-1/2 -translate-x-1/2 top-full mt-2 z-20 transition-opacity duration-500 ${nudgeVisible ? "opacity-100" : "opacity-0"}`}>
             <div className="flex justify-center mb-1">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-black border-2 border-primary animate-bounce">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-background border-2 border-primary animate-bounce">
                 <ChevronUpIcon className="h-4 w-4 text-primary" strokeWidth={3} />
               </div>
             </div>
