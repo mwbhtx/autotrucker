@@ -370,7 +370,25 @@ export function RouteMap({
     return () => { if (onHoverLegRef) onHoverLegRef.current = null; };
   }, [onHoverLegRef, handleHoverLeg]);
 
+  const legCount = selectedRoute?.legs.length ?? 0;
+
   return (
-    <div ref={containerRef} className="h-full w-full" />
+    <div className="relative h-full w-full">
+      <div ref={containerRef} className="h-full w-full" />
+      {legCount > 0 && (
+        <div className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2 text-xs space-y-1.5 pointer-events-none">
+          {selectedRoute!.legs.map((leg, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <span className="w-5 h-[3px] rounded-full shrink-0" style={{ backgroundColor: LEG_COLORS[i % LEG_COLORS.length] }} />
+              <span className="text-white/80">Leg {i + 1}</span>
+            </div>
+          ))}
+          <div className="flex items-center gap-2">
+            <span className="w-5 h-0 border-t-[2px] border-dashed shrink-0" style={{ borderColor: "#ff2200" }} />
+            <span className="text-white/80">Deadhead</span>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
