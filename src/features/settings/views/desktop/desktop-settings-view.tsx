@@ -14,12 +14,12 @@ import {
 import { Input } from "@/platform/web/components/ui/input";
 import { Separator } from "@/platform/web/components/ui/separator";
 import { Skeleton } from "@/platform/web/components/ui/skeleton";
-import { CheckIcon, LogOut, Shield } from "lucide-react";
+import { CheckIcon, LogOut } from "lucide-react";
 import { ThemeSelector } from "@/features/settings/components/theme-selector";
 import { useIsMobile } from "@/platform/web/hooks/use-is-mobile";
 import { useAuth } from "@/core/services/auth-provider";
 import { Button } from "@/platform/web/components/ui/button";
-import Link from "next/link";
+
 
 /** Debounce hook — returns a function that delays calling `fn` */
 function useDebouncedSave(delayMs = 800) {
@@ -286,19 +286,6 @@ export function DesktopSettingsView() {
             {section.label}
           </button>
         ))}
-
-        {user?.role === "admin" && (
-          <>
-            <Separator className="my-2" />
-            <Link
-              href="/admin"
-              className="flex w-full items-center gap-2 px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
-            >
-              <Shield className="h-3.5 w-3.5" />
-              Admin Panel
-            </Link>
-          </>
-        )}
 
         {isMobile && (
           <>
