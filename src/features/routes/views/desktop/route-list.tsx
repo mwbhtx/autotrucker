@@ -128,7 +128,7 @@ export function RouteList({
     return () => clearTimeout(timer);
   }, [selectedIndex]);
 
-  // Sync map to show correct sorted route when index is 0
+  // Sync detail panel / map to show the first *sorted* route
   useEffect(() => {
     if (selectedIndex !== 0 || isLoading) return;
     const firstChain = isRoundTripMode ? sortedRoundTrips[0] : sortedRoutes[0] ? routeChainToRoundTrip(sortedRoutes[0]) : null;
@@ -136,7 +136,7 @@ export function RouteList({
       onSelectIndex(0, firstChain);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedIndex, isLoading, sortBy]);
+  }, [selectedIndex, isLoading, sortBy, roundTripChains, routeChains]);
 
   return (
     <div className="flex h-full w-full bg-sidebar flex-col overflow-hidden">

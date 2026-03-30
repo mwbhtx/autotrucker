@@ -183,19 +183,18 @@ export function DesktopRoutesView() {
     return null;
   }, [selectedRouteLegs]);
 
-  // Reset selection when results change — auto-select first route
+  // Reset selection when results change — RouteList's sync effect will
+  // pick the first *sorted* result via the onSelectIndex callback.
+  // Only clear the chain when there are no results; otherwise the child
+  // effect sets the correct sorted route and we must not overwrite it
+  // (parent effects run after child effects in React).
   const prevResultsRef = useRef(displayLocation);
   useEffect(() => {
     if (prevResultsRef.current !== displayLocation) {
       prevResultsRef.current = displayLocation;
       setSelectedItemIndex(0);
-      // Auto-select first result from whichever mode has data
-      const firstRt = displayLocation.roundTripChains[0] ?? null;
-      if (firstRt) {
-        setSelectedChain(firstRt);
-        setSelectedRouteLegs(firstRt.legs as DrawableRouteLeg[]);
-      } else {
-        // One-way results need conversion — handled by RouteList's onSelectIndex callback
+      const hasResults = displayLocation.roundTripChains.length > 0 || displayLocation.routeChains.length > 0;
+      if (!hasResults) {
         setSelectedChain(null);
         setSelectedRouteLegs(null);
       }
