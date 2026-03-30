@@ -23,7 +23,6 @@ import { useSettings, useUpdateSettings } from "@/core/hooks/use-settings";
 import { TRAILER_CATEGORIES, expandTrailerCodes, codesToLabels, DEFAULT_LEGS_ONE_WAY, DEFAULT_LEGS_ROUND_TRIP, DEFAULT_MAX_DEADHEAD_PCT, DEFAULT_MAX_IDLE_HOURS, MIN_DEADHEAD_PCT, MAX_DEADHEAD_PCT, DEFAULT_COST_PER_MILE, IDLE_OPTIONS, ALL_WORK_DAYS, TIME_PRESETS } from "@mwbhtx/haulvisor-core";
 import type { RiskLevel } from "@mwbhtx/haulvisor-core";
 import type { RouteSearchParams, RoundTripSearchParams } from "@/core/hooks/use-routes";
-import { localHourToUtc } from "@/core/utils/local-to-utc";
 
 export type SearchParams = RouteSearchParams;
 
@@ -807,20 +806,14 @@ export function SearchFilters({
   // Stable key for driver profile so it can be a useEffect dependency
   const profileKey = JSON.stringify(driverProfile);
 
-  // Convert local time presets to UTC using origin coordinates
+  // Build time filter params (local time sent as-is; backend converts using origin coords)
   const buildTimeParams = useCallback(() => {
     const params: Record<string, string> = {};
     if (departBy) params.depart_by = departBy;
-    if (departByTime && origin) {
-      params.depart_by_time = localHourToUtc(departByTime, origin.lat, origin.lng);
-    }
-    if (homeByTime && origin) {
-      const lat = settings?.home_base_lat ?? origin.lat;
-      const lng = settings?.home_base_lng ?? origin.lng;
-      params.home_by_time = localHourToUtc(homeByTime, lat as number, lng as number);
-    }
+    if (departByTime) params.depart_by_time = departByTime;
+    if (homeByTime) params.home_by_time = homeByTime;
     return params;
-  }, [departBy, departByTime, homeByTime, origin, settings]);
+  }, [departBy, departByTime, homeByTime]);
 
   // Fire search (shared helper)
   const fireSearch = useCallback(() => {
