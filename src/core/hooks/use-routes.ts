@@ -14,6 +14,8 @@ export interface RouteSearchParams {
   cost_per_mile?: number;
   trailer_types?: string;
   max_layover_hours?: number;
+  depart_by?: string;
+  depart_by_time?: string;
 }
 
 export function useRouteSearch(companyId: string, params: RouteSearchParams | null) {
@@ -30,6 +32,8 @@ export function useRouteSearch(companyId: string, params: RouteSearchParams | nu
         if (params.cost_per_mile != null) qs.set("cost_per_mile", String(params.cost_per_mile));
         if (params.trailer_types) qs.set("trailer_types", params.trailer_types);
         if (params.max_layover_hours != null) qs.set("max_layover_hours", String(params.max_layover_hours));
+        if (params.depart_by) qs.set("depart_by", params.depart_by);
+        if (params.depart_by_time) qs.set("depart_by_time", params.depart_by_time);
       }
       return fetchApi<RouteSearchResult>(`routes/${companyId}/search?${qs.toString()}`);
     },
@@ -56,6 +60,9 @@ export interface RoundTripSearchParams {
   max_assigned_orders?: number;
   // Timing
   max_layover_hours?: number;
+  home_by_time?: string;
+  depart_by?: string;
+  depart_by_time?: string;
   // Cost model
   cost_per_mile?: number;
   diesel_price_per_gallon?: number;
@@ -79,6 +86,9 @@ export function useRoundTripSearch(companyId: string, params: RoundTripSearchPar
         if (params.legs != null) qs.set("legs", String(params.legs));
         if (params.risk) qs.set("risk", params.risk);
         if (params.home_by) qs.set("home_by", params.home_by);
+        if (params.home_by_time) qs.set("home_by_time", params.home_by_time);
+        if (params.depart_by) qs.set("depart_by", params.depart_by);
+        if (params.depart_by_time) qs.set("depart_by_time", params.depart_by_time);
         if (params.max_deadhead_pct != null) qs.set("max_deadhead_pct", String(params.max_deadhead_pct));
         if (params.max_layover_hours != null) qs.set("max_layover_hours", String(params.max_layover_hours));
         // Driver profile
