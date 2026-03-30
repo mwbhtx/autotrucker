@@ -269,41 +269,29 @@ export function DesktopSettingsView() {
   }
 
   return (
-    <div className="flex h-full -m-6 w-[calc(100%+3rem)]">
-      {/* Side navigation */}
-      <nav className="w-48 shrink-0 border-r border-border/50 p-4 space-y-1">
-        {NAV_SECTIONS.map((section) => (
-          <button
-            key={section.id}
-            type="button"
-            onClick={() => scrollToSection(section.id)}
-            className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-              activeSection === section.id
-                ? "bg-accent text-foreground font-medium"
-                : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-            }`}
-          >
-            {section.label}
-          </button>
-        ))}
-
-        {isMobile && (
-          <>
-            <Separator className="my-2" />
+    <div className={`flex h-full ${isMobile ? "" : "-m-6 w-[calc(100%+3rem)]"}`}>
+      {/* Side navigation — desktop only */}
+      {!isMobile && (
+        <nav className="w-48 shrink-0 border-r border-border/50 p-4 space-y-1">
+          {NAV_SECTIONS.map((section) => (
             <button
+              key={section.id}
               type="button"
-              onClick={logout}
-              className="flex w-full items-center gap-2 px-3 py-2 rounded-md text-sm text-destructive hover:bg-destructive/10 transition-colors"
+              onClick={() => scrollToSection(section.id)}
+              className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+                activeSection === section.id
+                  ? "bg-accent text-foreground font-medium"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+              }`}
             >
-              <LogOut className="h-3.5 w-3.5" />
-              Sign Out
+              {section.label}
             </button>
-          </>
-        )}
-      </nav>
+          ))}
+        </nav>
+      )}
 
       {/* Content */}
-      <div ref={contentRef} className="flex-1 overflow-y-auto p-6 space-y-10">
+      <div ref={contentRef} className={`flex-1 overflow-y-auto space-y-10 ${isMobile ? "px-0 py-4" : "p-6"}`}>
         {/* General */}
         <section id="settings-general" className="max-w-2xl space-y-6">
           <div>
@@ -579,6 +567,20 @@ export function DesktopSettingsView() {
 
           <ThemeSelector />
         </section>
+
+        {isMobile && (
+          <>
+            <Separator />
+            <Button
+              variant="destructive"
+              onClick={logout}
+              className="w-full max-w-2xl gap-2 h-12 text-base"
+            >
+              <LogOut className="h-4 w-4" />
+              Sign Out
+            </Button>
+          </>
+        )}
       </div>
     </div>
   );
