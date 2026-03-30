@@ -20,9 +20,10 @@ import { ChevronDown, ChevronUpIcon, LocateIcon, SlidersHorizontal, XIcon } from
 import { BorderBeam } from "@/platform/web/components/ui/border-beam";
 import { Calendar } from "@/platform/web/components/ui/calendar";
 import { useSettings, useUpdateSettings } from "@/core/hooks/use-settings";
-import { TRAILER_CATEGORIES, expandTrailerCodes, codesToLabels, DEFAULT_LEGS_ONE_WAY, DEFAULT_LEGS_ROUND_TRIP, DEFAULT_MAX_DEADHEAD_PCT, DEFAULT_MAX_IDLE_HOURS, MIN_DEADHEAD_PCT, MAX_DEADHEAD_PCT, DEFAULT_COST_PER_MILE, IDLE_OPTIONS, ALL_WORK_DAYS } from "@mwbhtx/haulvisor-core";
+import { TRAILER_CATEGORIES, expandTrailerCodes, codesToLabels, DEFAULT_LEGS_ONE_WAY, DEFAULT_LEGS_ROUND_TRIP, DEFAULT_MAX_DEADHEAD_PCT, DEFAULT_MAX_IDLE_HOURS, MIN_DEADHEAD_PCT, MAX_DEADHEAD_PCT, DEFAULT_COST_PER_MILE, IDLE_OPTIONS, ALL_WORK_DAYS, TIME_PRESETS } from "@mwbhtx/haulvisor-core";
 import type { RiskLevel } from "@mwbhtx/haulvisor-core";
 import type { RouteSearchParams, RoundTripSearchParams } from "@/core/hooks/use-routes";
+import { localHourToUtc } from "@/core/utils/local-to-utc";
 
 export type SearchParams = RouteSearchParams;
 
@@ -255,11 +256,25 @@ function DeadheadPctPill({ value, onChange }: { value: number; onChange: (v: num
   );
 }
 
-/* ---- Home By Pill (calendar popover) ---- */
+/* ---- Return By Pill (calendar + time popover) ---- */
 
-function HomeByPill({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function ReturnByPill({
+  dateValue,
+  timeValue,
+  onDateChange,
+  onTimeChange,
+}: {
+  dateValue: string;
+  timeValue: string;
+  onDateChange: (v: string) => void;
+  onTimeChange: (v: string) => void;
+}) {
   const [open, setOpen] = useState(false);
-  const selected = value ? new Date(value + "T00:00:00") : undefined;
+  const selected = dateValue ? new Date(dateValue + "T00:00:00") : undefined;
+
+  const displayLabel = dateValue
+    ? `${formatDateShort(dateValue)}${timeValue ? `, ${TIME_PRESETS.find((t) => t.value === timeValue)?.label ?? timeValue}` : ""}`
+    : "Any";
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -268,9 +283,9 @@ function HomeByPill({ value, onChange }: { value: string; onChange: (v: string) 
           type="button"
           className="flex h-9 items-center gap-1.5 rounded-full border bg-card/95 backdrop-blur px-4 text-sm font-medium shadow-sm transition-colors hover:bg-accent mobile-filter-pill whitespace-nowrap"
         >
-          <span className="text-muted-foreground">Home By:</span>
+          <span className="text-muted-foreground">Return By:</span>
           <span className="flex items-center gap-1.5">
-            <span>{value ? formatDateShort(value) : "Any"}</span>
+            <span>{displayLabel}</span>
             <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
           </span>
         </button>
@@ -283,19 +298,120 @@ function HomeByPill({ value, onChange }: { value: string; onChange: (v: string) 
           onSelect={(day: Date | undefined) => {
             if (day) {
               const iso = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
-              onChange(iso);
+              onDateChange(iso);
             }
-            setOpen(false);
           }}
           defaultMonth={selected}
         />
-        {value && (
+        <div className="border-t px-3 py-2">
+          <p className="text-xs font-medium text-muted-foreground mb-1.5">Time</p>
+          <div className="flex flex-wrap gap-1.5">
+            {TIME_PRESETS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => onTimeChange(opt.value)}
+                className={`h-7 rounded-md px-2.5 text-xs font-medium transition-colors ${
+                  timeValue === opt.value
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-accent"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        {(dateValue || timeValue) && (
           <div className="border-t px-3 py-2">
             <Button
               size="sm"
               variant="ghost"
               className="w-full text-muted-foreground"
-              onClick={() => { onChange(""); setOpen(false); }}
+              onClick={() => { onDateChange(""); onTimeChange(""); setOpen(false); }}
+            >
+              Clear
+            </Button>
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+/* ---- Leave By Pill (calendar + time popover) ---- */
+
+function LeaveByPill({
+  dateValue,
+  timeValue,
+  onDateChange,
+  onTimeChange,
+}: {
+  dateValue: string;
+  timeValue: string;
+  onDateChange: (v: string) => void;
+  onTimeChange: (v: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = dateValue ? new Date(dateValue + "T00:00:00") : undefined;
+
+  const displayLabel = dateValue
+    ? `${formatDateShort(dateValue)}${timeValue ? `, ${TIME_PRESETS.find((t) => t.value === timeValue)?.label ?? timeValue}` : ""}`
+    : "Any";
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="flex h-9 items-center gap-1.5 rounded-full border bg-card/95 backdrop-blur px-4 text-sm font-medium shadow-sm transition-colors hover:bg-accent mobile-filter-pill whitespace-nowrap"
+        >
+          <span className="text-muted-foreground">Leave By:</span>
+          <span className="flex items-center gap-1.5">
+            <span>{displayLabel}</span>
+            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+          </span>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <Calendar
+          mode="single"
+          selected={selected}
+          disabled={{ before: new Date() }}
+          onSelect={(day: Date | undefined) => {
+            if (day) {
+              const iso = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
+              onDateChange(iso);
+            }
+          }}
+          defaultMonth={selected}
+        />
+        <div className="border-t px-3 py-2">
+          <p className="text-xs font-medium text-muted-foreground mb-1.5">Time</p>
+          <div className="flex flex-wrap gap-1.5">
+            {TIME_PRESETS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => onTimeChange(opt.value)}
+                className={`h-7 rounded-md px-2.5 text-xs font-medium transition-colors ${
+                  timeValue === opt.value
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-accent"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        {(dateValue || timeValue) && (
+          <div className="border-t px-3 py-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="w-full text-muted-foreground"
+              onClick={() => { onDateChange(""); onTimeChange(""); setOpen(false); }}
             >
               Clear
             </Button>
@@ -494,7 +610,9 @@ export function SearchFilters({
   // Restore persisted filter state from sessionStorage
   const restored = useRef<{
     orders?: string; risk?: RiskLevel; origin?: PlaceResult | null;
-    destination?: PlaceResult | null; homeBy?: string; maxDeadheadPct?: number; maxIdle?: number; workDays?: string[]; legs?: number;
+    destination?: PlaceResult | null; homeBy?: string; homeByTime?: string;
+    departBy?: string; departByTime?: string;
+    maxDeadheadPct?: number; maxIdle?: number; workDays?: string[]; legs?: number;
   } | null>(null);
   if (restored.current === null && typeof window !== "undefined") {
     try {
@@ -511,6 +629,9 @@ export function SearchFilters({
   const [originPopoverOpen, setOriginPopoverOpen] = useState(false);
   const [destination, setDestination] = useState<PlaceResult | null>(r.destination ?? null);
   const [homeBy, setHomeBy] = useState<string>(r.homeBy ?? "");
+  const [homeByTime, setHomeByTime] = useState<string>(r.homeByTime ?? "");
+  const [departBy, setDepartBy] = useState<string>(r.departBy ?? "");
+  const [departByTime, setDepartByTime] = useState<string>(r.departByTime ?? "");
   const [maxDeadheadPct, setMaxDeadheadPct] = useState(r.maxDeadheadPct ?? DEFAULT_MAX_DEADHEAD_PCT);
   const [maxIdle, setMaxIdle] = useState<number>(r.maxIdle ?? settings?.max_idle_hours ?? DEFAULT_MAX_IDLE_HOURS);
   const [workDays, setWorkDays] = useState<string[]>(r.workDays ?? settings?.work_days ?? []);
@@ -537,10 +658,10 @@ export function SearchFilters({
     if (compactBar) return;
     try {
       sessionStorage.setItem("hv-route-filters", JSON.stringify({
-        orders, risk, origin, destination, homeBy, maxDeadheadPct, maxIdle, workDays, legs,
+        orders, risk, origin, destination, homeBy, homeByTime, departBy, departByTime, maxDeadheadPct, maxIdle, workDays, legs,
       }));
     } catch {}
-  }, [orders, risk, origin, destination, homeBy, maxDeadheadPct, maxIdle, compactBar]);
+  }, [orders, risk, origin, destination, homeBy, homeByTime, departBy, departByTime, maxDeadheadPct, maxIdle, compactBar]);
 
   // Reset filters when clear is triggered
   useEffect(() => {
@@ -551,6 +672,9 @@ export function SearchFilters({
     setOrigin(null);
     setDestination(null);
     setHomeBy("");
+    setHomeByTime("");
+    setDepartBy("");
+    setDepartByTime("");
   }, [resetKey, initialTripType]);
 
   // Pre-fill from settings (or restore from sessionStorage)
@@ -579,6 +703,7 @@ export function SearchFilters({
                   max_deadhead_pct: maxDeadheadPct,
                   ...(maxIdle > 0 ? { max_layover_hours: maxIdle } : {}),
                   ...driverProfile,
+                  ...buildTimeParams(),
                 });
               } else {
                 if (destination) {
@@ -591,6 +716,7 @@ export function SearchFilters({
                   legs,
                   trailer_types: driverProfile.trailer_types,
                   ...(maxIdle > 0 ? { max_layover_hours: maxIdle } : {}),
+                  ...buildTimeParams(),
                 });
               }
             }
@@ -618,6 +744,7 @@ export function SearchFilters({
             risk,
             max_deadhead_pct: maxDeadheadPct,
             ...driverProfile,
+            ...buildTimeParams(),
           });
         }
       }, 0);
@@ -650,6 +777,7 @@ export function SearchFilters({
             ...(homeBy ? { home_by: homeBy } : {}),
             max_deadhead_pct: maxDeadheadPct,
             ...driverProfile,
+            ...buildTimeParams(),
           });
         }
       } else {
@@ -668,6 +796,7 @@ export function SearchFilters({
           legs,
           trailer_types: driverProfile.trailer_types,
           ...(maxIdle > 0 ? { max_layover_hours: maxIdle } : {}),
+          ...buildTimeParams(),
         });
       } else {
         onClearSearch?.();
@@ -677,6 +806,21 @@ export function SearchFilters({
 
   // Stable key for driver profile so it can be a useEffect dependency
   const profileKey = JSON.stringify(driverProfile);
+
+  // Convert local time presets to UTC using origin coordinates
+  const buildTimeParams = useCallback(() => {
+    const params: Record<string, string> = {};
+    if (departBy) params.depart_by = departBy;
+    if (departByTime && origin) {
+      params.depart_by_time = localHourToUtc(departByTime, origin.lat, origin.lng);
+    }
+    if (homeByTime && origin) {
+      const lat = settings?.home_base_lat ?? origin.lat;
+      const lng = settings?.home_base_lng ?? origin.lng;
+      params.home_by_time = localHourToUtc(homeByTime, lat as number, lng as number);
+    }
+    return params;
+  }, [departBy, departByTime, homeByTime, origin, settings]);
 
   // Fire search (shared helper)
   const fireSearch = useCallback(() => {
@@ -695,6 +839,7 @@ export function SearchFilters({
         max_deadhead_pct: maxDeadheadPct,
         ...(maxIdle > 0 ? { max_layover_hours: maxIdle } : {}),
         ...driverProfile,
+        ...buildTimeParams(),
       });
     } else {
       onSearch({
@@ -704,16 +849,17 @@ export function SearchFilters({
         legs,
         trailer_types: driverProfile.trailer_types,
         ...(maxIdle > 0 ? { max_layover_hours: maxIdle } : {}),
+        ...buildTimeParams(),
       });
     }
-  }, [origin, destination, orders, risk, homeMode, homeBy, maxDeadheadPct, maxIdle, legs, profileKey, onClearSearch]);
+  }, [origin, destination, orders, risk, homeMode, homeBy, maxDeadheadPct, maxIdle, legs, profileKey, buildTimeParams, onClearSearch]);
 
   // Auto-search on filter changes (only after initial load settles)
   // Note: orders is NOT a trigger here — trip type changes are handled by prevTripType effect
   useEffect(() => {
     if (!searchEnabled.current) return;
     fireSearch();
-  }, [risk, homeBy, maxDeadheadPct, legs]);
+  }, [risk, homeBy, homeByTime, departBy, departByTime, maxDeadheadPct, legs]);
 
   // Auto-search on driver profile or max idle changes (debounced)
   // Signal loading immediately so the UI feels responsive, then fire the actual query after 400ms
@@ -894,8 +1040,10 @@ export function SearchFilters({
   if (mobile) {
     const activeFilterCount = [
       homeBy,
+      homeByTime,
+      departBy,
       maxDeadheadPct !== DEFAULT_MAX_DEADHEAD_PCT,
-      maxIdle !== 48,
+      maxIdle !== DEFAULT_MAX_IDLE_HOURS,
       risk !== "any",
     ].filter(Boolean).length;
 
@@ -923,7 +1071,8 @@ export function SearchFilters({
         {/* Expandable filter overlay */}
         {mobileFiltersOpen && (
           <div className="flex flex-wrap items-center gap-1.5 p-2 rounded-lg bg-muted/50 border border-border/50">
-            {isRoundTrip && <HomeByPill value={homeBy} onChange={setHomeBy} />}
+            {isRoundTrip && <LeaveByPill dateValue={departBy} timeValue={departByTime} onDateChange={setDepartBy} onTimeChange={setDepartByTime} />}
+            {isRoundTrip && <ReturnByPill dateValue={homeBy} timeValue={homeByTime} onDateChange={setHomeBy} onTimeChange={setHomeByTime} />}
             <MaxIdlePill value={maxIdle} onChange={setMaxIdle} />
             <DeadheadPctPill value={maxDeadheadPct} onChange={setMaxDeadheadPct} />
             <AllFiltersPopover risk={risk} onRiskChange={setRisk} workDays={workDays} onWorkDaysChange={setWorkDays} />
@@ -972,7 +1121,8 @@ export function SearchFilters({
       </div>
       {destPill}
       {legsPill}
-      {isRoundTrip && <div id="onborda-home-by"><HomeByPill value={homeBy} onChange={setHomeBy} /></div>}
+      {isRoundTrip && <div id="onborda-leave-by"><LeaveByPill dateValue={departBy} timeValue={departByTime} onDateChange={setDepartBy} onTimeChange={setDepartByTime} /></div>}
+      {isRoundTrip && <div id="onborda-home-by"><ReturnByPill dateValue={homeBy} timeValue={homeByTime} onDateChange={setHomeBy} onTimeChange={setHomeByTime} /></div>}
       <div id="onborda-idle"><MaxIdlePill value={maxIdle} onChange={setMaxIdle} /></div>
       <div id="onborda-deadhead"><DeadheadPctPill value={maxDeadheadPct} onChange={setMaxDeadheadPct} /></div>
       <div id="onborda-all-filters"><AllFiltersPopover risk={risk} onRiskChange={setRisk} workDays={workDays} onWorkDaysChange={setWorkDays} /></div>
