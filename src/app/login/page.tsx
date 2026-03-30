@@ -102,7 +102,7 @@ export default function LoginPage() {
       <div className="fixed inset-0 z-[1] bg-black/40 backdrop-blur-xl" />
 
       {/* Layer 3: Beams */}
-      <div className="opacity-0 animate-[fade-in_1s_ease-in_forwards] relative z-[2]">
+      <div className="fixed inset-0 z-[2] opacity-0 animate-[fade-in_1s_ease-in_forwards] pointer-events-none">
         <BackgroundBeams />
       </div>
 
