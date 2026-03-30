@@ -330,9 +330,15 @@ export function DesktopRoutesView() {
             onToggleWatchlist={selectedRouteKey ? () => toggleWatchlistRef.current?.(selectedRouteKey) : undefined}
             departureTime={(() => {
               const p = roundTripParams ?? searchParams;
-              if (!p?.depart_by) return undefined;
-              const t = (p as any).depart_by_time || "00:00";
-              return new Date(`${p.depart_by}T${t}`);
+              if (p?.depart_by) {
+                const t = (p as any).depart_by_time || "00:00";
+                return new Date(`${p.depart_by}T${t}`);
+              }
+              // Fall back to chain's suggested departure (pickup minus deadhead)
+              if (selectedChain?.suggested_departure) {
+                return new Date(selectedChain.suggested_departure);
+              }
+              return undefined;
             })()}
             returnByTime={(() => {
               const p = roundTripParams;

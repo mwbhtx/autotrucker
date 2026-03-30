@@ -28,6 +28,13 @@ export function RouteRow({
   const profit = hasSpeculative ? chain.estimated_total_profit : chain.firm_profit;
   const avgLoadedRpm = calcAvgLoadedRpm(firmLegs);
 
+  const suggestedDep = chain.suggested_departure
+    ? new Date(chain.suggested_departure)
+    : null;
+  const depLabel = suggestedDep
+    ? `Leave ${suggestedDep.toLocaleDateString("en-US", { month: "short", day: "numeric" })} ${suggestedDep.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`
+    : null;
+
   return (
     <div
       data-route-idx={routeIdx}
@@ -36,6 +43,9 @@ export function RouteRow({
       }`}
       onClick={onClick}
     >
+      {depLabel && (
+        <p className="px-4 pt-2 text-xs text-muted-foreground">{depLabel}</p>
+      )}
       <div className="flex justify-around text-center items-start px-4 py-3">
         <div>
           <p className="text-sm uppercase tracking-wide text-text-secondary">$/Day</p>
