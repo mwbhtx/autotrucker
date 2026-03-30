@@ -317,6 +317,18 @@ export function DesktopRoutesView() {
             onShowComments={handleShowComments}
             isWatchlisted={watchlistSet.has(selectedRouteKey)}
             onToggleWatchlist={selectedRouteKey ? () => toggleWatchlistRef.current?.(selectedRouteKey) : undefined}
+            departureTime={(() => {
+              const p = roundTripParams ?? searchParams;
+              if (!p?.depart_by) return undefined;
+              const t = (p as any).depart_by_time || "00:00";
+              return new Date(`${p.depart_by}T${t}`);
+            })()}
+            returnByTime={(() => {
+              const p = roundTripParams;
+              if (!p?.home_by) return undefined;
+              const t = (p as any).home_by_time || "23:59";
+              return new Date(`${p.home_by}T${t}`);
+            })()}
           />
         )}
 

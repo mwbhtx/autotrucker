@@ -26,6 +26,8 @@ export interface RouteDetailPanelProps {
   onShowComments?: (orderId: string) => void;
   isWatchlisted?: boolean;
   onToggleWatchlist?: () => void;
+  departureTime?: Date;
+  returnByTime?: Date;
 }
 
 export function RouteDetailPanel({
@@ -38,6 +40,8 @@ export function RouteDetailPanel({
   onShowComments,
   isWatchlisted,
   onToggleWatchlist,
+  departureTime,
+  returnByTime,
 }: RouteDetailPanelProps) {
   const [showCosts, setShowCosts] = useState(false);
   const [showInspector, setShowInspector] = useState(false);
@@ -78,6 +82,8 @@ export function RouteDetailPanel({
             onToggleCosts={() => setShowCosts((v) => !v)}
             showInspector={showInspector}
             onToggleInspector={() => setShowInspector((v) => !v)}
+            departureTime={departureTime}
+            returnByTime={returnByTime}
           />
         </div>
       )}
@@ -101,6 +107,8 @@ interface RouteDetailContentProps {
   onToggleInspector: () => void;
   isWatchlisted?: boolean;
   onToggleWatchlist?: () => void;
+  departureTime?: Date;
+  returnByTime?: Date;
 }
 
 function RouteDetailContent({
@@ -117,6 +125,8 @@ function RouteDetailContent({
   onToggleInspector,
   isWatchlisted,
   onToggleWatchlist,
+  departureTime,
+  returnByTime,
 }: RouteDetailContentProps) {
   const hasSpeculative = chain.legs.some((leg) => leg.type === "speculative");
   const firmLegs = chain.legs.filter((leg) => leg.type === "firm");
@@ -396,6 +406,8 @@ function RouteDetailContent({
                 originCity={origin}
                 returnCity={returnCity}
                 onClose={onToggleInspector}
+                departureTime={departureTime}
+                returnByTime={returnByTime}
               />
             </div>
           )}
