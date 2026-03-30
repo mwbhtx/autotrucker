@@ -302,24 +302,17 @@ function ReturnByPill({
           }}
           defaultMonth={selected}
         />
-        <div className="border-t px-3 py-2">
-          <p className="text-xs font-medium text-muted-foreground mb-1.5">Time</p>
-          <div className="flex flex-wrap gap-1.5">
+        <div className="border-t px-3 py-2 flex items-center gap-2">
+          <p className="text-xs font-medium text-muted-foreground shrink-0">Time</p>
+          <select
+            value={timeValue}
+            onChange={(e) => onTimeChange(e.target.value)}
+            className="flex-1 h-8 rounded-md bg-muted text-sm px-2 border-0 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+          >
             {TIME_PRESETS.map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => onTimeChange(opt.value)}
-                className={`h-7 rounded-md px-2.5 text-xs font-medium transition-colors ${
-                  timeValue === opt.value
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-accent"
-                }`}
-              >
-                {opt.label}
-              </button>
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
-          </div>
+          </select>
         </div>
         {(dateValue || timeValue) && (
           <div className="border-t px-3 py-2">
@@ -385,24 +378,17 @@ function LeaveByPill({
           }}
           defaultMonth={selected}
         />
-        <div className="border-t px-3 py-2">
-          <p className="text-xs font-medium text-muted-foreground mb-1.5">Time</p>
-          <div className="flex flex-wrap gap-1.5">
+        <div className="border-t px-3 py-2 flex items-center gap-2">
+          <p className="text-xs font-medium text-muted-foreground shrink-0">Time</p>
+          <select
+            value={timeValue}
+            onChange={(e) => onTimeChange(e.target.value)}
+            className="flex-1 h-8 rounded-md bg-muted text-sm px-2 border-0 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+          >
             {TIME_PRESETS.map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => onTimeChange(opt.value)}
-                className={`h-7 rounded-md px-2.5 text-xs font-medium transition-colors ${
-                  timeValue === opt.value
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-accent"
-                }`}
-              >
-                {opt.label}
-              </button>
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
-          </div>
+          </select>
         </div>
         {(dateValue || timeValue) && (
           <div className="border-t px-3 py-2">
