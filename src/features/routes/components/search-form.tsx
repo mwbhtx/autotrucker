@@ -746,8 +746,7 @@ export function SearchFilters({
     if (orders === "round-trip") {
       // Round trip: keep origin, set destination = origin (come back home)
       const place = origin ?? homePlace;
-      // Clamp legs to round-trip range (2-3)
-      const rtLegs = Math.max(2, Math.min(3, legs));
+      const rtLegs = Math.max(1, Math.min(3, legs));
       setLegs(rtLegs);
       if (place) {
         setOrigin(place);
@@ -965,7 +964,7 @@ export function SearchFilters({
   const legsPill = (
     <div id="onborda-legs" className="flex h-9 items-center rounded-full border bg-card/95 backdrop-blur shadow-sm overflow-hidden mobile-filter-pill whitespace-nowrap">
       <span className="pl-4 pr-2 text-sm text-muted-foreground font-medium">Loads:</span>
-      {(isRoundTrip ? [2, 3] : [1, 2, 3]).map((n) => (
+      {[1, 2, 3].map((n) => (
         <button
           key={n}
           type="button"
