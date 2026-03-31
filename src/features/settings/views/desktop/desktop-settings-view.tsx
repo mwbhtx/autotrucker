@@ -52,6 +52,7 @@ const NAV_SECTIONS = [
   { id: "truck", label: "Truck & Capacity" },
   { id: "trailers", label: "Trailer Types" },
   { id: "certifications", label: "Certifications" },
+  { id: "load-preferences", label: "Load Preferences" },
   { id: "schedule", label: "Schedule" },
   { id: "appearance", label: "Appearance" },
 ] as const;
@@ -511,6 +512,19 @@ export function DesktopSettingsView() {
             <CertToggle label="Hazmat Certified" checked={hazmatCertified} onChange={() => handleBoolToggle("hazmat_certified", hazmatCertified, setHazmatCertified)} />
             <CertToggle label="TWIC Card" checked={twicCard} onChange={() => handleBoolToggle("twic_card", twicCard, setTwicCard)} />
             <CertToggle label="Team Driver" checked={teamDriver} onChange={() => handleBoolToggle("team_driver", teamDriver, setTeamDriver)} />
+          </div>
+        </section>
+
+        <Separator />
+
+        {/* Load Preferences */}
+        <section id="settings-load-preferences" className="max-w-2xl space-y-6">
+          <div>
+            <h3 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">Load Preferences</h3>
+            <p className="text-xs text-muted-foreground mt-1">Types of loads you want included in results.</p>
+          </div>
+
+          <div className="space-y-2">
             <CertToggle label="No Tarps" checked={noTarps} onChange={() => handleBoolToggle("no_tarps", noTarps, setNoTarps)} />
           </div>
         </section>
