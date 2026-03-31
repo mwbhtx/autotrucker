@@ -37,7 +37,7 @@ export function RouteDetailPanel({
   returnByTime,
 }: RouteDetailPanelProps) {
   const [showCosts, setShowCosts] = useState(false);
-  const [showInspector, setShowInspector] = useState(true);
+  const [showInspector, setShowInspector] = useState(false);
 
   const isExpanded = chain !== null;
 
@@ -210,10 +210,10 @@ function RouteDetailContent({
           )}
         </div>
 
-        {/* Segments section */}
+        {/* Routes section */}
         <div className="bg-[#ebeced] dark:bg-transparent">
         <div className="px-4 pt-3 pb-1.5 ">
-          <p className="text-xs font-semibold uppercase tracking-widest text-text-subtle">Segments</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-text-subtle">Routes</p>
         </div>
 
         {/* Start deadhead */}
@@ -366,14 +366,14 @@ function RouteDetailContent({
         )}
 
         </div>
-        {/* Segment Details section (RouteInspector, collapsible) */}
+        {/* Route Planner section (RouteInspector, collapsible) */}
         <div className="">
           <button
             type="button"
             className="flex items-center gap-1.5 text-sm transition-colors w-full px-4 py-2.5 text-text-secondary"
             onClick={onToggleInspector}
           >
-            <span>Segment Details</span>
+            <span>Route Planner</span>
             {showInspector ? (
               <ChevronUpIcon className="h-3.5 w-3.5" />
             ) : (

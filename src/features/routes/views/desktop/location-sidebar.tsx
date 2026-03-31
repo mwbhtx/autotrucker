@@ -395,9 +395,9 @@ function RouteChainCard({
                 )}
               </div>
 
-              {/* Segments header */}
+              {/* Routes header */}
               <div className="px-4 pt-3 pb-1.5 border-b border-white/[0.05]">
-                <p className="text-xs font-semibold uppercase tracking-widest text-text-subtle">Segments</p>
+                <p className="text-xs font-semibold uppercase tracking-widest text-text-subtle">Routes</p>
               </div>
 
               {/* Start deadhead */}
