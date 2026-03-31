@@ -49,12 +49,7 @@ export function MobileRoutesView() {
     no_tarps: settings.no_tarps ?? undefined,
     max_assigned_orders: settings.max_assigned_orders ?? undefined,
     cost_per_mile: costPerMile,
-    diesel_price_per_gallon: settings.diesel_price_per_gallon ?? undefined,
-    maintenance_per_mile: settings.maintenance_per_mile ?? undefined,
-    tires_per_mile: settings.tires_per_mile ?? undefined,
-    truck_payment_per_day: settings.truck_payment_per_day ?? undefined,
-    insurance_per_day: settings.insurance_per_day ?? undefined,
-    per_diem_per_day: settings.per_diem_per_day ?? undefined,
+    cost_per_day: settings.cost_per_day ?? undefined,
     avg_mpg: settings.avg_mpg ?? undefined,
   } : { cost_per_mile: costPerMile };
 

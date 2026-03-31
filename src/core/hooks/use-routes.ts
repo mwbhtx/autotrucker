@@ -22,12 +22,7 @@ export interface RouteSearchParams {
   no_tarps?: boolean;
   // Cost model
   cost_per_mile?: number;
-  diesel_price_per_gallon?: number;
-  maintenance_per_mile?: number;
-  tires_per_mile?: number;
-  truck_payment_per_day?: number;
-  insurance_per_day?: number;
-  per_diem_per_day?: number;
+  cost_per_day?: number;
   avg_mpg?: number;
   avg_driving_hours_per_day?: number;
   // Work hours

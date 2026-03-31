@@ -71,12 +71,7 @@ export function DesktopSettingsView() {
   const [homeLng, setHomeLng] = useState<number | null>(null);
   const [radius, setRadius] = useState("");
   const [costPerMile, setCostPerMile] = useState("");
-  const [dieselPrice, setDieselPrice] = useState("");
-  const [maintenancePerMile, setMaintenancePerMile] = useState("");
-  const [tiresPerMile, setTiresPerMile] = useState("");
-  const [truckPaymentPerDay, setTruckPaymentPerDay] = useState("");
-  const [insurancePerDay, setInsurancePerDay] = useState("");
-  const [perDiemPerDay, setPerDiemPerDay] = useState("");
+  const [costPerDay, setCostPerDay] = useState("");
   const [avgMpg, setAvgMpg] = useState("");
   const [tankSize, setTankSize] = useState("");
   const [avgDrivingHours, setAvgDrivingHours] = useState("");
@@ -129,12 +124,7 @@ export function DesktopSettingsView() {
     setHomeLng(settings.home_base_lng ?? null);
     setRadius(settings.preferred_radius_miles != null ? String(settings.preferred_radius_miles) : "");
     setCostPerMile(settings.cost_per_mile != null ? String(settings.cost_per_mile) : "");
-    setDieselPrice(settings.diesel_price_per_gallon != null ? String(settings.diesel_price_per_gallon) : "");
-    setMaintenancePerMile(settings.maintenance_per_mile != null ? String(settings.maintenance_per_mile) : "");
-    setTiresPerMile(settings.tires_per_mile != null ? String(settings.tires_per_mile) : "");
-    setTruckPaymentPerDay(settings.truck_payment_per_day != null ? String(settings.truck_payment_per_day) : "");
-    setInsurancePerDay(settings.insurance_per_day != null ? String(settings.insurance_per_day) : "");
-    setPerDiemPerDay(settings.per_diem_per_day != null ? String(settings.per_diem_per_day) : "");
+    setCostPerDay(settings.cost_per_day != null ? String(settings.cost_per_day) : "");
     setAvgMpg(settings.avg_mpg != null ? String(settings.avg_mpg) : "");
     setTankSize((settings as any).tank_size_gallons != null ? String((settings as any).tank_size_gallons) : "");
     setAvgDrivingHours(settings.avg_driving_hours_per_day != null ? String(settings.avg_driving_hours_per_day) : "");
@@ -170,12 +160,7 @@ export function DesktopSettingsView() {
   const NUMBER_CONSTRAINTS: Record<string, { min: number; max: number }> = {
     preferred_radius_miles: { min: 10, max: 500 },
     cost_per_mile: { min: 0.5, max: 10 },
-    diesel_price_per_gallon: { min: 1, max: 15 },
-    maintenance_per_mile: { min: 0.01, max: 1 },
-    tires_per_mile: { min: 0.01, max: 0.5 },
-    truck_payment_per_day: { min: 0, max: 500 },
-    insurance_per_day: { min: 0, max: 300 },
-    per_diem_per_day: { min: 0, max: 200 },
+    cost_per_day: { min: 0, max: 1000 },
     avg_mpg: { min: 3, max: 12 },
     tank_size_gallons: { min: 50, max: 300 },
     avg_driving_hours_per_day: { min: 6, max: 11 },
@@ -339,21 +324,6 @@ export function DesktopSettingsView() {
             />
           </div>
 
-          <div className="space-y-3">
-            <label className="text-sm font-medium block">Cost Per Mile ($)</label>
-            <Input
-              type="number"
-              min={0.5}
-              max={10}
-              step={0.01}
-              value={costPerMile}
-              onChange={(e) => handleNumberChange("cost_per_mile", e.target.value, setCostPerMile)}
-              placeholder="e.g. 1.50"
-            />
-            <p className="text-sm text-muted-foreground">
-              Flat override — when set, replaces the detailed cost breakdown.
-            </p>
-          </div>
         </section>
 
         <Separator />
@@ -362,34 +332,39 @@ export function DesktopSettingsView() {
         <section id="settings-costs" className="max-w-2xl space-y-6">
           <div>
             <h3 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">Operating Costs</h3>
-            <p className="text-xs text-muted-foreground mt-1">Fine-tune your cost model. Leave blank to use industry defaults.</p>
+            <p className="text-xs text-muted-foreground mt-1">Your actual costs — used to calculate net profit on every route.</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium block">Diesel ($/gal)</label>
-              <Input type="number" min={1} max={15} step={0.01} value={dieselPrice} onChange={(e) => handleNumberChange("diesel_price_per_gallon", e.target.value, setDieselPrice)} placeholder="3.85" />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium block">Maintenance ($/mi)</label>
-              <Input type="number" min={0.01} max={1} step={0.01} value={maintenancePerMile} onChange={(e) => handleNumberChange("maintenance_per_mile", e.target.value, setMaintenancePerMile)} placeholder="0.15" />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium block">Tires ($/mi)</label>
-              <Input type="number" min={0.01} max={0.5} step={0.01} value={tiresPerMile} onChange={(e) => handleNumberChange("tires_per_mile", e.target.value, setTiresPerMile)} placeholder="0.04" />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium block">Truck payment ($/day)</label>
-              <Input type="number" min={0} max={500} step={1} value={truckPaymentPerDay} onChange={(e) => handleNumberChange("truck_payment_per_day", e.target.value, setTruckPaymentPerDay)} placeholder="65" />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium block">Insurance ($/day)</label>
-              <Input type="number" min={0} max={300} step={1} value={insurancePerDay} onChange={(e) => handleNumberChange("insurance_per_day", e.target.value, setInsurancePerDay)} placeholder="40" />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium block">Per diem ($/day)</label>
-              <Input type="number" min={0} max={200} step={1} value={perDiemPerDay} onChange={(e) => handleNumberChange("per_diem_per_day", e.target.value, setPerDiemPerDay)} placeholder="69" />
-            </div>
+          <div className="space-y-3">
+            <label className="text-sm font-medium block">Operating Cost / Mile ($)</label>
+            <Input
+              type="number"
+              min={0.5}
+              max={10}
+              step={0.01}
+              value={costPerMile}
+              onChange={(e) => handleNumberChange("cost_per_mile", e.target.value, setCostPerMile)}
+              placeholder="e.g. 0.65"
+            />
+            <p className="text-sm text-muted-foreground">
+              Fuel, maintenance, and tires combined. Divide your annual per-mile expenses by your total miles driven.
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <label className="text-sm font-medium block">Fixed Cost / Day ($)</label>
+            <Input
+              type="number"
+              min={0}
+              max={1000}
+              step={1}
+              value={costPerDay}
+              onChange={(e) => handleNumberChange("cost_per_day", e.target.value, setCostPerDay)}
+              placeholder="e.g. 180"
+            />
+            <p className="text-sm text-muted-foreground">
+              Truck payment, insurance, and per diem. Divide your annual fixed costs by your working days per year.
+            </p>
           </div>
         </section>
 

@@ -9,6 +9,7 @@ export interface Settings {
   home_base_state: string;
   preferred_radius_miles: number;
   cost_per_mile: number;
+  cost_per_day: number | null;
   trailer_types: string[];
   max_weight: number | null;
   max_assigned_orders: number | null;
@@ -18,12 +19,6 @@ export interface Settings {
   no_tarps: boolean;
   home_base_lat: number | null;
   home_base_lng: number | null;
-  diesel_price_per_gallon: number | null;
-  maintenance_per_mile: number | null;
-  tires_per_mile: number | null;
-  truck_payment_per_day: number | null;
-  insurance_per_day: number | null;
-  per_diem_per_day: number | null;
   avg_mpg: number | null;
   avg_driving_hours_per_day: number | null;
   max_idle_hours: number | null;
