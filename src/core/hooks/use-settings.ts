@@ -27,6 +27,8 @@ export interface Settings {
   avg_driving_hours_per_day: number | null;
   max_idle_hours: number | null;
   work_days: string[] | null;
+  work_start_hour: number | null;
+  work_end_hour: number | null;
   onboarding_completed: boolean;
   disabled_settings?: string[];
   last_login: string;

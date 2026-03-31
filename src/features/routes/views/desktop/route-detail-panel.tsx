@@ -44,7 +44,7 @@ export function RouteDetailPanel({
   returnByTime,
 }: RouteDetailPanelProps) {
   const [showCosts, setShowCosts] = useState(false);
-  const [showInspector, setShowInspector] = useState(false);
+  const [showInspector, setShowInspector] = useState(true);
 
   const isExpanded = chain !== null;
 

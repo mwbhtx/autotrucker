@@ -87,6 +87,8 @@ export function DesktopSettingsView() {
   const [twicCard, setTwicCard] = useState(false);
   const [teamDriver, setTeamDriver] = useState(false);
   const [workDays, setWorkDays] = useState<string[]>([]);
+  const [workStartHour, setWorkStartHour] = useState<string>("6");
+  const [workEndHour, setWorkEndHour] = useState<string>("20");
 
   // Track whether initial sync has happened to avoid triggering saves
   const initialized = useRef(false);
@@ -142,6 +144,8 @@ export function DesktopSettingsView() {
     setTwicCard(settings.twic_card ?? false);
     setTeamDriver(settings.team_driver ?? false);
     setWorkDays(settings.work_days ?? []);
+    setWorkStartHour(settings.work_start_hour != null ? String(settings.work_start_hour) : "6");
+    setWorkEndHour(settings.work_end_hour != null ? String(settings.work_end_hour) : "20");
     // Mark initialized after a tick so the first render doesn't trigger saves
     setTimeout(() => { initialized.current = true; }, 100);
   }, [settings]);
@@ -565,6 +569,47 @@ export function DesktopSettingsView() {
             <p className="text-sm text-muted-foreground">
               Routes won&apos;t include pickups or deliveries on your off days.
             </p>
+          </div>
+
+          <div className="space-y-3 pt-4 border-t border-border">
+            <h4 className="text-sm font-medium text-muted-foreground">Working Hours</h4>
+            <p className="text-xs text-muted-foreground">Set your preferred driving window. The trip schedule will start and end each day within these hours.</p>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-muted-foreground">Start</label>
+                <select
+                  value={workStartHour}
+                  onChange={(e) => {
+                    setWorkStartHour(e.target.value);
+                    if (initialized.current) save({ work_start_hour: Number(e.target.value) });
+                  }}
+                  className="rounded-lg border border-input bg-transparent px-3 py-1.5 text-sm"
+                >
+                  {Array.from({ length: 24 }, (_, h) => (
+                    <option key={h} value={h}>
+                      {h === 0 ? "12:00 AM" : h < 12 ? `${h}:00 AM` : h === 12 ? "12:00 PM" : `${h - 12}:00 PM`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-muted-foreground">End</label>
+                <select
+                  value={workEndHour}
+                  onChange={(e) => {
+                    setWorkEndHour(e.target.value);
+                    if (initialized.current) save({ work_end_hour: Number(e.target.value) });
+                  }}
+                  className="rounded-lg border border-input bg-transparent px-3 py-1.5 text-sm"
+                >
+                  {Array.from({ length: 24 }, (_, h) => (
+                    <option key={h} value={h}>
+                      {h === 0 ? "12:00 AM" : h < 12 ? `${h}:00 AM` : h === 12 ? "12:00 PM" : `${h - 12}:00 PM`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
           </div>
         </section>
 
