@@ -6,7 +6,6 @@ import { useAuth } from "@/core/services/auth-provider";
 
 export interface RecentSearch {
   id: string;
-  tripMode: "one_way" | "round_trip";
   origin: { label: string; coordinates: [number, number] };
   destination: { label: string; coordinates: [number, number] };
   filters: {
