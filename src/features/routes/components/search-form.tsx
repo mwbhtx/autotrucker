@@ -14,7 +14,7 @@ import { ChevronDown, ChevronUpIcon, LocateIcon, SlidersHorizontal, XIcon } from
 import { BorderBeam } from "@/platform/web/components/ui/border-beam";
 import { Calendar } from "@/platform/web/components/ui/calendar";
 import { useSettings, useUpdateSettings } from "@/core/hooks/use-settings";
-import { TRAILER_CATEGORIES, expandTrailerCodes, codesToLabels, DEFAULT_LEGS_ONE_WAY, DEFAULT_LEGS_ROUND_TRIP, DEFAULT_MAX_DEADHEAD_PCT, DEFAULT_MAX_IDLE_HOURS, MIN_DEADHEAD_PCT, MAX_DEADHEAD_PCT, DEFAULT_COST_PER_MILE, IDLE_OPTIONS, ALL_WORK_DAYS, TIME_PRESETS } from "@mwbhtx/haulvisor-core";
+import { TRAILER_CATEGORIES, expandTrailerCodes, codesToLabels, DEFAULT_LEGS_ONE_WAY, DEFAULT_LEGS_ROUND_TRIP, DEFAULT_MAX_DEADHEAD_PCT, DEFAULT_MAX_IDLE_HOURS, DEFAULT_MAX_TRIP_DAYS, MIN_DEADHEAD_PCT, MAX_DEADHEAD_PCT, DEFAULT_COST_PER_MILE, IDLE_OPTIONS, ALL_WORK_DAYS, TIME_PRESETS } from "@mwbhtx/haulvisor-core";
 
 import type { RouteSearchParams } from "@/core/hooks/use-routes";
 
@@ -142,6 +142,59 @@ export function PlaceAutocomplete({
         </div>
       )}
     </div>
+  );
+}
+
+/* ---- Days Out Pill ---- */
+
+function DaysOutPill({ value, onChange, departureDate }: { value: number; onChange: (v: number) => void; departureDate: string }) {
+  const [open, setOpen] = useState(false);
+
+  const returnDate = (() => {
+    const d = new Date(departureDate + "T00:00:00");
+    d.setDate(d.getDate() + value);
+    return d;
+  })();
+  const returnLabel = returnDate.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="flex h-9 items-center gap-1.5 rounded-full border bg-card/95 backdrop-blur px-4 text-sm font-medium shadow-sm transition-colors hover:bg-accent mobile-filter-pill whitespace-nowrap"
+        >
+          <span className="text-muted-foreground">Days Out:</span>
+          <span className="flex items-center gap-1.5">
+            <span>{value}</span>
+            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+          </span>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-64" align="start">
+        <div className="space-y-3 p-1">
+          <p className="text-sm font-medium">Days Out</p>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-muted-foreground w-4">1</span>
+            <input
+              type="range"
+              min={1}
+              max={10}
+              value={value}
+              onChange={(e) => onChange(Number(e.target.value))}
+              className="flex-1 accent-primary"
+            />
+            <span className="text-xs text-muted-foreground w-5">10</span>
+          </div>
+          <div className="text-center">
+            <span className="text-lg font-bold">{value} {value === 1 ? "day" : "days"}</span>
+          </div>
+          <p className="text-xs text-muted-foreground text-center">
+            Home by {returnLabel}
+          </p>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -584,7 +637,7 @@ export function SearchFilters({
     orders?: string; origin?: PlaceResult | null;
     destination?: PlaceResult | null; homeBy?: string; homeByTime?: string;
     departBy?: string; departByTime?: string; departureDate?: string;
-    maxDeadheadPct?: number; maxIdle?: number; workDays?: string[]; legs?: number;
+    maxDeadheadPct?: number; maxIdle?: number; daysOut?: number; workDays?: string[]; legs?: number;
   } | null>(null);
   if (restored.current === null && typeof window !== "undefined") {
     try {
@@ -607,6 +660,7 @@ export function SearchFilters({
   const [departureDate, setDepartureDate] = useState<string>(r.departureDate ?? tomorrow);
   const [maxDeadheadPct, setMaxDeadheadPct] = useState(r.maxDeadheadPct ?? DEFAULT_MAX_DEADHEAD_PCT);
   const [maxIdle, setMaxIdle] = useState<number>(r.maxIdle ?? settings?.max_idle_hours ?? DEFAULT_MAX_IDLE_HOURS);
+  const [daysOut, setDaysOut] = useState<number>(r.daysOut ?? DEFAULT_MAX_TRIP_DAYS);
   const [workDays, setWorkDays] = useState<string[]>(r.workDays ?? settings?.work_days ?? []);
   const [legs, setLegs] = useState<number>(r.legs ?? DEFAULT_LEGS_ROUND_TRIP);
   const [defaultsLoaded, setDefaultsLoaded] = useState(!!r.origin);
@@ -631,10 +685,10 @@ export function SearchFilters({
     if (compactBar) return;
     try {
       sessionStorage.setItem("hv-route-filters", JSON.stringify({
-        origin, destination, departureDate, maxDeadheadPct, maxIdle, workDays, legs,
+        origin, destination, departureDate, maxDeadheadPct, maxIdle, daysOut, workDays, legs,
       }));
     } catch {}
-  }, [origin, destination, departureDate, maxDeadheadPct, maxIdle, compactBar, legs]);
+  }, [origin, destination, departureDate, maxDeadheadPct, maxIdle, daysOut, compactBar, legs]);
 
   // Reset filters when clear is triggered
   useEffect(() => {
@@ -669,6 +723,7 @@ export function SearchFilters({
                 legs,
                 max_deadhead_pct: maxDeadheadPct,
                 ...(maxIdle > 0 ? { max_layover_hours: maxIdle } : {}),
+              max_trip_days: daysOut,
                 ...driverProfile,
               });
             }
@@ -716,15 +771,16 @@ export function SearchFilters({
       legs,
       max_deadhead_pct: maxDeadheadPct,
       ...(maxIdle > 0 ? { max_layover_hours: maxIdle } : {}),
+      max_trip_days: daysOut,
       ...driverProfile,
     });
-  }, [origin, destination, departureDate, maxDeadheadPct, maxIdle, legs, profileKey, onClearSearch]);
+  }, [origin, destination, departureDate, maxDeadheadPct, maxIdle, daysOut, legs, profileKey, onClearSearch]);
 
   // Auto-search on filter changes (only after initial load settles)
   useEffect(() => {
     if (!searchEnabled.current) return;
     fireSearch();
-  }, [departureDate, maxDeadheadPct, legs]);
+  }, [departureDate, maxDeadheadPct, daysOut, legs]);
 
   // Auto-search on driver profile or max idle changes (debounced)
   // Signal loading immediately so the UI feels responsive, then fire the actual query after 400ms
@@ -897,6 +953,7 @@ export function SearchFilters({
     const activeFilterCount = [
       maxDeadheadPct !== DEFAULT_MAX_DEADHEAD_PCT,
       maxIdle !== DEFAULT_MAX_IDLE_HOURS,
+      daysOut !== DEFAULT_MAX_TRIP_DAYS,
     ].filter(Boolean).length;
 
     return (
@@ -923,6 +980,7 @@ export function SearchFilters({
         {/* Expandable filter overlay */}
         {mobileFiltersOpen && (
           <div className="flex flex-wrap items-center gap-1.5 p-2 rounded-lg bg-muted/50 border border-border/50">
+            <DaysOutPill value={daysOut} onChange={setDaysOut} departureDate={departureDate} />
             <MaxIdlePill value={maxIdle} onChange={setMaxIdle} />
             <DeadheadPctPill value={maxDeadheadPct} onChange={setMaxDeadheadPct} />
             <AllFiltersPopover workDays={workDays} onWorkDaysChange={setWorkDays} />
@@ -971,6 +1029,7 @@ export function SearchFilters({
       {destPill}
       {departureDatePill}
       {legsPill}
+      <DaysOutPill value={daysOut} onChange={setDaysOut} departureDate={departureDate} />
       <div id="onborda-idle"><MaxIdlePill value={maxIdle} onChange={setMaxIdle} /></div>
       <div id="onborda-deadhead"><DeadheadPctPill value={maxDeadheadPct} onChange={setMaxDeadheadPct} /></div>
       <div id="onborda-all-filters"><AllFiltersPopover workDays={workDays} onWorkDaysChange={setWorkDays} /></div>
