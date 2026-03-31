@@ -16,7 +16,6 @@ export function groupOrdersByLocation(orders: Order[]): LocationGroup[] {
         lng: order.origin_lng,
         orders: [],
         routeChains: [],
-        roundTripChains: [],
       };
       map.set(key, group);
     }
@@ -43,7 +42,6 @@ export function groupRoutesByLocation(routes: RouteChain[]): LocationGroup[] {
         lng: leg.origin_lng,
         orders: [],
         routeChains: [],
-        roundTripChains: [],
       };
       map.set(key, group);
     }

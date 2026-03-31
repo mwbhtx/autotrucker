@@ -1,13 +1,13 @@
 "use client";
 
 import { BookmarkIcon } from "lucide-react";
-import type { RoundTripChain } from "@/core/types";
+import type { RouteChain } from "@/core/types";
 import { calcAvgLoadedRpm } from "@mwbhtx/haulvisor-core";
 import { routeProfitColor } from "@/core/utils/rate-color";
 import { formatCurrency, formatRpm } from "@/core/utils/route-helpers";
 
 interface RouteRowProps {
-  chain: RoundTripChain;
+  chain: RouteChain;
   isSelected: boolean;
   onClick: () => void;
   isWatchlisted?: boolean;
@@ -23,8 +23,8 @@ export function RouteRow({
   onToggleWatchlist,
   routeIdx,
 }: RouteRowProps) {
-  const firmLegs = chain.legs.filter((leg) => leg.type === "firm");
-  const profit = chain.firm_profit;
+  const firmLegs = chain.legs;
+  const profit = chain.profit;
   const avgLoadedRpm = calcAvgLoadedRpm(firmLegs);
   const suggestedDep = chain.suggested_departure
     ? new Date(chain.suggested_departure)

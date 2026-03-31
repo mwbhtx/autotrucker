@@ -2,10 +2,10 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { BookmarkIcon } from "lucide-react";
-import type { RouteChain, RoundTripChain } from "@/core/types";
+import type { RouteChain } from "@/core/types";
 import { ROUTE_SORT_OPTIONS, DEFAULT_SORT_KEY } from "@mwbhtx/haulvisor-core";
 import type { RouteSortKey } from "@mwbhtx/haulvisor-core";
-import { sortRouteChains, sortRoundTripChains } from "@/features/routes/utils/sort-options";
+import { sortRouteChains } from "@/features/routes/utils/sort-options";
 import { RouteRow } from "./route-row";
 
 /** Unique key for a route chain based on its leg order IDs */
@@ -13,62 +13,17 @@ function routeKey(legs: { order_id?: string }[]): string {
   return legs.map((l) => l.order_id ?? "spec").join("|");
 }
 
-function routeChainToRoundTrip(route: RouteChain): RoundTripChain {
-  return {
-    rank: 0,
-    total_pay: route.total_pay,
-    total_miles: route.total_miles,
-    total_deadhead_miles: route.total_deadhead_miles,
-    estimated_deadhead_cost: route.estimated_deadhead_cost,
-    firm_profit: route.profit,
-    estimated_total_profit: route.profit,
-    rate_per_mile: route.effective_rpm,
-    deadhead_pct: route.deadhead_pct,
-    effective_rpm: route.effective_rpm,
-    estimated_days: route.estimated_days,
-    daily_net_profit: route.daily_net_profit,
-    cost_breakdown: route.cost_breakdown,
-    legs: route.legs.map((leg, i) => ({
-      leg_number: i + 1,
-      type: "firm" as const,
-      order_id: leg.order_id,
-      origin_city: leg.origin_city,
-      origin_state: leg.origin_state,
-      origin_lat: leg.origin_lat,
-      origin_lng: leg.origin_lng,
-      destination_city: leg.destination_city,
-      destination_state: leg.destination_state,
-      destination_lat: leg.destination_lat,
-      destination_lng: leg.destination_lng,
-      pay: leg.pay,
-      miles: leg.miles,
-      deadhead_miles: leg.deadhead_miles,
-      trailer_type: leg.trailer_type,
-      weight: leg.weight,
-      pickup_date_early: leg.pickup_date_early,
-      pickup_date_late: leg.pickup_date_late,
-      delivery_date_early: leg.delivery_date_early,
-      delivery_date_late: leg.delivery_date_late,
-      lane_rank: leg.lane_rank,
-    })),
-    timeline: route.timeline,
-    trip_summary: route.trip_summary,
-  };
-}
-
 interface RouteListProps {
-  roundTripChains: RoundTripChain[];
-  routeChains: RouteChain[];
+  chains: RouteChain[];
   selectedIndex: number;
-  onSelectIndex: (index: number, chain: RoundTripChain | null) => void;
+  onSelectIndex: (index: number, chain: RouteChain | null) => void;
   isLoading?: boolean;
   onClearFilters?: () => void;
   onWatchlistChange?: (watchlist: Set<string>, toggle: (key: string) => void) => void;
 }
 
 export function RouteList({
-  roundTripChains,
-  routeChains,
+  chains,
   selectedIndex,
   onSelectIndex,
   isLoading,
@@ -101,19 +56,13 @@ export function RouteList({
     onWatchlistChange?.(watchlist, toggleWatchlist);
   }, [watchlist, toggleWatchlist, onWatchlistChange]);
 
-  const isRoundTripMode = roundTripChains.length > 0;
-  const isOneWayMode = !isRoundTripMode && routeChains.length > 0;
-  const hasResults = isRoundTripMode || isOneWayMode;
+  const hasResults = chains.length > 0;
 
-  const allSortedRoundTrips = isRoundTripMode ? sortRoundTripChains(roundTripChains, sortBy) : [];
-  const allSortedRoutes = isOneWayMode ? sortRouteChains(routeChains, sortBy) : [];
+  const allSorted = sortRouteChains(chains, sortBy);
 
-  const sortedRoundTrips = showWatchlistOnly
-    ? allSortedRoundTrips.filter((c) => watchlist.has(routeKey(c.legs)))
-    : allSortedRoundTrips;
-  const sortedRoutes = showWatchlistOnly
-    ? allSortedRoutes.filter((r) => watchlist.has(routeKey(r.legs)))
-    : allSortedRoutes;
+  const sorted = showWatchlistOnly
+    ? allSorted.filter((c) => watchlist.has(routeKey(c.legs)))
+    : allSorted;
 
   // Scroll selected row into view after selection
   useEffect(() => {
@@ -130,12 +79,12 @@ export function RouteList({
   // Sync detail panel / map to show the first *sorted* route
   useEffect(() => {
     if (selectedIndex !== 0 || isLoading) return;
-    const firstChain = isRoundTripMode ? sortedRoundTrips[0] : sortedRoutes[0] ? routeChainToRoundTrip(sortedRoutes[0]) : null;
+    const firstChain = sorted[0] ?? null;
     if (firstChain) {
       onSelectIndex(0, firstChain);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedIndex, isLoading, sortBy, roundTripChains, routeChains]);
+  }, [selectedIndex, isLoading, sortBy, chains]);
 
   return (
     <div className="flex h-full w-full bg-sidebar flex-col overflow-hidden">
@@ -214,8 +163,7 @@ export function RouteList({
               </button>
             )}
           </div>
-        ) : isRoundTripMode
-          ? sortedRoundTrips.map((chain, i) => (
+        ) : sorted.map((chain, i) => (
               <RouteRow
                 key={`${chain.legs[0]?.order_id ?? i}-${i}`}
                 chain={chain}
@@ -226,20 +174,6 @@ export function RouteList({
                 onToggleWatchlist={() => toggleWatchlist(routeKey(chain.legs))}
               />
             ))
-          : sortedRoutes.map((route, i) => {
-              const chain = routeChainToRoundTrip(route);
-              return (
-                <RouteRow
-                  key={`${route.legs[0]?.order_id ?? i}-${i}`}
-                  chain={chain}
-                  routeIdx={i}
-                  isSelected={i === selectedIndex}
-                  onClick={() => onSelectIndex(i === selectedIndex ? -1 : i, i === selectedIndex ? null : chain)}
-                  isWatchlisted={watchlist.has(routeKey(route.legs))}
-                  onToggleWatchlist={() => toggleWatchlist(routeKey(route.legs))}
-                />
-              );
-            })
         }
       </div>
     </div>

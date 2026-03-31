@@ -8,12 +8,12 @@ import { RouteMap } from "@/features/routes/components/route-map";
 import { SearchFilters } from "@/features/routes/components/search-form";
 import { RouteList } from "./route-list";
 import { RouteDetailPanel } from "./route-detail-panel";
-import { useRouteSearch, useRoundTripSearch, type RouteSearchParams, type RoundTripSearchParams } from "@/core/hooks/use-routes";
+import { useRouteSearch, type RouteSearchParams } from "@/core/hooks/use-routes";
 import { useAuth } from "@/core/services/auth-provider";
 import { useSettings, useUpdateSettings } from "@/core/hooks/use-settings";
 import { isDemoUser } from "@/core/services/auth";
 import { groupRoutesByLocation } from "@/core/utils/group-by-location";
-import type { LocationGroup, RoundTripChain } from "@/core/types";
+import type { LocationGroup, RouteChain } from "@/core/types";
 import type { DrawableRouteLeg } from "@/core/utils/map/draw-route";
 import { DEFAULT_COST_PER_MILE } from "@mwbhtx/haulvisor-core";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/platform/web/components/ui/dialog";
@@ -26,21 +26,18 @@ const EMPTY_LOCATION: LocationGroup = {
   lng: 0,
   orders: [],
   routeChains: [],
-  roundTripChains: [],
 };
 
 export function DesktopRoutesView() {
   const { activeCompanyId } = useAuth();
   const { data: settings, isLoading: settingsLoading } = useSettings();
   const [searchParams, setSearchParams] = useState<RouteSearchParams | null>(null);
-  const [roundTripParams, setRoundTripParams] = useState<RoundTripSearchParams | null>(null);
   const [selectedItemIndex, setSelectedItemIndex] = useState(0);
-  const [selectedChain, setSelectedChain] = useState<RoundTripChain | null>(null);
+  const [selectedChain, setSelectedChain] = useState<RouteChain | null>(null);
   const [filterResetKey, setFilterResetKey] = useState(0);
   const [originFilter, setOriginFilter] = useState<{ lat: number; lng: number; city: string } | null>(null);
   const [destFilter, setDestFilter] = useState<{ lat: number; lng: number; city: string } | null>(null);
 
-  const [tripMode, setTripMode] = useState<"one-way" | "round-trip">("round-trip");
   const [filterPending, setFilterPending] = useState(false);
   const hoverLegRef = useRef<((legIndex: number | null) => void) | null>(null);
 
@@ -60,11 +57,9 @@ export function DesktopRoutesView() {
   const { data, isLoading, isFetched } = useRouteSearch(activeCompanyId ?? "", searchParams);
   const routes = useMemo(() => data?.routes ?? [], [data?.routes]);
 
-  const { data: roundTripResults, isLoading: isRoundTripLoading, isFetched: isRoundTripFetched } = useRoundTripSearch(activeCompanyId ?? "", roundTripParams);
+  const orderUrlTemplate = data?.order_url_template;
 
-  const orderUrlTemplate = roundTripResults?.order_url_template ?? data?.order_url_template;
-
-  const hasActiveSearch = searchParams !== null || roundTripParams !== null;
+  const hasActiveSearch = searchParams !== null;
   const hasHomeBase = !settingsLoading && !!settings?.home_base_lat;
 
   // Start onboarding tour if no search is active and user hasn't completed it
@@ -134,31 +129,27 @@ export function DesktopRoutesView() {
       return true;
     }
     // Search active — ready once results have settled
-    if (roundTripParams !== null && isRoundTripFetched) return true;
     if (searchParams !== null && isFetched) return true;
     return false;
-  }, [settingsLoading, hasActiveSearch, hasHomeBase, roundTripParams, isRoundTripFetched, searchParams, isFetched]);
+  }, [settingsLoading, hasActiveSearch, hasHomeBase, searchParams, isFetched]);
 
   const [selectedRouteLegs, setSelectedRouteLegs] = useState<DrawableRouteLeg[] | null>(null);
 
   // Derive sidebar location directly from query results (no useEffect delay)
   const displayLocation = useMemo<LocationGroup>(() => {
-    if (roundTripParams !== null && roundTripResults) {
-      const homeRoutes = roundTripResults.routes ?? [];
-      if (homeRoutes.length > 0) {
-        const origin = roundTripResults.origin;
+    if (searchParams !== null && routes.length > 0) {
+      const origin = data?.origin;
+      if (origin) {
         return {
           city: origin.city,
           state: origin.state,
           lat: origin.lat,
           lng: origin.lng,
           orders: [],
-          routeChains: [],
-          roundTripChains: homeRoutes,
+          routeChains: routes,
         };
       }
-    }
-    if (searchParams !== null && routes.length > 0) {
+      // Fallback: group by location
       const locations = groupRoutesByLocation(routes);
       if (locations.length > 0) {
         const allRouteChains = locations.flatMap((l) => l.routeChains);
@@ -169,12 +160,11 @@ export function DesktopRoutesView() {
           lng: locations[0].lng,
           orders: [],
           routeChains: allRouteChains,
-          roundTripChains: [],
         };
       }
     }
     return EMPTY_LOCATION;
-  }, [roundTripParams, roundTripResults, searchParams, routes]);
+  }, [searchParams, routes, data?.origin]);
 
   // Derive selected route for the map — only use legs provided by the sidebar
   // (sidebar handles sort order, so index-based lookup would be wrong)
@@ -193,7 +183,7 @@ export function DesktopRoutesView() {
     if (prevResultsRef.current !== displayLocation) {
       prevResultsRef.current = displayLocation;
       setSelectedItemIndex(0);
-      const hasResults = displayLocation.roundTripChains.length > 0 || displayLocation.routeChains.length > 0;
+      const hasResults = displayLocation.routeChains.length > 0;
       if (!hasResults) {
         setSelectedChain(null);
         setSelectedRouteLegs(null);
@@ -212,22 +202,12 @@ export function DesktopRoutesView() {
   const handleSearch = (p: RouteSearchParams) => {
     setFilterPending(false);
     setSearchParams(p);
-    setRoundTripParams(null);
-    setSelectedItemIndex(0);
-    setSelectedRouteLegs(null);
-  };
-
-  const handleSearchRoundTrip = (p: RoundTripSearchParams) => {
-    setFilterPending(false);
-    setRoundTripParams(p);
-    setSearchParams(null);
     setSelectedItemIndex(0);
     setSelectedRouteLegs(null);
   };
 
   const handleSearchCleared = () => {
     setSearchParams(null);
-    setRoundTripParams(null);
     setSelectedItemIndex(0);
     setSelectedChain(null);
     setSelectedRouteLegs(null);
@@ -237,7 +217,6 @@ export function DesktopRoutesView() {
 
   const handleClearSearch = () => {
     handleSearchCleared();
-    setTripMode("round-trip");
     setFilterResetKey((k) => k + 1);
   };
 
@@ -259,7 +238,7 @@ export function DesktopRoutesView() {
     }
   }, [activeCompanyId]);
 
-  const handleRouteSelect = useCallback((index: number, chain: RoundTripChain | null) => {
+  const handleRouteSelect = useCallback((index: number, chain: RouteChain | null) => {
     setSelectedItemIndex(index);
     setSelectedChain(chain);
     if (chain) {
@@ -286,16 +265,13 @@ export function DesktopRoutesView() {
       <div className="bg-sidebar p-3 w-full shrink-0">
         <SearchFilters
           onSearch={handleSearch}
-          onSearchRoundTrip={handleSearchRoundTrip}
           onClearSearch={handleSearchCleared}
-          onTripModeChange={setTripMode}
           onOriginChange={setOriginFilter}
           onDestinationChange={setDestFilter}
           onFilterPending={() => setFilterPending(true)}
           isOnboarding={isTourActive}
           hasHome={hasHomeBase}
           resetKey={filterResetKey}
-          initialTripType="round-trip"
         />
       </div>
 
@@ -305,12 +281,11 @@ export function DesktopRoutesView() {
         {hasActiveSearch && (
           <div className="w-[35%] min-w-[280px] max-w-[450px] shrink-0 min-h-0">
             <RouteList
-              roundTripChains={displayLocation.roundTripChains}
-              routeChains={displayLocation.routeChains}
+              chains={displayLocation.routeChains}
               selectedIndex={selectedItemIndex}
               onSelectIndex={handleRouteSelect}
               onClearFilters={hasActiveSearch ? handleClearSearch : undefined}
-              isLoading={!ready || isLoading || isRoundTripLoading || filterPending || (hasPersistedFilters && !hasActiveSearch && !hasSearchedOnce.current)}
+              isLoading={!ready || isLoading || filterPending || (hasPersistedFilters && !hasActiveSearch && !hasSearchedOnce.current)}
               onWatchlistChange={handleWatchlistChange}
             />
           </div>
@@ -329,22 +304,11 @@ export function DesktopRoutesView() {
             isWatchlisted={watchlistSet.has(selectedRouteKey)}
             onToggleWatchlist={selectedRouteKey ? () => toggleWatchlistRef.current?.(selectedRouteKey) : undefined}
             departureTime={(() => {
-              const p = roundTripParams ?? searchParams;
-              if (p?.depart_by) {
-                const t = (p as any).depart_by_time || "00:00";
-                return new Date(`${p.depart_by}T${t}`);
-              }
               // Fall back to chain's suggested departure (pickup minus deadhead)
               if (selectedChain?.suggested_departure) {
                 return new Date(selectedChain.suggested_departure);
               }
               return undefined;
-            })()}
-            returnByTime={(() => {
-              const p = roundTripParams;
-              if (!p?.home_by) return undefined;
-              const t = (p as any).home_by_time || "23:59";
-              return new Date(`${p.home_by}T${t}`);
             })()}
           />
         )}
@@ -355,7 +319,7 @@ export function DesktopRoutesView() {
             selectedRoute={ready ? selectedRoute : undefined}
             originCoords={originFilter}
             destCoords={destFilter}
-            tripMode={tripMode}
+            tripMode="round-trip"
             onHoverLegRef={hoverLegRef}
           />
         </div>

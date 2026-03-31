@@ -7,10 +7,10 @@ import { calcAvgLoadedRpm } from "@mwbhtx/haulvisor-core";
 import { LEG_COLORS } from "@/core/utils/route-colors";
 import { rateColor, routeProfitColor } from "@/core/utils/rate-color";
 import { formatCurrency, formatDateRange, formatRpm } from "@/core/utils/route-helpers";
-import type { RoundTripChain, RoundTripLeg } from "@/core/types";
+import type { RouteChain, RouteLeg } from "@/core/types";
 
 export interface RouteDetailPanelProps {
-  chain: RoundTripChain | null;
+  chain: RouteChain | null;
   originCity?: string;
   destCity?: string;
   costPerMile: number;
@@ -87,7 +87,7 @@ export function RouteDetailPanel({
 /* ---- Inner content split out to keep RouteDetailPanel clean ---- */
 
 interface RouteDetailContentProps {
-  chain: RoundTripChain;
+  chain: RouteChain;
   originCity?: string;
   destCity?: string;
   costPerMile: number;
@@ -121,8 +121,8 @@ function RouteDetailContent({
   departureTime,
   returnByTime,
 }: RouteDetailContentProps) {
-  const firmLegs = chain.legs.filter((leg) => leg.type === "firm");
-  const profit = chain.firm_profit;
+  const firmLegs = chain.legs;
+  const profit = chain.profit;
   const avgLoadedRpm = calcAvgLoadedRpm(firmLegs);
   const needsTarp = chain.legs.some(
     (l) => l.tarp_height != null && parseInt(l.tarp_height, 10) > 0,
@@ -166,7 +166,7 @@ function RouteDetailContent({
               { label1: "Net/mi", value1: formatRpm(chain.effective_rpm), color1: routeProfitColor(chain.daily_net_profit), label2: "Gross", value2: formatCurrency(chain.total_pay), color2: "" },
               { label1: "Miles", value1: chain.total_miles.toLocaleString(), color1: "", label2: "DH %", value2: `${chain.deadhead_pct.toFixed(0)}%`, color2: "" },
               { label1: "Days", value1: chain.estimated_days.toFixed(1), color1: "", label2: "$/mi loaded", value2: avgLoadedRpm !== null ? `$${avgLoadedRpm.toFixed(2)}` : "—", color2: "" },
-              { label1: "Tarp", value1: needsTarp ? "Yes" : "No", color1: needsTarp ? "text-negative" : "", label2: "Loads", value2: String(chain.legs.filter(l => l.type === "firm").length), color2: "" },
+              { label1: "Tarp", value1: needsTarp ? "Yes" : "No", color1: needsTarp ? "text-negative" : "", label2: "Loads", value2: String(chain.legs.length), color2: "" },
             ].map((row, i) => (
               <div key={i} className={`grid grid-cols-subgrid col-span-4 px-3 py-1.5 ${i % 2 === 0 ? "bg-[#ebeced] dark:bg-[#232323]" : ""}`}>
                 <span className="text-text-secondary text-left">{row.label1}</span>
@@ -233,7 +233,7 @@ function RouteDetailContent({
         )}
 
         {/* Legs */}
-        {chain.legs.map((leg: RoundTripLeg, legIdx: number) => {
+        {chain.legs.map((leg: RouteLeg, legIdx: number) => {
           const color = LEG_COLORS[legIdx % LEG_COLORS.length];
           const showBetweenDh = leg.deadhead_miles > 0 && legIdx > 0;
           return (

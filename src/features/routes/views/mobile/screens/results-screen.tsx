@@ -4,23 +4,21 @@ import { useState, useMemo } from "react";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { Skeleton } from "@/platform/web/components/ui/skeleton";
 import { RouteCard } from "@/features/routes/components/route-card";
-import type { RouteChain, RoundTripChain } from "@/core/types";
-import { type SortKey, SORT_OPTIONS, sortRouteChains, sortRoundTripChains } from "@/features/routes/utils/sort-options";
+import type { RouteChain } from "@/core/types";
+import { type SortKey, SORT_OPTIONS, sortRouteChains } from "@/features/routes/utils/sort-options";
 
 interface ResultsScreenProps {
   searchText: string;
-  chains: (RouteChain | RoundTripChain)[];
-  isRoundTrip: boolean;
+  chains: RouteChain[];
   isLoading: boolean;
   onSearchBarTap: () => void;
   onFiltersTap: () => void;
-  onRouteSelect: (chain: RouteChain | RoundTripChain) => void;
+  onRouteSelect: (chain: RouteChain) => void;
 }
 
 export function ResultsScreen({
   searchText,
   chains,
-  isRoundTrip,
   isLoading,
   onSearchBarTap,
   onFiltersTap,
@@ -28,9 +26,8 @@ export function ResultsScreen({
 }: ResultsScreenProps) {
   const [sortBy, setSortBy] = useState<SortKey>("daily_profit");
   const sortedChains = useMemo(() => {
-    if (isRoundTrip) return sortRoundTripChains(chains as RoundTripChain[], sortBy);
-    return sortRouteChains(chains as RouteChain[], sortBy);
-  }, [chains, sortBy, isRoundTrip]);
+    return sortRouteChains(chains, sortBy);
+  }, [chains, sortBy]);
 
   return (
     <div className="flex flex-col h-full bg-background">
@@ -99,7 +96,6 @@ export function ResultsScreen({
             <RouteCard
               key={i}
               chain={chain}
-              isRoundTrip={isRoundTrip}
               onClick={() => onRouteSelect(chain)}
             />
           ))}

@@ -12,16 +12,15 @@ import {
   getOriginCity, getDestCity, getDailyProfit, getNetProfit, getNetPerMile,
   getDeadheadPct, formatCurrency, formatDateTime, formatRpm,
 } from "@/core/utils/route-helpers";
-import type { RouteChain, RoundTripChain, RoundTripLeg, RouteLeg } from "@/core/types";
+import type { RouteChain, RouteLeg } from "@/core/types";
 
 interface DetailScreenProps {
-  chain: RouteChain | RoundTripChain;
-  isRoundTrip: boolean;
+  chain: RouteChain;
   originCity: string;
   onBack: () => void;
 }
 
-export function DetailScreen({ chain, isRoundTrip, originCity, onBack }: DetailScreenProps) {
+export function DetailScreen({ chain, originCity, onBack }: DetailScreenProps) {
   const origin = getOriginCity(chain);
   const dest = getDestCity(chain);
   const dailyProfit = getDailyProfit(chain) ?? 0;
@@ -58,9 +57,6 @@ export function DetailScreen({ chain, isRoundTrip, originCity, onBack }: DetailS
               <span className="truncate">{dest}</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground mt-0.5">
-              <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs font-medium uppercase tracking-wider">
-                {isRoundTrip ? "Round trip" : "One way"}
-              </span>
               <span>{legCount} {legCount === 1 ? "leg" : "legs"}</span>
             </div>
           </div>
@@ -120,7 +116,7 @@ export function DetailScreen({ chain, isRoundTrip, originCity, onBack }: DetailS
 
             {/* Collapsible trip itinerary */}
             <SegmentDetailsCollapsible
-              chain={chain as RoundTripChain}
+              chain={chain}
               originCity={originCity}
               onBack={onBack}
             />
@@ -133,7 +129,6 @@ export function DetailScreen({ chain, isRoundTrip, originCity, onBack }: DetailS
             <RouteMap
               selectedRoute={{ legs: chain.legs }}
               originCoords={originCoords}
-              tripMode={isRoundTrip ? "round-trip" : "one-way"}
               fullScreen
             />
           </div>
@@ -162,7 +157,7 @@ function MetricCard({
   );
 }
 
-function SegmentCard({ leg, index }: { leg: RouteLeg | RoundTripLeg; index: number }) {
+function SegmentCard({ leg, index }: { leg: RouteLeg; index: number }) {
   return (
     <div className="rounded-xl border border-white/10 bg-card p-4">
       <div className="flex items-center gap-2.5 mb-3">
@@ -239,7 +234,7 @@ function SegmentDetailsCollapsible({
   originCity,
   onBack,
 }: {
-  chain: RoundTripChain;
+  chain: RouteChain;
   originCity: string;
   onBack: () => void;
 }) {

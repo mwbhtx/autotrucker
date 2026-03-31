@@ -9,10 +9,6 @@ interface HomeScreenProps {
   onRecentTap: (search: RecentSearch) => void;
 }
 
-function formatTripMode(mode: "one_way" | "round_trip"): string {
-  return mode === "round_trip" ? "Round trip" : "One way";
-}
-
 /** Strip country from place label — "Houston, Texas, United States" → "Houston, Texas" */
 function shortLabel(label: string): string {
   return label.split(",").slice(0, 2).map(s => s.trim()).join(", ");
@@ -68,9 +64,6 @@ export function HomeScreen({ onSearchBarTap, onFiltersTap, onRecentTap }: HomeSc
                 className="flex w-full rounded-xl border border-white/10 bg-card p-4 text-left transition-colors active:bg-muted/50"
               >
                 <div className="flex-1 min-w-0 space-y-2">
-                  <span className="text-base font-bold text-primary uppercase tracking-wider">
-                    {formatTripMode(search.tripMode)}
-                  </span>
                   <div className="text-lg space-y-0.5">
                     <div>
                       <span className="text-muted-foreground">Origin: </span>

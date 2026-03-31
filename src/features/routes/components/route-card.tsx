@@ -4,16 +4,15 @@ import { MapPin } from "lucide-react";
 import { cn } from "@/core/utils";
 import { routeProfitColor } from "@/core/utils/rate-color";
 import { getOriginCity, getDestCity, getDailyProfit, getNetProfit, getNetPerMile, getEstimatedDays, getRouteStates, formatCurrency, formatRpm } from "@/core/utils/route-helpers";
-import type { RouteChain, RoundTripChain } from "@/core/types";
+import type { RouteChain } from "@/core/types";
 
 interface RouteCardProps {
-  chain: RouteChain | RoundTripChain;
-  isRoundTrip: boolean;
+  chain: RouteChain;
   onClick: () => void;
   className?: string;
 }
 
-export function RouteCard({ chain, isRoundTrip, onClick, className }: RouteCardProps) {
+export function RouteCard({ chain, onClick, className }: RouteCardProps) {
   const routeStates = getRouteStates(chain);
   const dailyProfit = getDailyProfit(chain);
   const netProfit = getNetProfit(chain);
@@ -37,7 +36,7 @@ export function RouteCard({ chain, isRoundTrip, onClick, className }: RouteCardP
           {routeStates}
         </span>
         <span className="ml-auto shrink-0 rounded-full bg-white px-2.5 py-0.5 text-sm text-black font-[800]">
-          {isRoundTrip ? "RT" : "OW"}
+          {chain.legs.length}L
         </span>
       </div>
 

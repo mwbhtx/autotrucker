@@ -1,7 +1,7 @@
 "use client";
 
 import { TruckIcon, ClockIcon, Package, PackageOpen, Fuel, Coffee, Bed } from "lucide-react";
-import type { RoundTripChain, TripPhase } from "@/core/types";
+import type { RouteChain, TripPhase } from "@/core/types";
 import { TRIP_DEFAULTS } from "@mwbhtx/haulvisor-core";
 
 // Phase colors — hardcoded for now, migrate to theme vars later
@@ -102,7 +102,7 @@ function groupByDay(timeline: TripPhase[], timestamps: Date[]): DayGroup[] {
 }
 
 interface RouteInspectorProps {
-  chain: RoundTripChain;
+  chain: RouteChain;
   originCity: string;
   returnCity?: string;
   onClose: () => void;

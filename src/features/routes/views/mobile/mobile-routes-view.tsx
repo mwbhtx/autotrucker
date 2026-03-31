@@ -4,11 +4,11 @@ import { useState, useMemo, useCallback } from "react";
 import { AnimatePresence } from "framer-motion";
 import { useAuth } from "@/core/services/auth-provider";
 import { useSettings } from "@/core/hooks/use-settings";
-import { useRouteSearch, useRoundTripSearch, type RouteSearchParams, type RoundTripSearchParams } from "@/core/hooks/use-routes";
+import { useRouteSearch, type RouteSearchParams } from "@/core/hooks/use-routes";
 import { useMobileRouteNav } from "@/features/routes/hooks/use-mobile-route-nav";
 import { useSaveRecentSearch, type RecentSearch } from "@/features/routes/hooks/use-recent-searches";
 import { DEFAULT_COST_PER_MILE, DEFAULT_LEGS_ROUND_TRIP, DEFAULT_MAX_DEADHEAD_PCT, DEFAULT_MAX_IDLE_HOURS } from "@mwbhtx/haulvisor-core";
-import type { RouteChain, RoundTripChain } from "@/core/types";
+import type { RouteChain } from "@/core/types";
 import type { PlaceResult } from "@/features/routes/components/search-form";
 import type { AdvancedFilters } from "./screens/filters-sheet";
 import { HomeScreen } from "./screens/home-screen";
@@ -24,7 +24,6 @@ export function MobileRoutesView() {
   const saveRecent = useSaveRecentSearch();
 
   // Search state
-  const [tripMode, setTripMode] = useState<"one-way" | "round-trip">("round-trip");
   const [origin, setOrigin] = useState<PlaceResult | null>(null);
   const [destination, setDestination] = useState<PlaceResult | null>(null);
   const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>({
@@ -37,7 +36,6 @@ export function MobileRoutesView() {
 
   // Query params
   const [searchParams, setSearchParams] = useState<RouteSearchParams | null>(null);
-  const [roundTripParams, setRoundTripParams] = useState<RoundTripSearchParams | null>(null);
 
   const costPerMile = (settings?.cost_per_mile as number | undefined) ?? DEFAULT_COST_PER_MILE;
 
@@ -59,23 +57,13 @@ export function MobileRoutesView() {
     avg_mpg: settings.avg_mpg ?? undefined,
   } : { cost_per_mile: costPerMile };
 
-  // Fire queries
-  const oneWayQuery = useRouteSearch(activeCompanyId ?? "", searchParams);
-  const roundTripQuery = useRoundTripSearch(activeCompanyId ?? "", roundTripParams);
-
-  const isRoundTrip = tripMode === "round-trip";
-  const activeQuery = isRoundTrip ? roundTripQuery : oneWayQuery;
+  // Fire query
+  const routeQuery = useRouteSearch(activeCompanyId ?? "", searchParams);
 
   // Build chain list from results (sorting handled by ResultsScreen)
   const chains = useMemo(() => {
-    if (isRoundTrip && roundTripQuery.data) {
-      return roundTripQuery.data.routes ?? [];
-    }
-    if (!isRoundTrip && oneWayQuery.data) {
-      return oneWayQuery.data.routes ?? [];
-    }
-    return [];
-  }, [isRoundTrip, roundTripQuery.data, oneWayQuery.data]);
+    return routeQuery.data?.routes ?? [];
+  }, [routeQuery.data]);
 
   // Build search text for results screen (city, state only — drop country)
   const searchText = useMemo(() => {
@@ -85,47 +73,37 @@ export function MobileRoutesView() {
     return short(origin.name);
   }, [origin, destination]);
 
+  // Compute tomorrow as default departure date
+  const tomorrow = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }, []);
+
   // Build query params from current state
   const buildAndFireSearch = useCallback(
     (
-      mode: "one-way" | "round-trip",
       orig: PlaceResult,
       dest: PlaceResult | null,
       filters: AdvancedFilters,
     ) => {
       if (!activeCompanyId) return;
 
-      if (mode === "round-trip") {
-        const params: RoundTripSearchParams = {
-          origin_lat: orig.lat,
-          origin_lng: orig.lng,
-          origin_city: orig.name.split(",")[0],
-          legs: filters.legs,
-          max_deadhead_pct: filters.maxDeadheadPct,
-          ...(filters.maxIdleHours > 0 ? { max_layover_hours: filters.maxIdleHours } : {}),
-          home_by: filters.homeBy || undefined,
-          ...driverProfile,
-          // Override trailer_types from filters if user specified one
-          ...(filters.trailerType ? { trailer_types: filters.trailerType } : {}),
-        };
-        setRoundTripParams(params);
-        setSearchParams(null);
-      } else {
-        const params: RouteSearchParams = {
-          origin_lat: orig.lat,
-          origin_lng: orig.lng,
-          dest_lat: dest?.lat,
-          dest_lng: dest?.lng,
-          legs: filters.legs,
-          cost_per_mile: costPerMile,
-          trailer_types: filters.trailerType || driverProfile.trailer_types,
-          ...(filters.maxIdleHours > 0 ? { max_layover_hours: filters.maxIdleHours } : {}),
-        };
-        setSearchParams(params);
-        setRoundTripParams(null);
-      }
+      const params: RouteSearchParams = {
+        origin_lat: orig.lat,
+        origin_lng: orig.lng,
+        departure_date: tomorrow,
+        ...(dest ? { destination_lat: dest.lat, destination_lng: dest.lng } : {}),
+        legs: filters.legs,
+        max_deadhead_pct: filters.maxDeadheadPct,
+        ...(filters.maxIdleHours > 0 ? { max_layover_hours: filters.maxIdleHours } : {}),
+        ...driverProfile,
+        // Override trailer_types from filters if user specified one
+        ...(filters.trailerType ? { trailer_types: filters.trailerType } : {}),
+      };
+      setSearchParams(params);
     },
-    [activeCompanyId, costPerMile, driverProfile],
+    [activeCompanyId, tomorrow, driverProfile],
   );
 
   // Handlers
@@ -139,14 +117,13 @@ export function MobileRoutesView() {
   }, [push]);
 
   const handleSearch = useCallback(
-    (params: { tripMode: "one-way" | "round-trip"; origin: PlaceResult; destination: PlaceResult | null }) => {
-      setTripMode(params.tripMode);
+    (params: { origin: PlaceResult; destination: PlaceResult | null }) => {
       setOrigin(params.origin);
       setDestination(params.destination);
 
       // Save recent search
       saveRecent.mutate({
-        tripMode: params.tripMode === "round-trip" ? "round_trip" : "one_way",
+        tripMode: "round_trip",
         origin: { label: params.origin.name, coordinates: [params.origin.lat, params.origin.lng] },
         destination: {
           label: params.destination?.name ?? params.origin.name,
@@ -163,7 +140,7 @@ export function MobileRoutesView() {
         },
       });
 
-      buildAndFireSearch(params.tripMode, params.origin, params.destination, advancedFilters);
+      buildAndFireSearch(params.origin, params.destination, advancedFilters);
       goToResults();
     },
     [advancedFilters, buildAndFireSearch, goToResults, saveRecent],
@@ -171,7 +148,6 @@ export function MobileRoutesView() {
 
   const handleRecentTap = useCallback(
     (search: RecentSearch) => {
-      const mode: "one-way" | "round-trip" = search.tripMode === "round_trip" ? "round-trip" : "one-way";
       const orig: PlaceResult = { name: search.origin.label, lat: search.origin.coordinates[0], lng: search.origin.coordinates[1] };
       const dest: PlaceResult = { name: search.destination.label, lat: search.destination.coordinates[0], lng: search.destination.coordinates[1] };
       const filters: AdvancedFilters = {
@@ -182,12 +158,11 @@ export function MobileRoutesView() {
         trailerType: search.filters.trailerType ?? "",
       };
 
-      setTripMode(mode);
       setOrigin(orig);
       setDestination(dest);
       setAdvancedFilters(filters);
 
-      buildAndFireSearch(mode, orig, dest, filters);
+      buildAndFireSearch(orig, dest, filters);
       goToResults();
     },
     [buildAndFireSearch, goToResults],
@@ -198,16 +173,16 @@ export function MobileRoutesView() {
       setAdvancedFilters(filters);
       // Re-run search if we have an active origin
       if (origin) {
-        buildAndFireSearch(tripMode, origin, destination, filters);
+        buildAndFireSearch(origin, destination, filters);
       }
       pop();
     },
-    [origin, destination, tripMode, buildAndFireSearch, pop],
+    [origin, destination, buildAndFireSearch, pop],
   );
 
-  const [selectedChain, setSelectedChain] = useState<RouteChain | RoundTripChain | null>(null);
+  const [selectedChain, setSelectedChain] = useState<RouteChain | null>(null);
   const handleRouteSelect = useCallback(
-    (chain: RouteChain | RoundTripChain) => {
+    (chain: RouteChain) => {
       setSelectedChain(chain);
       push({ type: "detail", routeIndex: 0 });
     },
@@ -249,8 +224,7 @@ export function MobileRoutesView() {
         <ResultsScreen
           searchText={searchText}
           chains={chains}
-          isRoundTrip={isRoundTrip}
-          isLoading={activeQuery.isLoading}
+          isLoading={routeQuery.isLoading}
           onSearchBarTap={handleSearchBarTap}
           onFiltersTap={handleFiltersTap}
           onRouteSelect={handleRouteSelect}
@@ -264,7 +238,6 @@ export function MobileRoutesView() {
             key="search"
             onBack={pop}
             onSearch={handleSearch}
-            initialTripMode={tripMode}
             initialOrigin={origin}
             initialDestination={destination}
           />
@@ -283,7 +256,6 @@ export function MobileRoutesView() {
           <DetailScreen
             key="detail"
             chain={detailChain}
-            isRoundTrip={isRoundTrip}
             originCity={origin?.name ?? ""}
             onBack={pop}
           />

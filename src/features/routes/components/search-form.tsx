@@ -16,7 +16,7 @@ import { Calendar } from "@/platform/web/components/ui/calendar";
 import { useSettings, useUpdateSettings } from "@/core/hooks/use-settings";
 import { TRAILER_CATEGORIES, expandTrailerCodes, codesToLabels, DEFAULT_LEGS_ONE_WAY, DEFAULT_LEGS_ROUND_TRIP, DEFAULT_MAX_DEADHEAD_PCT, DEFAULT_MAX_IDLE_HOURS, MIN_DEADHEAD_PCT, MAX_DEADHEAD_PCT, DEFAULT_COST_PER_MILE, IDLE_OPTIONS, ALL_WORK_DAYS, TIME_PRESETS } from "@mwbhtx/haulvisor-core";
 
-import type { RouteSearchParams, RoundTripSearchParams } from "@/core/hooks/use-routes";
+import type { RouteSearchParams } from "@/core/hooks/use-routes";
 
 export type SearchParams = RouteSearchParams;
 
@@ -526,10 +526,8 @@ function LocationPill({
 /* ---- Floating Search Filters ---- */
 
 interface SearchFiltersProps {
-  onSearchRoundTrip: (params: RoundTripSearchParams) => void;
   onSearch: (params: RouteSearchParams) => void;
   onClearSearch?: () => void;
-  onTripModeChange?: (mode: "one-way" | "round-trip") => void;
   onOriginChange?: (origin: { lat: number; lng: number; city: string } | null) => void;
   onDestinationChange?: (dest: { lat: number; lng: number; city: string } | null) => void;
   /** Fires immediately when a filter changes, before the debounced search fires */
@@ -538,7 +536,6 @@ interface SearchFiltersProps {
   isOnboarding?: boolean;
   hasHome?: boolean;
   resetKey?: number;
-  initialTripType?: "one-way" | "round-trip";
   mobile?: boolean;
   /** Render only the essential pills stacked vertically for map overlay */
   mapOverlay?: boolean;
@@ -549,17 +546,14 @@ interface SearchFiltersProps {
 }
 
 export function SearchFilters({
-  onSearchRoundTrip,
   onSearch,
   onClearSearch,
-  onTripModeChange,
   onOriginChange,
   onDestinationChange,
   onFilterPending,
   isOnboarding,
   hasHome,
   resetKey,
-  initialTripType,
   mobile,
   mapOverlay,
   compactBar,
@@ -589,7 +583,7 @@ export function SearchFilters({
   const restored = useRef<{
     orders?: string; origin?: PlaceResult | null;
     destination?: PlaceResult | null; homeBy?: string; homeByTime?: string;
-    departBy?: string; departByTime?: string;
+    departBy?: string; departByTime?: string; departureDate?: string;
     maxDeadheadPct?: number; maxIdle?: number; workDays?: string[]; legs?: number;
   } | null>(null);
   if (restored.current === null && typeof window !== "undefined") {
@@ -600,20 +594,21 @@ export function SearchFilters({
   }
   const r = restored.current ?? {};
 
-  const initialOrders = r.orders as "one-way" | "round-trip" ?? initialTripType ?? "round-trip";
-  const [orders, setOrders] = useState(initialOrders);
+  // Compute tomorrow as default departure date
+  const tomorrow = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  })();
 
   const [origin, setOrigin] = useState<PlaceResult | null>(r.origin ?? null);
   const [originPopoverOpen, setOriginPopoverOpen] = useState(false);
   const [destination, setDestination] = useState<PlaceResult | null>(r.destination ?? null);
-  const [homeBy, setHomeBy] = useState<string>(r.homeBy ?? "");
-  const [homeByTime, setHomeByTime] = useState<string>(r.homeByTime ?? "");
-  const [departBy, setDepartBy] = useState<string>(r.departBy ?? "");
-  const [departByTime, setDepartByTime] = useState<string>(r.departByTime ?? "");
+  const [departureDate, setDepartureDate] = useState<string>(r.departureDate ?? tomorrow);
   const [maxDeadheadPct, setMaxDeadheadPct] = useState(r.maxDeadheadPct ?? DEFAULT_MAX_DEADHEAD_PCT);
   const [maxIdle, setMaxIdle] = useState<number>(r.maxIdle ?? settings?.max_idle_hours ?? DEFAULT_MAX_IDLE_HOURS);
   const [workDays, setWorkDays] = useState<string[]>(r.workDays ?? settings?.work_days ?? []);
-  const [legs, setLegs] = useState<number>(r.legs ?? (initialOrders === "one-way" ? DEFAULT_LEGS_ONE_WAY : DEFAULT_LEGS_ROUND_TRIP));
+  const [legs, setLegs] = useState<number>(r.legs ?? DEFAULT_LEGS_ROUND_TRIP);
   const [defaultsLoaded, setDefaultsLoaded] = useState(!!r.origin);
 
   const hasHomeLocation =
@@ -636,24 +631,18 @@ export function SearchFilters({
     if (compactBar) return;
     try {
       sessionStorage.setItem("hv-route-filters", JSON.stringify({
-        orders, origin, destination, homeBy, homeByTime, departBy, departByTime, maxDeadheadPct, maxIdle, workDays, legs,
+        origin, destination, departureDate, maxDeadheadPct, maxIdle, workDays, legs,
       }));
     } catch {}
-  }, [orders, origin, destination, homeBy, homeByTime, departBy, departByTime, maxDeadheadPct, maxIdle, compactBar]);
+  }, [origin, destination, departureDate, maxDeadheadPct, maxIdle, compactBar, legs]);
 
   // Reset filters when clear is triggered
   useEffect(() => {
     if (resetKey === undefined || resetKey === 0) return;
-    const resetMode = initialTripType ?? "round-trip";
-    setOrders(resetMode);
-    setLegs(resetMode === "one-way" ? DEFAULT_LEGS_ONE_WAY : DEFAULT_LEGS_ROUND_TRIP);
+    setLegs(DEFAULT_LEGS_ROUND_TRIP);
     setOrigin(null);
     setDestination(null);
-    setHomeBy("");
-    setHomeByTime("");
-    setDepartBy("");
-    setDepartByTime("");
-  }, [resetKey, initialTripType]);
+  }, [resetKey]);
 
   // Pre-fill from settings (or restore from sessionStorage)
   // compactBar instances only mirror state — they never auto-fire searches on mount.
@@ -669,33 +658,19 @@ export function SearchFilters({
           setTimeout(() => {
             if (origin) {
               onOriginChange?.(origin ? { lat: origin.lat, lng: origin.lng, city: origin.name.split(",")[0] } : null);
-              onTripModeChange?.(orders);
-              if (orders === "round-trip") {
-                onSearchRoundTrip({
-                  origin_lat: origin.lat,
-                  origin_lng: origin.lng,
-                  origin_city: origin.name.split(",")[0],
-                  legs,
-                  ...(homeBy ? { home_by: homeBy } : {}),
-                  max_deadhead_pct: maxDeadheadPct,
-                  ...(maxIdle > 0 ? { max_layover_hours: maxIdle } : {}),
-                  ...driverProfile,
-                  ...buildTimeParams(),
-                });
-              } else {
-                if (destination) {
-                  onDestinationChange?.(destination ? { lat: destination.lat, lng: destination.lng, city: destination.name.split(",")[0] } : null);
-                }
-                onSearch({
-                  origin_lat: origin.lat,
-                  origin_lng: origin.lng,
-                  ...(destination ? { dest_lat: destination.lat, dest_lng: destination.lng } : {}),
-                  legs,
-                  trailer_types: driverProfile.trailer_types,
-                  ...(maxIdle > 0 ? { max_layover_hours: maxIdle } : {}),
-                  ...buildTimeParams(),
-                });
+              if (destination) {
+                onDestinationChange?.(destination ? { lat: destination.lat, lng: destination.lng, city: destination.name.split(",")[0] } : null);
               }
+              onSearch({
+                origin_lat: origin.lat,
+                origin_lng: origin.lng,
+                departure_date: departureDate,
+                ...(destination ? { destination_lat: destination.lat, destination_lng: destination.lng } : {}),
+                legs,
+                max_deadhead_pct: maxDeadheadPct,
+                ...(maxIdle > 0 ? { max_layover_hours: maxIdle } : {}),
+                ...driverProfile,
+              });
             }
           }, 0);
         }
@@ -705,90 +680,27 @@ export function SearchFilters({
     // First load with no restored state — prefill from home base
     if (homePlace) {
       setOrigin(homePlace);
-      setDestination(homePlace);
-      setOrders("round-trip");
     }
     setDefaultsLoaded(true);
     searchEnabled.current = true;
     if (!compactBar) {
       setTimeout(() => {
         if (homePlace) {
-          onSearchRoundTrip({
+          onSearch({
             origin_lat: homePlace.lat,
             origin_lng: homePlace.lng,
-            origin_city: homePlace.name.split(",")[0],
+            departure_date: departureDate,
             legs,
             max_deadhead_pct: maxDeadheadPct,
             ...driverProfile,
-            ...buildTimeParams(),
           });
         }
       }, 0);
     }
   }, [settings, defaultsLoaded]);
 
-  // Reset locations when trip type changes
-  const prevTripType = useRef(orders);
-  useEffect(() => {
-    if (prevTripType.current === orders) return;
-    prevTripType.current = orders;
-    onTripModeChange?.(orders);
-
-    if (orders === "round-trip") {
-      // Round trip: keep origin, set destination = origin (come back home)
-      const place = origin ?? homePlace;
-      const rtLegs = Math.max(1, Math.min(3, legs));
-      setLegs(rtLegs);
-      if (place) {
-        setOrigin(place);
-        setDestination(place);
-        if (searchEnabled.current) {
-          onSearchRoundTrip({
-            origin_lat: place.lat,
-            origin_lng: place.lng,
-            origin_city: place.name.split(",")[0],
-            legs: rtLegs,
-            ...(homeBy ? { home_by: homeBy } : {}),
-            max_deadhead_pct: maxDeadheadPct,
-            ...driverProfile,
-            ...buildTimeParams(),
-          });
-        }
-      } else {
-        setOrigin(null);
-        setDestination(null);
-        onClearSearch?.();
-      }
-    } else {
-      // One way: keep origin, clear destination
-      setDestination(null);
-      onDestinationChange?.(null);
-      if (origin && searchEnabled.current) {
-        onSearch({
-          origin_lat: origin.lat,
-          origin_lng: origin.lng,
-          legs,
-          trailer_types: driverProfile.trailer_types,
-          ...(maxIdle > 0 ? { max_layover_hours: maxIdle } : {}),
-          ...buildTimeParams(),
-        });
-      } else {
-        onClearSearch?.();
-      }
-    }
-  }, [orders]);
-
   // Stable key for driver profile so it can be a useEffect dependency
   const profileKey = JSON.stringify(driverProfile);
-
-  // Build time filter params (local time sent as-is; backend converts using origin coords)
-  const buildTimeParams = useCallback(() => {
-    const params: Record<string, string> = {};
-    if (departBy) params.depart_by = departBy;
-    if (departByTime) params.depart_by_time = departByTime;
-    if (homeByTime) params.home_by_time = homeByTime;
-    return params;
-  }, [departBy, departByTime, homeByTime]);
 
   // Fire search (shared helper)
   const fireSearch = useCallback(() => {
@@ -796,37 +708,23 @@ export function SearchFilters({
       onClearSearch?.();
       return;
     }
-    if (orders === "round-trip") {
-      onSearchRoundTrip({
-        origin_lat: origin.lat,
-        origin_lng: origin.lng,
-        origin_city: origin.name.split(",")[0],
-        legs,
-        ...(homeBy ? { home_by: homeBy } : {}),
-        max_deadhead_pct: maxDeadheadPct,
-        ...(maxIdle > 0 ? { max_layover_hours: maxIdle } : {}),
-        ...driverProfile,
-        ...buildTimeParams(),
-      });
-    } else {
-      onSearch({
-        origin_lat: origin.lat,
-        origin_lng: origin.lng,
-        ...(destination ? { dest_lat: destination.lat, dest_lng: destination.lng } : {}),
-        legs,
-        trailer_types: driverProfile.trailer_types,
-        ...(maxIdle > 0 ? { max_layover_hours: maxIdle } : {}),
-        ...buildTimeParams(),
-      });
-    }
-  }, [origin, destination, orders, homeMode, homeBy, maxDeadheadPct, maxIdle, legs, profileKey, buildTimeParams, onClearSearch]);
+    onSearch({
+      origin_lat: origin.lat,
+      origin_lng: origin.lng,
+      departure_date: departureDate,
+      ...(destination ? { destination_lat: destination.lat, destination_lng: destination.lng } : {}),
+      legs,
+      max_deadhead_pct: maxDeadheadPct,
+      ...(maxIdle > 0 ? { max_layover_hours: maxIdle } : {}),
+      ...driverProfile,
+    });
+  }, [origin, destination, departureDate, maxDeadheadPct, maxIdle, legs, profileKey, onClearSearch]);
 
   // Auto-search on filter changes (only after initial load settles)
-  // Note: orders is NOT a trigger here — trip type changes are handled by prevTripType effect
   useEffect(() => {
     if (!searchEnabled.current) return;
     fireSearch();
-  }, [homeBy, homeByTime, departBy, departByTime, maxDeadheadPct, legs]);
+  }, [departureDate, maxDeadheadPct, legs]);
 
   // Auto-search on driver profile or max idle changes (debounced)
   // Signal loading immediately so the UI feels responsive, then fire the actual query after 400ms
@@ -856,7 +754,7 @@ export function SearchFilters({
   useEffect(() => {
     if (!searchEnabled.current) return;
     onDestinationChange?.(destination ? { lat: destination.lat, lng: destination.lng, city: destination.name.split(",")[0] } : null);
-    if (!origin || orders === "round-trip") return;
+    if (!origin) return;
     fireSearch();
   }, [destination]);
 
@@ -885,39 +783,30 @@ export function SearchFilters({
 
   const showSaveAsHome = !homeMode && destination != null;
 
-  const isRoundTrip = orders === "round-trip";
-
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   // Shared filter elements
-  const tripTypePill = (
-    <div id="onborda-trip-mode">
-    <FilterPill label={compactBar || mobile ? "" : "Trip"} value={isRoundTrip ? (compactBar || mobile ? "RT" : "Round Trip") : (compactBar || mobile ? "OW" : "One Way")}>
-      {(close) => (
-        <div className="space-y-3 p-1">
-          <p className="text-sm font-medium">Trip Type</p>
-          <div className="flex gap-2">
-            {([
-              { value: "one-way", label: "One Way" },
-              { value: "round-trip", label: "Round Trip" },
-            ] as const).map((t) => (
-              <button
-                key={t.value}
-                type="button"
-                onClick={() => { setOrders(t.value); close(); }}
-                className={`flex h-9 items-center rounded-md px-4 text-sm font-medium transition-colors ${
-                  orders === t.value
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-accent"
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
+  const departureDatePill = (
+    <div id="onborda-departure-date">
+      <FilterPill label={compactBar || mobile ? "Dep" : "Departure"} value={departureDate ? formatDateShort(departureDate) : "Tomorrow"}>
+        {(close) => (
+          <div className="p-0">
+            <Calendar
+              mode="single"
+              selected={departureDate ? new Date(departureDate + "T00:00:00") : undefined}
+              disabled={{ before: new Date() }}
+              onSelect={(day: Date | undefined) => {
+                if (day) {
+                  const iso = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
+                  setDepartureDate(iso);
+                  close();
+                }
+              }}
+              defaultMonth={departureDate ? new Date(departureDate + "T00:00:00") : undefined}
+            />
           </div>
-        </div>
-      )}
-    </FilterPill>
+        )}
+      </FilterPill>
     </div>
   );
 
@@ -937,18 +826,18 @@ export function SearchFilters({
     </div>
   );
 
-  const destPill = !isRoundTrip ? (
+  const destPill = (
     <div id="onborda-destination">
       <LocationPill
         label={compactBar || mobile ? "D" : "Destination"}
-        title="Destination"
+        title="Destination (optional)"
         value={destination}
         onSelect={setDestination}
         onUseHome={hasHomeLocation ? () => setDestination(homePlace) : undefined}
         homeCityLabel={hasHomeLocation ? settings!.home_base_city! : undefined}
       />
     </div>
-  ) : null;
+  );
 
   const legsPill = (
     <div id="onborda-legs" className="flex h-9 items-center rounded-full border bg-card/95 backdrop-blur shadow-sm overflow-hidden mobile-filter-pill whitespace-nowrap">
@@ -976,11 +865,11 @@ export function SearchFilters({
   if (compactBar) {
     return (
       <div className="flex flex-col gap-1.5">
-        {/* Row 1: trip mode, origin, destination */}
+        {/* Row 1: origin, destination, departure date */}
         <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none" style={{ scrollbarWidth: "none" }}>
-          {tripTypePill}
           {originPill}
           {destPill}
+          {departureDatePill}
         </div>
         {/* Row 2: legs + action icons */}
         <div className="flex items-center gap-1.5">
@@ -995,9 +884,9 @@ export function SearchFilters({
   if (mapOverlay) {
     return (
       <div className="flex flex-col gap-1.5">
-        {tripTypePill}
         {originPill}
         {destPill}
+        {departureDatePill}
         {legsPill}
       </div>
     );
@@ -1006,9 +895,6 @@ export function SearchFilters({
   /* ---- Mobile layout ---- */
   if (mobile) {
     const activeFilterCount = [
-      homeBy,
-      homeByTime,
-      departBy,
       maxDeadheadPct !== DEFAULT_MAX_DEADHEAD_PCT,
       maxIdle !== DEFAULT_MAX_IDLE_HOURS,
     ].filter(Boolean).length;
@@ -1017,9 +903,9 @@ export function SearchFilters({
       <div className="flex flex-col gap-1.5 mobile-filters">
         {/* Single compact row: essential pills + filter toggle */}
         <div className="flex items-center gap-1.5 flex-wrap">
-          {tripTypePill}
           {originPill}
           {destPill}
+          {departureDatePill}
           {legsPill}
           <button
             type="button"
@@ -1037,8 +923,6 @@ export function SearchFilters({
         {/* Expandable filter overlay */}
         {mobileFiltersOpen && (
           <div className="flex flex-wrap items-center gap-1.5 p-2 rounded-lg bg-muted/50 border border-border/50">
-            {isRoundTrip && <LeaveByPill dateValue={departBy} timeValue={departByTime} onDateChange={setDepartBy} onTimeChange={setDepartByTime} />}
-            {isRoundTrip && <ReturnByPill dateValue={homeBy} timeValue={homeByTime} onDateChange={setHomeBy} onTimeChange={setHomeByTime} />}
             <MaxIdlePill value={maxIdle} onChange={setMaxIdle} />
             <DeadheadPctPill value={maxDeadheadPct} onChange={setMaxDeadheadPct} />
             <AllFiltersPopover workDays={workDays} onWorkDaysChange={setWorkDays} />
@@ -1068,7 +952,6 @@ export function SearchFilters({
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {tripTypePill}
       <div className="relative">
         {originPill}
         {showNudge && (
@@ -1086,9 +969,8 @@ export function SearchFilters({
         )}
       </div>
       {destPill}
+      {departureDatePill}
       {legsPill}
-      {isRoundTrip && <div id="onborda-leave-by"><LeaveByPill dateValue={departBy} timeValue={departByTime} onDateChange={setDepartBy} onTimeChange={setDepartByTime} /></div>}
-      {isRoundTrip && <div id="onborda-home-by"><ReturnByPill dateValue={homeBy} timeValue={homeByTime} onDateChange={setHomeBy} onTimeChange={setHomeByTime} /></div>}
       <div id="onborda-idle"><MaxIdlePill value={maxIdle} onChange={setMaxIdle} /></div>
       <div id="onborda-deadhead"><DeadheadPctPill value={maxDeadheadPct} onChange={setMaxDeadheadPct} /></div>
       <div id="onborda-all-filters"><AllFiltersPopover workDays={workDays} onWorkDaysChange={setWorkDays} /></div>

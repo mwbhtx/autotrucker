@@ -7,14 +7,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/platform/web
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/platform/web/components/ui/tooltip";
 import { useAuth } from "@/core/services/auth-provider";
 import { fetchApi } from "@/core/services/api";
-import type { RouteChain, RoundTripChain, RoundTripLeg, LocationGroup } from "@/core/types";
+import type { RouteChain, RouteLeg, LocationGroup } from "@/core/types";
 import { RouteInspector } from "@/features/routes/components/route-inspector";
 import { DEFAULT_COST_PER_MILE, calcAvgLoadedRpm, ROUTE_SORT_OPTIONS, DEFAULT_SORT_KEY } from "@mwbhtx/haulvisor-core";
 import type { RouteSortKey } from "@mwbhtx/haulvisor-core";
 import { LEG_COLORS } from "@/core/utils/route-colors";
 import { rateColor, netRateColor, routeProfitColor } from "@/core/utils/rate-color";
 import { formatCurrency, formatDateTime, formatDateRange, formatDate, formatRpm } from "@/core/utils/route-helpers";
-import { type SortKey, SORT_OPTIONS, sortRouteChains, sortRoundTripChains } from "@/features/routes/utils/sort-options";
+import { sortRouteChains } from "@/features/routes/utils/sort-options";
 
 function formatPickupDates(early?: string, late?: string): string {
   if (!early) return "";
@@ -93,33 +93,25 @@ export function LocationSidebar({ location, selectedIndex, onSelectIndex, onClos
       return next;
     });
   }, []);
-  const isRoundTripMode = location.roundTripChains.length > 0;
-  const isOneWayMode = !isRoundTripMode && location.routeChains.length > 0;
-  const hasResults = isRoundTripMode || isOneWayMode;
+  const hasResults = location.routeChains.length > 0;
 
-  const allSortedRoundTrips = isRoundTripMode ? sortRoundTripChains(location.roundTripChains, sortBy) : [];
-  const allSortedRoutes = isOneWayMode ? sortRouteChains(location.routeChains, sortBy) : [];
+  const allSorted = sortRouteChains(location.routeChains, sortBy);
 
-  const sortedRoundTrips = showWatchlistOnly
-    ? allSortedRoundTrips.filter((c) => watchlist.has(routeKey(c.legs)))
-    : allSortedRoundTrips;
-  const sortedRoutes = showWatchlistOnly
-    ? allSortedRoutes.filter((r) => watchlist.has(routeKey(r.legs)))
-    : allSortedRoutes;
+  const sorted = showWatchlistOnly
+    ? allSorted.filter((c) => watchlist.has(routeKey(c.legs)))
+    : allSorted;
 
-  const itemCount = isRoundTripMode
-    ? sortedRoundTrips.length
-    : sortedRoutes.length;
+  const itemCount = sorted.length;
 
   // Sync the map to show the correct sorted route when index is 0
   // (parent can't know sort order, so sidebar pushes the sorted legs)
   useEffect(() => {
     if (selectedIndex !== 0 || isLoading) return;
-    const firstChain = isRoundTripMode ? sortedRoundTrips[0] : sortedRoutes[0];
+    const firstChain = sorted[0];
     if (firstChain) {
       onSelectIndex(0, firstChain.legs);
     }
-  }, [selectedIndex, isLoading, sortBy, sortedRoundTrips, sortedRoutes, isRoundTripMode, onSelectIndex]);
+  }, [selectedIndex, isLoading, sortBy, sorted, onSelectIndex]);
 
   return (
     <div className="flex h-full w-full bg-card/95 backdrop-blur flex-col overflow-hidden relative">
@@ -195,9 +187,8 @@ export function LocationSidebar({ location, selectedIndex, onSelectIndex, onClos
               </button>
             )}
           </div>
-        ) : isRoundTripMode
-          ? sortedRoundTrips.map((chain, i) => (
-              <RoundTripChainCard
+        ) : sorted.map((chain, i) => (
+              <RouteChainCard
                 key={`${chain.legs[0]?.order_id ?? i}-${i}`}
                 chain={chain}
                 rank={i + 1}
@@ -205,27 +196,10 @@ export function LocationSidebar({ location, selectedIndex, onSelectIndex, onClos
                 isSelected={i === selectedIndex}
                 onClick={() => onSelectIndex(i === selectedIndex ? -1 : i, i === selectedIndex ? undefined : chain.legs)}
                 maxWeight={maxWeight}
-                originCity={location.city}
+                originCity={originFilter?.city ?? location.city}
+                destCity={destFilter?.city}
                 isWatchlisted={watchlist.has(routeKey(chain.legs))}
                 onToggleWatchlist={() => toggleWatchlist(routeKey(chain.legs))}
-                orderUrlTemplate={orderUrlTemplate}
-                onShowComments={handleShowComments}
-                onHoverLeg={onHoverLeg}
-                costPerMile={costPerMile}
-              />
-            ))
-          : sortedRoutes.map((route, i) => (
-              <RoundTripChainCard
-                key={`${route.legs[0]?.order_id ?? i}-${i}`}
-                chain={routeChainToRoundTrip(route)}
-                rank={i + 1}
-                routeIdx={i}
-                isSelected={i === selectedIndex}
-                onClick={() => onSelectIndex(i === selectedIndex ? -1 : i, i === selectedIndex ? undefined : routeChainToRoundTrip(route).legs)}
-                originCity={originFilter?.city}
-                destCity={destFilter?.city}
-                isWatchlisted={watchlist.has(routeKey(route.legs))}
-                onToggleWatchlist={() => toggleWatchlist(routeKey(route.legs))}
                 orderUrlTemplate={orderUrlTemplate}
                 onShowComments={handleShowComments}
                 onHoverLeg={onHoverLeg}
@@ -256,54 +230,9 @@ export function LocationSidebar({ location, selectedIndex, onSelectIndex, onClos
   );
 }
 
-/* ---- Convert one-way RouteChain to RoundTripChain shape for unified card ---- */
+/* ---- Route chain card ---- */
 
-function routeChainToRoundTrip(route: RouteChain): RoundTripChain {
-  return {
-    rank: 0,
-    total_pay: route.total_pay,
-    total_miles: route.total_miles,
-    total_deadhead_miles: route.total_deadhead_miles,
-    estimated_deadhead_cost: route.estimated_deadhead_cost,
-    firm_profit: route.profit,
-    estimated_total_profit: route.profit,
-    rate_per_mile: route.effective_rpm,
-    deadhead_pct: route.deadhead_pct,
-    effective_rpm: route.effective_rpm,
-    estimated_days: route.estimated_days,
-    daily_net_profit: route.daily_net_profit,
-    cost_breakdown: route.cost_breakdown,
-    legs: route.legs.map((leg, i) => ({
-      leg_number: i + 1,
-      type: "firm" as const,
-      order_id: leg.order_id,
-      origin_city: leg.origin_city,
-      origin_state: leg.origin_state,
-      origin_lat: leg.origin_lat,
-      origin_lng: leg.origin_lng,
-      destination_city: leg.destination_city,
-      destination_state: leg.destination_state,
-      destination_lat: leg.destination_lat,
-      destination_lng: leg.destination_lng,
-      pay: leg.pay,
-      miles: leg.miles,
-      deadhead_miles: leg.deadhead_miles,
-      trailer_type: leg.trailer_type,
-      weight: leg.weight,
-      pickup_date_early: leg.pickup_date_early,
-      pickup_date_late: leg.pickup_date_late,
-      delivery_date_early: leg.delivery_date_early,
-      delivery_date_late: leg.delivery_date_late,
-      lane_rank: leg.lane_rank,
-    })),
-    timeline: route.timeline,
-    trip_summary: route.trip_summary,
-  };
-}
-
-/* ---- Route chain card (unified for both modes) ---- */
-
-function RoundTripChainCard({
+function RouteChainCard({
   chain,
   rank,
   isSelected,
@@ -319,13 +248,13 @@ function RoundTripChainCard({
   onHoverLeg,
   costPerMile,
 }: {
-  chain: RoundTripChain;
+  chain: RouteChain;
   rank: number;
   isSelected: boolean;
   onClick: () => void;
   maxWeight?: number | null;
   originCity?: string;
-  /** Destination city label (one-way mode). When set, return DH targets this instead of origin. */
+  /** Destination city label. When set, return DH targets this instead of origin. */
   destCity?: string;
   isWatchlisted?: boolean;
   onToggleWatchlist?: () => void;
@@ -335,7 +264,7 @@ function RoundTripChainCard({
   onHoverLeg?: (legIndex: number | null) => void;
   costPerMile: number;
 }) {
-  const firmLegs = chain.legs.filter((leg) => leg.type === "firm");
+  const firmLegs = chain.legs;
 
   // Compute overall date range: first pickup → estimated arrival at final destination
   const startDates = chain.legs
@@ -361,7 +290,7 @@ function RoundTripChainCard({
 
   const [showCosts, setShowCosts] = useState(false);
   const [showInspector, setShowInspector] = useState(false);
-  const profit = chain.firm_profit;
+  const profit = chain.profit;
 
   const avgLoadedRpm = calcAvgLoadedRpm(firmLegs);
 
@@ -486,7 +415,7 @@ function RoundTripChainCard({
                 </div>
               )}
 
-              {chain.legs.map((leg: RoundTripLeg, legIdx: number) => {
+              {chain.legs.map((leg: RouteLeg, legIdx: number) => {
                 const color = LEG_COLORS[legIdx % LEG_COLORS.length];
                 const showBetweenDh = leg.deadhead_miles > 0 && legIdx > 0;
                 return (
@@ -535,7 +464,7 @@ function RoundTripChainCard({
                               <span className="truncate">{leg.origin_city} → {leg.destination_city}</span>
                             )}
                             {leg.lane_rank != null && <FlameIcon className="h-4 w-4 text-primary shrink-0" />}
-                            {leg.order_id && leg.type === "firm" && onShowComments && (
+                            {leg.order_id && onShowComments && (
                               <button
                                 type="button"
                                 onClick={(e) => { e.stopPropagation(); onShowComments(leg.order_id!); }}
@@ -550,8 +479,7 @@ function RoundTripChainCard({
                             {formatCurrency(leg.pay)}
                           </span>
                         </div>
-                        {leg.type === "firm" ? (
-                          <div className="text-sm mt-1 space-y-0.5 text-text-body">
+                        <div className="text-sm mt-1 space-y-0.5 text-text-body">
                             <p>
                               {[leg.weight != null ? `${leg.weight.toLocaleString()} lbs` : null, leg.miles != null ? `${leg.miles.toLocaleString()} mi` : null].filter(Boolean).join(" · ")}
                               {leg.miles > 0 && <>{" · "}<span className={rateColor(leg.pay / leg.miles, costPerMile)}>${(leg.pay / leg.miles).toFixed(2)}/mi</span></>}
@@ -563,11 +491,6 @@ function RoundTripChainCard({
                               </div>
                             )}
                           </div>
-                        ) : (
-                          <p className="text-sm mt-1 text-text-body">
-                            {leg.miles.toLocaleString()} mi
-                          </p>
-                        )}
                       </div>
                     </div>
                   </div>
