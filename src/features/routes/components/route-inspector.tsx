@@ -1,6 +1,6 @@
 "use client";
 
-import { TruckIcon, ClockIcon, Package, PackageOpen, Fuel, Coffee, Bed } from "lucide-react";
+import { TruckIcon, ClockIcon, Package, PackageOpen, Fuel, Coffee, Bed, Layers } from "lucide-react";
 import type { RouteChain, TripPhase } from "@/core/types";
 import { TRIP_DEFAULTS } from "@mwbhtx/haulvisor-core";
 
@@ -8,6 +8,7 @@ import { TRIP_DEFAULTS } from "@mwbhtx/haulvisor-core";
 // Using inline style objects so arbitrary hex values work reliably
 const PHASE_COLORS = {
   loading:   { color: "#34d399" },  // emerald-400
+  tarping:   { color: "#fb923c" },  // orange-400
   unloading: { color: "#34d399" },  // emerald-400
   rest:      { color: "#a78bfa" },  // violet-400
   break:     { color: "#fbbf24" },  // amber-400
@@ -262,6 +263,20 @@ function PhaseRow({ phase, timestamp, showTimeOnly, originCity, returnCity }: { 
             Loading at {phase.origin_city}
           </span>
           <span className="text-sm tabular-nums w-14 text-right shrink-0" style={phaseStyle("loading", true)}>
+            {formatDuration(phase.duration_hours)}
+          </span>
+        </div>
+      );
+
+    case 'tarping':
+      return (
+        <div className="flex items-center gap-2.5 px-4 py-2 border-b border-white/[0.03]">
+          {timeLabel}
+          <Layers className="h-5 w-5 shrink-0" style={phaseStyle("tarping")} />
+          <span className="flex-1 text-sm" style={phaseStyle("tarping")}>
+            Tarping at {phase.origin_city}
+          </span>
+          <span className="text-sm tabular-nums w-14 text-right shrink-0" style={phaseStyle("tarping", true)}>
             {formatDuration(phase.duration_hours)}
           </span>
         </div>
