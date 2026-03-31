@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useSettings, useUpdateSettings } from "@/core/hooks/use-settings";
 import { PlaceAutocomplete, type PlaceResult } from "@/features/routes/components/search-form";
-import { TRAILER_CATEGORIES, expandTrailerCodes, codesToLabels } from "@mwbhtx/haulvisor-core";
+import { TRAILER_CATEGORIES, expandTrailerCodes, codesToLabels, DEFAULT_COST_PER_MILE, DEFAULT_COST_PER_DAY } from "@mwbhtx/haulvisor-core";
 import {
   Card,
   CardHeader,
@@ -344,7 +344,7 @@ export function DesktopSettingsView() {
               step={0.01}
               value={costPerMile}
               onChange={(e) => handleNumberChange("cost_per_mile", e.target.value, setCostPerMile)}
-              placeholder="e.g. 0.65"
+              placeholder={String(DEFAULT_COST_PER_MILE)}
             />
             <p className="text-sm text-muted-foreground">
               Fuel, maintenance, and tires combined. Divide your annual per-mile expenses by your total miles driven.
@@ -360,7 +360,7 @@ export function DesktopSettingsView() {
               step={1}
               value={costPerDay}
               onChange={(e) => handleNumberChange("cost_per_day", e.target.value, setCostPerDay)}
-              placeholder="e.g. 180"
+              placeholder={String(DEFAULT_COST_PER_DAY)}
             />
             <p className="text-sm text-muted-foreground">
               Truck payment, insurance, and per diem. Divide your annual fixed costs by your working days per year.
