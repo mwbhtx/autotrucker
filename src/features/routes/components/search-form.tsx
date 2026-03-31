@@ -10,7 +10,9 @@ import {
   PopoverTrigger,
 } from "@/platform/web/components/ui/popover";
 
-import { ChevronDown, ChevronUpIcon, LocateIcon, SlidersHorizontal, XIcon } from "lucide-react";
+import { driver } from "driver.js";
+import "driver.js/dist/driver.css";
+import { ChevronDown, LocateIcon, SlidersHorizontal, XIcon } from "lucide-react";
 import { BorderBeam } from "@/platform/web/components/ui/border-beam";
 import { Calendar } from "@/platform/web/components/ui/calendar";
 import { useSettings, useUpdateSettings } from "@/core/hooks/use-settings";
@@ -891,41 +893,36 @@ export function SearchFilters({
   }
 
   /* ---- Desktop layout ---- */
-  const [showNudge, setShowNudge] = useState(false);
-  const [nudgeVisible, setNudgeVisible] = useState(false);
+  const nudgeRef = useRef<ReturnType<typeof driver> | null>(null);
   useEffect(() => {
     const shouldShow = !origin && defaultsLoaded && searchEnabled.current && !originPopoverOpen && !isOnboarding;
     if (shouldShow) {
       const timer = setTimeout(() => {
-        setShowNudge(true);
-        // Trigger fade-in on next frame
-        requestAnimationFrame(() => setNudgeVisible(true));
+        nudgeRef.current = driver({ overlayOpacity: 0, allowClose: true, popoverClass: "hv-tour-popover" });
+        nudgeRef.current.highlight({
+          element: "#onborda-origin",
+          popover: {
+            title: "Set an origin",
+            description: "Pick a starting city to get route suggestions",
+            side: "bottom",
+            align: "start",
+          },
+        });
       }, 2000);
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(timer);
+        nudgeRef.current?.destroy();
+        nudgeRef.current = null;
+      };
     } else {
-      setShowNudge(false);
-      setNudgeVisible(false);
+      nudgeRef.current?.destroy();
+      nudgeRef.current = null;
     }
   }, [origin, defaultsLoaded, originPopoverOpen, isOnboarding]);
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <div className="relative">
-        {originPill}
-        {showNudge && (
-          <div className={`absolute left-1/2 -translate-x-1/2 top-full mt-2 z-20 transition-opacity duration-500 ${nudgeVisible ? "opacity-100" : "opacity-0"}`}>
-            <div className="flex justify-center mb-1">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-background border-2 border-primary animate-bounce">
-                <ChevronUpIcon className="h-4 w-4 text-primary" strokeWidth={3} />
-              </div>
-            </div>
-            <div className="bg-card border-2 border-primary rounded-xl shadow-lg px-5 py-4 w-64">
-              <p className="text-base text-foreground font-semibold">Set an origin</p>
-              <p className="text-sm text-muted-foreground mt-1 leading-relaxed">Pick a starting city to get route suggestions</p>
-            </div>
-          </div>
-        )}
-      </div>
+      {originPill}
       {destPill}
       {departureDatePill}
       <div id="onborda-days-out"><DaysOutPill value={daysOut} onChange={setDaysOut} departureDate={departureDate} /></div>
