@@ -175,14 +175,14 @@ export function RouteInspector({
               </div>
               {/* Phase rows */}
               {day.phases.map(({ phase, timestamp }, i) => (
-                <PhaseRow key={i} phase={phase} timestamp={timestamp} showTimeOnly />
+                <PhaseRow key={i} phase={phase} timestamp={timestamp} showTimeOnly originCity={originCity} returnCity={returnCity} />
               ))}
             </div>
           ))
         ) : (
           // Fallback: flat list without day grouping (no departure time)
           timeline.map((phase, i) => (
-            <PhaseRow key={i} phase={phase} timestamp={null} showTimeOnly={false} />
+            <PhaseRow key={i} phase={phase} timestamp={null} showTimeOnly={false} originCity={originCity} returnCity={returnCity} />
           ))
         )}
       </div>
@@ -211,7 +211,7 @@ export function RouteInspector({
   );
 }
 
-function PhaseRow({ phase, timestamp, showTimeOnly }: { phase: TripPhase; timestamp: Date | null; showTimeOnly: boolean }) {
+function PhaseRow({ phase, timestamp, showTimeOnly, originCity, returnCity }: { phase: TripPhase; timestamp: Date | null; showTimeOnly: boolean; originCity?: string; returnCity?: string }) {
   const timeLabel = timestamp ? (
     <span className="text-xs text-muted-foreground/60 tabular-nums w-[4.5rem] shrink-0 text-right">
       {showTimeOnly ? formatTime(timestamp) : formatTimestamp(timestamp)}
@@ -225,7 +225,7 @@ function PhaseRow({ phase, timestamp, showTimeOnly }: { phase: TripPhase; timest
           {timeLabel}
           <TruckIcon className="h-5 w-5 shrink-0" style={phaseStyle("deadhead")} />
           <span className="flex-1 text-sm font-semibold" style={phaseStyle("deadhead")}>
-            {phase.origin_city} → {phase.destination_city} <span className="font-normal text-xs">(DH)</span>
+            {phase.origin_city || originCity} → {phase.destination_city || returnCity || originCity} <span className="font-normal text-xs">(DH)</span>
           </span>
           <span className="text-sm tabular-nums shrink-0" style={phaseStyle("deadhead", true)}>
             {phase.miles?.toLocaleString()} mi
