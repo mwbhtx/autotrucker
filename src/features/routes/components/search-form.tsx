@@ -1093,6 +1093,32 @@ function AllFiltersPopover({
             />
           </div>
 
+          {/* Load Preferences */}
+          <div className="space-y-2">
+            <p className="text-sm font-medium">Load Preferences</p>
+            <div className="space-y-1">
+              {[
+                { label: "No Tarps", checked: noTarps, key: "no_tarps", setter: setNoTarps },
+              ].map((cert) => (
+                <button
+                  key={cert.key}
+                  type="button"
+                  onClick={() => handleBool(cert.key, cert.checked, cert.setter)}
+                  className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-accent transition-colors"
+                >
+                  <span>{cert.label}</span>
+                  <div
+                    className={`flex h-4 w-4 items-center justify-center rounded border transition-colors ${
+                      cert.checked ? "border-primary bg-primary text-primary-foreground" : "border-input"
+                    }`}
+                  >
+                    {cert.checked && <span className="text-xs">✓</span>}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Certifications */}
           <div className="space-y-2">
             <p className="text-sm font-medium">Certifications</p>
@@ -1101,7 +1127,6 @@ function AllFiltersPopover({
                 { label: "Hazmat", checked: hazmat, key: "hazmat_certified", setter: setHazmat },
                 { label: "TWIC Card", checked: twic, key: "twic_card", setter: setTwic },
                 { label: "Team Driver", checked: team, key: "team_driver", setter: setTeam },
-                { label: "No Tarps", checked: noTarps, key: "no_tarps", setter: setNoTarps },
               ].map((cert) => (
                 <button
                   key={cert.key}

@@ -45,6 +45,7 @@ export function MobileRoutesView() {
     hazmat_certified: settings.hazmat_certified ?? undefined,
     twic_card: settings.twic_card ?? undefined,
     team_driver: settings.team_driver ?? undefined,
+    no_tarps: settings.no_tarps ?? undefined,
     max_assigned_orders: settings.max_assigned_orders ?? undefined,
     cost_per_mile: costPerMile,
     diesel_price_per_gallon: settings.diesel_price_per_gallon ?? undefined,
