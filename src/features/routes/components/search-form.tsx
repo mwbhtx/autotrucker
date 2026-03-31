@@ -435,7 +435,19 @@ function LocationPill({
       </PopoverTrigger>
       <PopoverContent className="w-72" align="start">
         <div className="space-y-3">
-          <p className="text-sm font-medium">{title}</p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium">{title}</p>
+            {value && (
+              <button
+                type="button"
+                onClick={() => { onSelect(null); setOpen(false); }}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <XIcon className="h-3.5 w-3.5" />
+                Clear
+              </button>
+            )}
+          </div>
           <PlaceAutocomplete
             placeholder="City, state"
             value={value}
