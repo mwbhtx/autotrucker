@@ -517,6 +517,7 @@ export function SearchFilters({
     hazmat_certified: settings.hazmat_certified ?? undefined,
     twic_card: settings.twic_card ?? undefined,
     team_driver: settings.team_driver ?? undefined,
+    no_tarps: settings.no_tarps ?? undefined,
     max_assigned_orders: settings.max_assigned_orders ?? undefined,
     cost_per_mile: (settings.cost_per_mile as number | undefined) ?? DEFAULT_COST_PER_MILE,
     diesel_price_per_gallon: settings.diesel_price_per_gallon ?? undefined,
@@ -974,6 +975,7 @@ function AllFiltersPopover({
   const [hazmat, setHazmat] = useState(false);
   const [twic, setTwic] = useState(false);
   const [team, setTeam] = useState(false);
+  const [noTarps, setNoTarps] = useState(false);
   const initialized = useRef(false);
 
   useEffect(() => {
@@ -983,6 +985,7 @@ function AllFiltersPopover({
     setHazmat(settings.hazmat_certified ?? false);
     setTwic(settings.twic_card ?? false);
     setTeam(settings.team_driver ?? false);
+    setNoTarps(settings.no_tarps ?? false);
     setTimeout(() => { initialized.current = true; }, 100);
   }, [settings]);
 
@@ -1012,6 +1015,7 @@ function AllFiltersPopover({
     hazmat,
     twic,
     team,
+    noTarps,
     workDays.length > 0 && workDays.length < 7,
   ].filter(Boolean).length;
 
@@ -1097,6 +1101,7 @@ function AllFiltersPopover({
                 { label: "Hazmat", checked: hazmat, key: "hazmat_certified", setter: setHazmat },
                 { label: "TWIC Card", checked: twic, key: "twic_card", setter: setTwic },
                 { label: "Team Driver", checked: team, key: "team_driver", setter: setTeam },
+                { label: "No Tarps", checked: noTarps, key: "no_tarps", setter: setNoTarps },
               ].map((cert) => (
                 <button
                   key={cert.key}

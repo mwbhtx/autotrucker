@@ -15,6 +15,7 @@ export interface Settings {
   hazmat_certified: boolean;
   twic_card: boolean;
   team_driver: boolean;
+  no_tarps: boolean;
   home_base_lat: number | null;
   home_base_lng: number | null;
   diesel_price_per_gallon: number | null;
