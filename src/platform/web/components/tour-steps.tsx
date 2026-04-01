@@ -31,19 +31,19 @@ export const tourSteps: DriveStep[] = [
     },
   },
   {
-    element: "#onborda-legs",
+    element: "#onborda-days-out",
     popover: {
-      title: "📦 Number of Loads",
-      description: `Set how many <strong class="${hl}">loads</strong> (stops) you want in a route. More loads can mean better revenue but longer trips.`,
+      title: "🗓️ Days Out",
+      description: `Set how many <strong class="${hl}">days</strong> you want to be on the road. Only routes that fit within this timeframe are shown. The return date is calculated automatically.`,
       side: "bottom",
       align: "center",
     },
   },
   {
-    element: "#onborda-days-out",
+    element: "#onborda-legs",
     popover: {
-      title: "🗓️ Days Out",
-      description: `Set how many <strong class="${hl}">days</strong> you want to be on the road. Only routes that fit within this timeframe are shown. The return date is calculated automatically.`,
+      title: "📦 Number of Loads",
+      description: `Set how many <strong class="${hl}">loads</strong> (stops) you want in a route. More loads can mean better revenue but longer trips.`,
       side: "bottom",
       align: "center",
     },
