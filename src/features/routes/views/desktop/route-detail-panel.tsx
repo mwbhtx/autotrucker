@@ -160,8 +160,8 @@ function RouteDetailContent({
               { label1: "Net/mi", value1: formatRpm(chain.effective_rpm), color1: routeProfitColor(chain.daily_net_profit), label2: "Expenses", value2: formatCurrency(chain.cost_breakdown.total), color2: "", tooltip2: `${chain.total_miles.toLocaleString()} mi × $${costPerMile.toFixed(2)}/mi` },
               { label1: "Miles", value1: chain.total_miles.toLocaleString(), color1: "", label2: "Gross", value2: formatCurrency(chain.total_pay), color2: "" },
               { label1: "Days", value1: chain.estimated_days.toFixed(1), color1: "", label2: "DH %", value2: `${chain.deadhead_pct.toFixed(0)}%`, color2: "" },
-              { label1: "Tarp", value1: needsTarp ? "Yes" : "No", color1: needsTarp ? "text-negative" : "", label2: "$/mi loaded", value2: avgLoadedRpm !== null ? `$${avgLoadedRpm.toFixed(2)}` : "—", color2: "" },
-              { label1: "Loads", value1: String(chain.legs.length), color1: "", label2: "DH mi.", value2: chain.total_deadhead_miles.toLocaleString(), color2: "" },
+              { label1: "Tarp", value1: needsTarp ? "Yes" : "No", color1: needsTarp ? "text-negative" : "", label2: "DH mi.", value2: chain.total_deadhead_miles.toLocaleString(), color2: "" },
+              { label1: "Loads", value1: String(chain.legs.length), color1: "", label2: "$/mi loaded", value2: avgLoadedRpm !== null ? `$${avgLoadedRpm.toFixed(2)}` : "—", color2: "" },
             ].map((row, i) => (
               <div key={i} className={`grid grid-cols-subgrid col-span-4 px-3 py-1.5 ${i % 2 === 0 ? "bg-[#ebeced] dark:bg-[#232323]" : ""}`}>
                 <span className="text-text-secondary text-left">{row.label1}</span>
