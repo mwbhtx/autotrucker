@@ -363,9 +363,9 @@ function RouteDetailContent({
         </div>
         {/* Suggested Departure (always visible) */}
         {chain.suggested_departure && (
-          <div className="px-4 py-3 bg-primary/10 border-b border-primary/20">
-            <p className="text-xs uppercase tracking-wider font-medium" style={{ color: "#cdcdcd" }}>Suggested Departure</p>
-            <p className="text-lg font-bold" style={{ color: "#cdcdcd" }}>
+          <div className="px-4 py-3 bg-muted border-b border-primary/20">
+            <p className="text-xs uppercase tracking-wider font-medium text-foreground">Suggested Departure</p>
+            <p className="text-lg font-bold text-foreground">
               {new Date(chain.suggested_departure).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })} at {new Date(chain.suggested_departure).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
             </p>
             {chain.trip_summary && (
