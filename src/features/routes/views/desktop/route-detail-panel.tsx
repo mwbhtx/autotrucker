@@ -240,10 +240,6 @@ function RouteDetailContent({
               >
                 <div className="flex flex-col items-center shrink-0">
                   <div className="w-px flex-1 bg-black/10 dark:bg-white/[0.07]" />
-                  <div
-                    className="h-3.5 w-3.5 rounded-full shrink-0"
-                    style={{ backgroundColor: color }}
-                  />
                   <div className="w-px flex-1 bg-black/10 dark:bg-white/[0.07]" />
                 </div>
                 <div className="flex-1 py-3">
@@ -251,6 +247,10 @@ function RouteDetailContent({
                     <p
                       className="flex-1 text-base font-bold flex items-center gap-1.5 min-w-0 text-text-body"
                     >
+                      <span
+                        className="h-2.5 w-2.5 rounded-full shrink-0"
+                        style={{ backgroundColor: color }}
+                      />
                       {leg.order_id && orderUrlTemplate ? (
                         <a
                           href={orderUrlTemplate.replace("{{ORDER_ID}}", leg.order_id)}
