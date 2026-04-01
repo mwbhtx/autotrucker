@@ -141,7 +141,6 @@ export function SearchSheet({
             {recentSearches.map((search) => {
               const originLabel = search.origin.label.split(",").slice(0, 2).join(",").trim();
               const destLabel = search.destination.label.split(",").slice(0, 2).join(",").trim();
-              const isSame = search.origin.label === search.destination.label;
               return (
                 <button
                   key={search.id}
@@ -152,7 +151,7 @@ export function SearchSheet({
                   <ClockIcon className="h-5 w-5 shrink-0 text-muted-foreground" />
                   <div className="flex flex-col min-w-0">
                     <span className="text-base text-foreground truncate"><span className="text-muted-foreground">Origin: </span>{originLabel}</span>
-                    {!isSame && <span className="text-sm text-foreground truncate"><span className="text-muted-foreground">Dest: </span>{destLabel}</span>}
+                    <span className="text-sm text-foreground truncate"><span className="text-muted-foreground">Dest: </span>{destLabel}</span>
                   </div>
                 </button>
               );
