@@ -151,7 +151,7 @@ export function SearchSheet({
                   <ClockIcon className="h-5 w-5 shrink-0 text-muted-foreground" />
                   <div className="flex flex-col min-w-0">
                     <span className="text-base text-foreground truncate"><span className="text-muted-foreground">Origin: </span>{originLabel}</span>
-                    <span className="text-sm text-foreground truncate"><span className="text-muted-foreground">Destination: </span>{destLabel}</span>
+                    <span className="text-base text-foreground truncate"><span className="text-muted-foreground">Destination: </span>{destLabel}</span>
                   </div>
                 </button>
               );
