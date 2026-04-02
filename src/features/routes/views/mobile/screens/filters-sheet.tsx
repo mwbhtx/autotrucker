@@ -13,10 +13,13 @@ import {
   codesToLabels,
   ALL_WORK_DAYS,
   DEFAULT_MAX_TRIP_DAYS,
+  DEFAULT_NUM_ORDERS,
+  ORDER_COUNT_OPTIONS,
 } from "@mwbhtx/haulvisor-core";
 import { useSettings, useUpdateSettings } from "@/core/hooks/use-settings";
 
 export interface AdvancedFilters {
+  numOrders: number;
   departureDate: string;
   daysOut: number;
 }
@@ -109,6 +112,7 @@ export function FiltersSheet({ onBack, onApply, initialFilters }: FiltersSheetPr
     d.setDate(d.getDate() + 1);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   })();
+  const [numOrders, setNumOrders] = useState(initialFilters?.numOrders ?? DEFAULT_NUM_ORDERS);
   const [departureDate, setDepartureDate] = useState(initialFilters?.departureDate ?? tomorrow);
   const [daysOut, setDaysOut] = useState(initialFilters?.daysOut ?? DEFAULT_MAX_TRIP_DAYS);
 
@@ -167,7 +171,7 @@ export function FiltersSheet({ onBack, onApply, initialFilters }: FiltersSheetPr
   const toggle = (row: string) => setExpandedRow((prev) => (prev === row ? null : row));
 
   const handleBack = () => {
-    onApply({ departureDate, daysOut });
+    onApply({ numOrders, departureDate, daysOut });
   };
 
   const returnLabel = (() => {
@@ -193,6 +197,32 @@ export function FiltersSheet({ onBack, onApply, initialFilters }: FiltersSheetPr
       </div>
 
       <div className="flex-1 overflow-y-auto">
+
+        {/* Number of Orders */}
+        <FilterRow
+          label="Number of Orders"
+          value={numOrders === 0 ? "Any" : String(numOrders)}
+          expanded={expandedRow === "numOrders"}
+          onToggle={() => toggle("numOrders")}
+        >
+          <div className="flex gap-2 mt-1">
+            {ORDER_COUNT_OPTIONS.map((n) => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => setNumOrders(n)}
+                className={cn(
+                  "flex-1 rounded-lg py-2.5 text-sm font-medium border transition-colors",
+                  numOrders === n
+                    ? "border-primary bg-primary/15 text-primary"
+                    : "border-white/10 text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {n === 0 ? "Any" : String(n)}
+              </button>
+            ))}
+          </div>
+        </FilterRow>
 
         {/* Departure Date */}
         <FilterRow

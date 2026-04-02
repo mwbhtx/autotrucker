@@ -16,7 +16,7 @@ import { ChevronDown, LocateIcon, SlidersHorizontal, XIcon } from "lucide-react"
 import { BorderBeam } from "@/platform/web/components/ui/border-beam";
 import { Calendar } from "@/platform/web/components/ui/calendar";
 import { useSettings, useUpdateSettings } from "@/core/hooks/use-settings";
-import { TRAILER_CATEGORIES, expandTrailerCodes, codesToLabels, DEFAULT_MAX_TRIP_DAYS, DEFAULT_COST_PER_MILE, TIME_PRESETS } from "@mwbhtx/haulvisor-core";
+import { TRAILER_CATEGORIES, expandTrailerCodes, codesToLabels, DEFAULT_MAX_TRIP_DAYS, DEFAULT_COST_PER_MILE, TIME_PRESETS, ORDER_COUNT_OPTIONS, DEFAULT_NUM_ORDERS } from "@mwbhtx/haulvisor-core";
 
 import type { RouteSearchParams } from "@/core/hooks/use-routes";
 
@@ -193,6 +193,47 @@ function DaysOutPill({ value, onChange, departureDate }: { value: number; onChan
           <p className="text-xs text-muted-foreground">
             Home by {returnLabel}
           </p>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+/* ---- Num Orders Pill ---- */
+
+function NumOrdersPill({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const [open, setOpen] = useState(false);
+  const label = value === 0 ? "Any" : `${value}`;
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="flex h-9 items-center gap-1.5 rounded-full border bg-card/95 backdrop-blur px-4 text-sm font-medium shadow-sm transition-colors hover:bg-accent mobile-filter-pill whitespace-nowrap"
+        >
+          <span className="text-muted-foreground">Orders:</span>
+          <span className="flex items-center gap-1.5">
+            <span>{label}</span>
+            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+          </span>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-44" align="start">
+        <div className="space-y-2 p-1">
+          <p className="text-sm font-medium">Number of Orders</p>
+          <div className="flex gap-1.5">
+            {ORDER_COUNT_OPTIONS.map((n) => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => { onChange(n); setOpen(false); }}
+                className={`flex-1 rounded-md py-1.5 text-sm font-medium border transition-colors ${value === n ? "border-primary bg-primary/15 text-primary" : "border-border text-muted-foreground hover:text-foreground hover:bg-accent"}`}
+              >
+                {n === 0 ? "Any" : String(n)}
+              </button>
+            ))}
+          </div>
         </div>
       </PopoverContent>
     </Popover>
@@ -542,7 +583,7 @@ export function SearchFilters({
     orders?: string; origin?: PlaceResult | null;
     destination?: PlaceResult | null; homeBy?: string; homeByTime?: string;
     departBy?: string; departByTime?: string; departureDate?: string;
-    daysOut?: number;
+    daysOut?: number; numOrders?: number;
   } | null>(null);
   if (restored.current === null && typeof window !== "undefined") {
     try {
@@ -564,6 +605,7 @@ export function SearchFilters({
   const [destination, setDestination] = useState<PlaceResult | null>(r.destination ?? null);
   const [departureDate, setDepartureDate] = useState<string>(r.departureDate ?? tomorrow);
   const [daysOut, setDaysOut] = useState<number>(r.daysOut ?? DEFAULT_MAX_TRIP_DAYS);
+  const [numOrders, setNumOrders] = useState<number>(r.numOrders ?? DEFAULT_NUM_ORDERS);
   const [defaultsLoaded, setDefaultsLoaded] = useState(!!r.origin);
 
   const hasHomeLocation =
@@ -586,10 +628,10 @@ export function SearchFilters({
     if (compactBar) return;
     try {
       sessionStorage.setItem("hv-route-filters", JSON.stringify({
-        origin, destination, departureDate, daysOut,
+        origin, destination, departureDate, daysOut, numOrders,
       }));
     } catch {}
-  }, [origin, destination, departureDate, daysOut, compactBar]);
+  }, [origin, destination, departureDate, daysOut, numOrders, compactBar]);
 
   // Reset filters when clear is triggered
   useEffect(() => {
@@ -621,6 +663,7 @@ export function SearchFilters({
                 departure_date: departureDate,
                 ...(destination ? { destination_lat: destination.lat, destination_lng: destination.lng } : {}),
                 max_trip_days: daysOut,
+                ...(numOrders > 0 ? { num_orders: numOrders } : {}),
                 ...driverProfile,
               });
             }
@@ -643,6 +686,7 @@ export function SearchFilters({
             origin_lng: homePlace.lng,
             departure_date: departureDate,
             max_trip_days: daysOut,
+            ...(numOrders > 0 ? { num_orders: numOrders } : {}),
             ...driverProfile,
           });
         }
@@ -665,15 +709,16 @@ export function SearchFilters({
       departure_date: departureDate,
       ...(destination ? { destination_lat: destination.lat, destination_lng: destination.lng } : {}),
       max_trip_days: daysOut,
+      ...(numOrders > 0 ? { num_orders: numOrders } : {}),
       ...driverProfile,
     });
-  }, [origin, destination, departureDate, daysOut, profileKey, onClearSearch]);
+  }, [origin, destination, departureDate, daysOut, numOrders, profileKey, onClearSearch]);
 
   // Auto-search on filter changes (only after initial load settles)
   useEffect(() => {
     if (!searchEnabled.current) return;
     fireSearch();
-  }, [departureDate, daysOut]);
+  }, [departureDate, daysOut, numOrders]);
 
   // Auto-search on driver profile changes (debounced)
   // Signal loading immediately so the UI feels responsive, then fire the actual query after 400ms
@@ -823,6 +868,7 @@ export function SearchFilters({
   if (mobile) {
     const activeFilterCount = [
       daysOut !== DEFAULT_MAX_TRIP_DAYS,
+      numOrders !== DEFAULT_NUM_ORDERS,
     ].filter(Boolean).length;
 
     return (
@@ -849,6 +895,7 @@ export function SearchFilters({
         {mobileFiltersOpen && (
           <div className="flex flex-wrap items-center gap-1.5 p-2 rounded-lg bg-muted/50 border border-border/50">
             <DaysOutPill value={daysOut} onChange={setDaysOut} departureDate={departureDate} />
+            <NumOrdersPill value={numOrders} onChange={setNumOrders} />
             <AllFiltersPopover />
           </div>
         )}
@@ -890,6 +937,7 @@ export function SearchFilters({
       {destPill}
       {departureDatePill}
       <div id="onborda-days-out"><DaysOutPill value={daysOut} onChange={setDaysOut} departureDate={departureDate} /></div>
+      <NumOrdersPill value={numOrders} onChange={setNumOrders} />
       <div id="onborda-all-filters"><AllFiltersPopover /></div>
       {clearButton}
     </div>

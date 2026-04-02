@@ -33,6 +33,7 @@ export function MobileRoutesView() {
   }, []);
 
   const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>({
+    numOrders: 0,
     departureDate: tomorrow,
     daysOut: DEFAULT_MAX_TRIP_DAYS,
   });
@@ -85,6 +86,7 @@ export function MobileRoutesView() {
         departure_date: filters.departureDate,
         ...(dest ? { destination_lat: dest.lat, destination_lng: dest.lng } : {}),
         max_trip_days: filters.daysOut,
+        ...(filters.numOrders > 0 ? { num_orders: filters.numOrders } : {}),
         ...driverProfile,
       };
       setSearchParams(params);
@@ -130,6 +132,7 @@ export function MobileRoutesView() {
       const orig: PlaceResult = { name: search.origin.label, lat: search.origin.coordinates[0], lng: search.origin.coordinates[1] };
       const dest: PlaceResult = { name: search.destination.label, lat: search.destination.coordinates[0], lng: search.destination.coordinates[1] };
       const filters: AdvancedFilters = {
+        numOrders: 0,
         departureDate: tomorrow,
         daysOut: DEFAULT_MAX_TRIP_DAYS,
       };
