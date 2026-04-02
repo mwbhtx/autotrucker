@@ -7,7 +7,7 @@ import { useSettings } from "@/core/hooks/use-settings";
 import { useRouteSearch, type RouteSearchParams } from "@/core/hooks/use-routes";
 import { useMobileRouteNav } from "@/features/routes/hooks/use-mobile-route-nav";
 import { useSaveRecentSearch, type RecentSearch } from "@/features/routes/hooks/use-recent-searches";
-import { DEFAULT_COST_PER_MILE, DEFAULT_LEGS_ROUND_TRIP, DEFAULT_MAX_TRIP_DAYS } from "@mwbhtx/haulvisor-core";
+import { DEFAULT_COST_PER_MILE, DEFAULT_MAX_TRIP_DAYS } from "@mwbhtx/haulvisor-core";
 import type { RouteChain } from "@/core/types";
 import type { PlaceResult } from "@/features/routes/components/search-form";
 import type { AdvancedFilters } from "./screens/filters-sheet";
@@ -33,7 +33,6 @@ export function MobileRoutesView() {
   }, []);
 
   const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>({
-    legs: DEFAULT_LEGS_ROUND_TRIP,
     departureDate: tomorrow,
     daysOut: DEFAULT_MAX_TRIP_DAYS,
   });
@@ -53,7 +52,6 @@ export function MobileRoutesView() {
     no_tarps: settings.no_tarps ?? undefined,
     max_assigned_orders: settings.max_assigned_orders ?? undefined,
     cost_per_mile: costPerMile,
-    avg_mpg: settings.avg_mpg ?? undefined,
   } : { cost_per_mile: costPerMile };
 
   // Fire query
@@ -86,7 +84,6 @@ export function MobileRoutesView() {
         origin_lng: orig.lng,
         departure_date: filters.departureDate,
         ...(dest ? { destination_lat: dest.lat, destination_lng: dest.lng } : {}),
-        legs: filters.legs,
         max_trip_days: filters.daysOut,
         ...driverProfile,
       };
@@ -119,9 +116,7 @@ export function MobileRoutesView() {
             ? [params.destination.lat, params.destination.lng]
             : [params.origin.lat, params.origin.lng],
         },
-        filters: {
-          legs: advancedFilters.legs,
-        },
+        filters: {},
       });
 
       buildAndFireSearch(params.origin, params.destination, advancedFilters);
@@ -135,7 +130,6 @@ export function MobileRoutesView() {
       const orig: PlaceResult = { name: search.origin.label, lat: search.origin.coordinates[0], lng: search.origin.coordinates[1] };
       const dest: PlaceResult = { name: search.destination.label, lat: search.destination.coordinates[0], lng: search.destination.coordinates[1] };
       const filters: AdvancedFilters = {
-        legs: search.filters.legs ?? DEFAULT_LEGS_ROUND_TRIP,
         departureDate: tomorrow,
         daysOut: DEFAULT_MAX_TRIP_DAYS,
       };

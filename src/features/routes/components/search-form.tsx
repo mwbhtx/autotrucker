@@ -16,7 +16,7 @@ import { ChevronDown, LocateIcon, SlidersHorizontal, XIcon } from "lucide-react"
 import { BorderBeam } from "@/platform/web/components/ui/border-beam";
 import { Calendar } from "@/platform/web/components/ui/calendar";
 import { useSettings, useUpdateSettings } from "@/core/hooks/use-settings";
-import { TRAILER_CATEGORIES, expandTrailerCodes, codesToLabels, DEFAULT_LEGS_ONE_WAY, DEFAULT_LEGS_ROUND_TRIP, DEFAULT_MAX_TRIP_DAYS, DEFAULT_COST_PER_MILE, ALL_WORK_DAYS, TIME_PRESETS } from "@mwbhtx/haulvisor-core";
+import { TRAILER_CATEGORIES, expandTrailerCodes, codesToLabels, DEFAULT_MAX_TRIP_DAYS, DEFAULT_COST_PER_MILE, TIME_PRESETS } from "@mwbhtx/haulvisor-core";
 
 import type { RouteSearchParams } from "@/core/hooks/use-routes";
 
@@ -535,7 +535,6 @@ export function SearchFilters({
     search_radius_miles: settings.preferred_radius_miles ?? undefined,
     max_assigned_orders: settings.max_assigned_orders ?? undefined,
     cost_per_mile: (settings.cost_per_mile as number | undefined) ?? DEFAULT_COST_PER_MILE,
-    avg_mpg: settings.avg_mpg ?? undefined,
   } : {};
 
   // Restore persisted filter state from sessionStorage
@@ -543,7 +542,7 @@ export function SearchFilters({
     orders?: string; origin?: PlaceResult | null;
     destination?: PlaceResult | null; homeBy?: string; homeByTime?: string;
     departBy?: string; departByTime?: string; departureDate?: string;
-    daysOut?: number; workDays?: string[]; legs?: number;
+    daysOut?: number;
   } | null>(null);
   if (restored.current === null && typeof window !== "undefined") {
     try {
@@ -565,8 +564,6 @@ export function SearchFilters({
   const [destination, setDestination] = useState<PlaceResult | null>(r.destination ?? null);
   const [departureDate, setDepartureDate] = useState<string>(r.departureDate ?? tomorrow);
   const [daysOut, setDaysOut] = useState<number>(r.daysOut ?? DEFAULT_MAX_TRIP_DAYS);
-  const [workDays, setWorkDays] = useState<string[]>(r.workDays ?? settings?.work_days ?? []);
-  const [legs, setLegs] = useState<number>(r.legs ?? DEFAULT_LEGS_ROUND_TRIP);
   const [defaultsLoaded, setDefaultsLoaded] = useState(!!r.origin);
 
   const hasHomeLocation =
@@ -589,15 +586,14 @@ export function SearchFilters({
     if (compactBar) return;
     try {
       sessionStorage.setItem("hv-route-filters", JSON.stringify({
-        origin, destination, departureDate, daysOut, workDays, legs,
+        origin, destination, departureDate, daysOut,
       }));
     } catch {}
-  }, [origin, destination, departureDate, daysOut, compactBar, legs]);
+  }, [origin, destination, departureDate, daysOut, compactBar]);
 
   // Reset filters when clear is triggered
   useEffect(() => {
     if (resetKey === undefined || resetKey === 0) return;
-    setLegs(DEFAULT_LEGS_ROUND_TRIP);
     setOrigin(null);
     setDestination(null);
   }, [resetKey]);
@@ -624,7 +620,6 @@ export function SearchFilters({
                 origin_lng: origin.lng,
                 departure_date: departureDate,
                 ...(destination ? { destination_lat: destination.lat, destination_lng: destination.lng } : {}),
-                legs,
                 max_trip_days: daysOut,
                 ...driverProfile,
               });
@@ -647,7 +642,6 @@ export function SearchFilters({
             origin_lat: homePlace.lat,
             origin_lng: homePlace.lng,
             departure_date: departureDate,
-            legs,
             max_trip_days: daysOut,
             ...driverProfile,
           });
@@ -670,17 +664,16 @@ export function SearchFilters({
       origin_lng: origin.lng,
       departure_date: departureDate,
       ...(destination ? { destination_lat: destination.lat, destination_lng: destination.lng } : {}),
-      legs,
       max_trip_days: daysOut,
       ...driverProfile,
     });
-  }, [origin, destination, departureDate, daysOut, legs, profileKey, onClearSearch]);
+  }, [origin, destination, departureDate, daysOut, profileKey, onClearSearch]);
 
   // Auto-search on filter changes (only after initial load settles)
   useEffect(() => {
     if (!searchEnabled.current) return;
     fireSearch();
-  }, [departureDate, daysOut, legs]);
+  }, [departureDate, daysOut]);
 
   // Auto-search on driver profile changes (debounced)
   // Signal loading immediately so the UI feels responsive, then fire the actual query after 400ms
@@ -795,26 +788,6 @@ export function SearchFilters({
     </div>
   );
 
-  const legsPill = (
-    <div id="onborda-legs" className="flex h-9 items-center rounded-full border bg-card/95 backdrop-blur shadow-sm overflow-hidden mobile-filter-pill whitespace-nowrap">
-      <span className="pl-4 pr-2 text-sm text-muted-foreground font-medium">Loads:</span>
-      {[1, 2, 3].map((n) => (
-        <button
-          key={n}
-          type="button"
-          onClick={() => setLegs(n)}
-          className={`h-full px-3 text-sm font-medium transition-colors ${
-            legs === n
-              ? "bg-primary text-primary-foreground"
-              : "text-muted-foreground hover:bg-accent"
-          }`}
-        >
-          {n}
-        </button>
-      ))}
-    </div>
-  );
-
   const clearButton = null;
 
   /* ---- Compact bar layout (two rows) ---- */
@@ -827,9 +800,8 @@ export function SearchFilters({
           {destPill}
           {departureDatePill}
         </div>
-        {/* Row 2: legs + action icons */}
+        {/* Row 2: action icons */}
         <div className="flex items-center gap-1.5">
-          {legsPill}
           {children}
         </div>
       </div>
@@ -843,7 +815,6 @@ export function SearchFilters({
         {originPill}
         {destPill}
         {departureDatePill}
-        {legsPill}
       </div>
     );
   }
@@ -861,7 +832,6 @@ export function SearchFilters({
           {originPill}
           {destPill}
           {departureDatePill}
-          {legsPill}
           <button
             type="button"
             onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
@@ -879,7 +849,7 @@ export function SearchFilters({
         {mobileFiltersOpen && (
           <div className="flex flex-wrap items-center gap-1.5 p-2 rounded-lg bg-muted/50 border border-border/50">
             <DaysOutPill value={daysOut} onChange={setDaysOut} departureDate={departureDate} />
-            <AllFiltersPopover workDays={workDays} onWorkDaysChange={setWorkDays} />
+            <AllFiltersPopover />
           </div>
         )}
       </div>
@@ -920,8 +890,7 @@ export function SearchFilters({
       {destPill}
       {departureDatePill}
       <div id="onborda-days-out"><DaysOutPill value={daysOut} onChange={setDaysOut} departureDate={departureDate} /></div>
-      {legsPill}
-      <div id="onborda-all-filters"><AllFiltersPopover workDays={workDays} onWorkDaysChange={setWorkDays} /></div>
+      <div id="onborda-all-filters"><AllFiltersPopover /></div>
       {clearButton}
     </div>
   );
@@ -964,13 +933,7 @@ export function MobileFilterSheet({ open, onOpenChange, ...filterProps }: Mobile
   );
 }
 
-function AllFiltersPopover({
-  workDays,
-  onWorkDaysChange,
-}: {
-  workDays: string[];
-  onWorkDaysChange: (v: string[]) => void;
-}) {
+function AllFiltersPopover() {
   const { data: settings } = useSettings();
   const updateSettings = useUpdateSettings();
 
@@ -1023,7 +986,6 @@ function AllFiltersPopover({
     team,
     noTarps,
     searchRadius !== 250,
-    workDays.length > 0 && workDays.length < 7,
   ].filter(Boolean).length;
 
   return (
@@ -1100,10 +1062,10 @@ function AllFiltersPopover({
             />
           </div>
 
-          {/* Max Deadhead */}
+          {/* Search Radius */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium">Max Deadhead</p>
+              <p className="text-sm font-medium">Search Radius</p>
               <span className="text-sm text-muted-foreground">{searchRadius} mi</span>
             </div>
             <Slider
@@ -1178,55 +1140,6 @@ function AllFiltersPopover({
             </div>
           </div>
 
-          {/* Work Days */}
-          <div className="space-y-2">
-            <p className="text-sm font-medium">Work Days</p>
-            <div className="flex flex-wrap gap-1.5">
-              {ALL_WORK_DAYS.map((day) => {
-                const allSelected = workDays.length === 0 || workDays.length === 7;
-                const selected = allSelected || workDays.includes(day);
-                return (
-                  <button
-                    key={day}
-                    type="button"
-                    onClick={() => {
-                      const next = workDays.includes(day)
-                        ? workDays.filter((d) => d !== day)
-                        : [...workDays, day];
-                      onWorkDaysChange(next.length === 7 ? [] : next);
-                    }}
-                    className={`flex h-8 w-10 items-center justify-center rounded-md text-xs font-medium transition-colors ${
-                      selected
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-muted-foreground hover:bg-accent"
-                    }`}
-                  >
-                    {day}
-                  </button>
-                );
-              })}
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => onWorkDaysChange([])}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                All days
-              </button>
-              <span className="text-xs text-muted-foreground">/</span>
-              <button
-                type="button"
-                onClick={() => onWorkDaysChange(["Mon", "Tue", "Wed", "Thu", "Fri"])}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Weekdays only
-              </button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Routes won&apos;t include pickups or deliveries on your off days
-            </p>
-          </div>
         </div>
       </PopoverContent>
     </Popover>
