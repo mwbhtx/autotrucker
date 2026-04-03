@@ -64,7 +64,7 @@ interface Company {
   stale_order_refresh_config?: {
     enabled: boolean;
     timezone: string;
-    run_time: string;
+    interval_hours: number;
   };
   last_stale_refresh?: {
     timestamp: string;
@@ -334,12 +334,12 @@ function StaleRefreshPopover({
 }) {
   const [open, setOpen] = useState(false);
   const [config, setConfig] = useState(
-    company.stale_order_refresh_config ?? { enabled: false, timezone: "America/Chicago", run_time: "06:00" },
+    company.stale_order_refresh_config ?? { enabled: false, timezone: "America/Chicago", interval_hours: 4 },
   );
   const [saving, setSaving] = useState(false);
 
   function resetAndOpen() {
-    setConfig(company.stale_order_refresh_config ?? { enabled: false, timezone: "America/Chicago", run_time: "06:00" });
+    setConfig(company.stale_order_refresh_config ?? { enabled: false, timezone: "America/Chicago", interval_hours: 4 });
     setOpen(true);
   }
 
@@ -400,15 +400,22 @@ function StaleRefreshPopover({
             </Select>
           </div>
 
-          {/* Run time */}
+          {/* Interval */}
           <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">Run after</label>
-            <input
-              type="time"
-              className="h-8 w-full rounded border bg-background px-2 text-sm"
-              value={config.run_time}
-              onChange={(e) => setConfig({ ...config, run_time: e.target.value })}
-            />
+            <label className="text-xs text-muted-foreground">Run every (hours)</label>
+            <Select
+              value={String(config.interval_hours)}
+              onValueChange={(v) => setConfig({ ...config, interval_hours: Number(v) })}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[1, 2, 4, 6, 8, 12, 24].map((h) => (
+                  <SelectItem key={h} value={String(h)}>{h === 1 ? "Every hour" : `Every ${h} hours`}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Last run */}
