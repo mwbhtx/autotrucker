@@ -421,7 +421,8 @@ export function SearchFilters({
     twic_card: settings.twic_card ?? undefined,
     team_driver: settings.team_driver ?? undefined,
     no_tarps: settings.no_tarps ?? undefined,
-    search_radius_miles: settings.preferred_radius_miles ?? undefined,
+    ignore_radius: settings.ignore_radius ?? undefined,
+    search_radius_miles: settings.ignore_radius ? undefined : (settings.preferred_radius_miles ?? undefined),
     max_assigned_orders: settings.max_assigned_orders ?? undefined,
     cost_per_mile: (settings.cost_per_mile as number | undefined) ?? DEFAULT_COST_PER_MILE,
   } : {};
@@ -510,7 +511,7 @@ export function SearchFilters({
                 origin_lat: origin.lat,
                 origin_lng: origin.lng,
                 departure_date: departureDate,
-                ...(destination ? { destination_lat: destination.lat, destination_lng: destination.lng } : {}),
+                ...(destination ? { destination_lat: destination.lat, destination_lng: destination.lng, destination_city: destination.name.split(",")[0] } : {}),
                 max_trip_days: daysOut,
                 ...(numOrders > 0 ? { num_orders: numOrders } : {}),
                 ...driverProfile,
@@ -552,11 +553,13 @@ export function SearchFilters({
       onClearSearch?.();
       return;
     }
+    onOriginChange?.({ lat: origin.lat, lng: origin.lng, city: origin.name.split(",")[0] });
+    onDestinationChange?.(destination ? { lat: destination.lat, lng: destination.lng, city: destination.name.split(",")[0] } : null);
     onSearch({
       origin_lat: origin.lat,
       origin_lng: origin.lng,
       departure_date: departureDate,
-      ...(destination ? { destination_lat: destination.lat, destination_lng: destination.lng } : {}),
+      ...(destination ? { destination_lat: destination.lat, destination_lng: destination.lng, destination_city: destination.name.split(",")[0] } : {}),
       max_trip_days: daysOut,
       ...(numOrders > 0 ? { num_orders: numOrders } : {}),
       ...driverProfile,
@@ -780,6 +783,7 @@ function AllFiltersPopover() {
   const [team, setTeam] = useState(false);
   const [noTarps, setNoTarps] = useState(false);
   const [searchRadius, setSearchRadius] = useState(250);
+  const [ignoreRadius, setIgnoreRadius] = useState(false);
   const initialized = useRef(false);
 
   useEffect(() => {
@@ -791,6 +795,7 @@ function AllFiltersPopover() {
     setTeam(settings.team_driver ?? false);
     setNoTarps(settings.no_tarps ?? false);
     setSearchRadius(settings.preferred_radius_miles ?? 250);
+    setIgnoreRadius(settings.ignore_radius ?? false);
     setTimeout(() => { initialized.current = true; }, 100);
   }, [settings]);
 
@@ -821,7 +826,8 @@ function AllFiltersPopover() {
     twic,
     team,
     noTarps,
-    searchRadius < 250,
+    ignoreRadius,
+    !ignoreRadius && searchRadius < 250,
   ].filter(Boolean).length;
 
   return (
@@ -902,24 +908,48 @@ function AllFiltersPopover() {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium">Search Radius</p>
-              <span className="text-sm text-muted-foreground">{searchRadius} mi</span>
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !ignoreRadius;
+                  setIgnoreRadius(next);
+                  if (initialized.current) save({ ignore_radius: next || null });
+                }}
+                className={`flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
+                  ignoreRadius
+                    ? "bg-primary text-primary-foreground"
+                    : "border border-input text-muted-foreground hover:bg-accent"
+                }`}
+              >
+                Time-only
+              </button>
             </div>
-            <Slider
-              value={[searchRadius]}
-              min={50}
-              max={350}
-              step={25}
-              onValueChange={([v]) => {
-                setSearchRadius(v);
-              }}
-              onValueCommit={([v]) => {
-                if (initialized.current) save({ preferred_radius_miles: v });
-              }}
-            />
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>50 mi</span>
-              <span>350 mi</span>
-            </div>
+            {ignoreRadius ? (
+              <p className="text-xs text-muted-foreground">Radius ignored — all orders reachable within your trip window are considered.</p>
+            ) : (
+              <>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Deadhead limit</span>
+                  <span className="text-sm text-muted-foreground">{searchRadius} mi</span>
+                </div>
+                <Slider
+                  value={[searchRadius]}
+                  min={50}
+                  max={350}
+                  step={25}
+                  onValueChange={([v]) => {
+                    setSearchRadius(v);
+                  }}
+                  onValueCommit={([v]) => {
+                    if (initialized.current) save({ preferred_radius_miles: v });
+                  }}
+                />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>50 mi</span>
+                  <span>350 mi</span>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Load Preferences */}

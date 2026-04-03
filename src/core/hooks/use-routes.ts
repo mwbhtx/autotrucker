@@ -10,6 +10,7 @@ export interface RouteSearchParams {
   departure_date: string;
   destination_lat?: number;
   destination_lng?: number;
+  destination_city?: string;
   search_radius_miles?: number;
   max_trip_days?: number;
   num_orders?: number;
@@ -20,6 +21,7 @@ export interface RouteSearchParams {
   twic_card?: boolean;
   team_driver?: boolean;
   no_tarps?: boolean;
+  ignore_radius?: boolean;
   // Cost model
   cost_per_mile?: number;
   avg_mpg?: number;
