@@ -76,7 +76,6 @@ export function DesktopSettingsView() {
   const [avgDrivingHours, setAvgDrivingHours] = useState("");
   const [maxWeight, setMaxWeight] = useState("");
   const [maxAssigned, setMaxAssigned] = useState("");
-  const [maxIdle, setMaxIdle] = useState("");
   const [trailerLabels, setTrailerLabels] = useState<string[]>([]);
   const [hazmatCertified, setHazmatCertified] = useState(false);
   const [twicCard, setTwicCard] = useState(false);
@@ -128,7 +127,6 @@ export function DesktopSettingsView() {
     setAvgDrivingHours(settings.avg_driving_hours_per_day != null ? String(settings.avg_driving_hours_per_day) : "");
     setMaxWeight(settings.max_weight != null ? String(settings.max_weight) : "");
     setMaxAssigned(settings.max_assigned_orders != null ? String(settings.max_assigned_orders) : "");
-    setMaxIdle(settings.max_idle_hours != null ? String(settings.max_idle_hours) : "");
     setTrailerLabels(codesToLabels(settings.trailer_types ?? []));
     setHazmatCertified(settings.hazmat_certified ?? false);
     setTwicCard(settings.twic_card ?? false);
@@ -400,24 +398,6 @@ export function DesktopSettingsView() {
             </p>
           </div>
 
-          <div className="space-y-3">
-            <label className="text-sm font-medium block">Max Idle Between Loads</label>
-            <select
-              value={maxIdle}
-              onChange={(e) => handleNumberChange("max_idle_hours", e.target.value, setMaxIdle)}
-              className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            >
-              <option value="">Not set (use filter bar)</option>
-              <option value="2">2 Hours</option>
-              <option value="4">4 Hours</option>
-              <option value="8">8 Hours</option>
-              <option value="24">24 Hours</option>
-            </select>
-            <p className="text-sm text-muted-foreground">
-              Maximum idle time between delivering one load and picking up the next.
-              This sets your default — you can still override it on the filter bar.
-            </p>
-          </div>
         </section>
 
         <Separator />
