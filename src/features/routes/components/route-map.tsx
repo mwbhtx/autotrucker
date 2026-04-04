@@ -3,7 +3,6 @@
 import { useEffect, useRef, useCallback } from "react";
 import { useTheme } from "next-themes";
 import maplibregl from "maplibre-gl";
-import { Protocol } from "pmtiles";
 import { layersWithCustomTheme, namedTheme } from "protomaps-themes-base";
 import { cleanupRouteLayers, type DrawableRouteLeg } from "@/core/utils/map/draw-route";
 import { LEG_COLORS, DEADHEAD_COLOR } from "@/core/utils/route-colors";
@@ -23,22 +22,19 @@ interface RouteMapProps {
   fullScreen?: boolean;
 }
 
-const PMTILES_URL = process.env.NEXT_PUBLIC_PMTILES_URL ?? "";
+const PROTOMAPS_API_KEY = process.env.NEXT_PUBLIC_PROTOMAPS_API_KEY ?? "";
 const ORS_API_KEY = process.env.NEXT_PUBLIC_ORS_API_KEY ?? "";
 
-// Register PMTiles protocol once
-const protocol = new Protocol();
-maplibregl.addProtocol("pmtiles", protocol.tile);
-
 /** Protomaps style object for a given theme */
-function pmtilesStyle(theme: "light" | "dark"): maplibregl.StyleSpecification {
+function protomapsStyle(theme: "light" | "dark"): maplibregl.StyleSpecification {
   return {
     version: 8,
     glyphs: "https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf",
     sources: {
       protomaps: {
         type: "vector",
-        url: `pmtiles://${PMTILES_URL}`,
+        tiles: [`https://api.protomaps.com/tiles/v4/{z}/{x}/{y}.mvt?key=${PROTOMAPS_API_KEY}`],
+        maxzoom: 15,
         attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>',
       },
     },
@@ -69,7 +65,7 @@ export function RouteMap({
     const isDarkInit = document.documentElement.classList.contains("dark");
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: pmtilesStyle(isDarkInit ? "dark" : "light"),
+      style: protomapsStyle(isDarkInit ? "dark" : "light"),
       center: [-95.7, 37.1],
       zoom: 4,
       attributionControl: false,
@@ -89,9 +85,9 @@ export function RouteMap({
     if (!map) return;
     const theme = resolvedTheme === "light" ? "light" : "dark";
     if (map.isStyleLoaded()) {
-      map.setStyle(pmtilesStyle(theme));
+      map.setStyle(protomapsStyle(theme));
     } else {
-      const onLoad = () => map.setStyle(pmtilesStyle(theme));
+      const onLoad = () => map.setStyle(protomapsStyle(theme));
       map.once("style.load", onLoad);
       return () => { map.off("style.load", onLoad); };
     }
