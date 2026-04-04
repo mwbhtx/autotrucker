@@ -7,7 +7,7 @@ Haulvisor analyzes thousands of available loads and builds the most profitable m
 ## Tech Stack
 
 - **Frontend:** Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4
-- **Maps:** Mapbox GL JS with custom route visualization
+- **Maps:** MapLibre GL JS + Protomaps tiles with custom Moonlight/Dark themes
 - **Data:** REST API with React Query for caching and real-time updates
 - **Auth:** JWT-based authentication with role-based access control
 - **Animations:** Framer Motion, Shader Gradient
@@ -20,7 +20,7 @@ Haulvisor analyzes thousands of available loads and builds the most profitable m
 - **Multi-stop route optimization** — Evaluates route chains (1–3 legs) and ranks them by a composite score factoring in pay, deadhead percentage, and cost per mile
 - **Round-trip planning** — "Home By" date constraint ensures routes get drivers back on schedule
 - **Real-time cost modeling** — Per-driver cost-per-mile settings with color-coded rate tiers (red/yellow/green) based on industry benchmarks and individual operating costs
-- **Interactive map** — Mapbox-powered route visualization with animated arcs, origin/destination markers, and click-to-select locations
+- **Interactive map** — MapLibre + Protomaps route visualization with road-following polylines (via OpenRouteService), origin/destination markers, and LocationIQ geocoding
 - **Guided onboarding** — Step-by-step tour walks new users through the filter bar using Onborda
 - **Analytics dashboard** — Track earnings, costs, and profit per lane over time
 - **Mobile experience** — Uber-inspired sequential flow with bottom tab navigation, screen stack navigation, and touch-optimized filters
@@ -64,6 +64,14 @@ src/
 - `features/` can import from `core/` and `platform/web/components/ui/`
 - `platform/` can import from `core/` only
 - `app/` is the composition layer — imports from everything
+
+## External Services
+
+| Service | Purpose | Free Tier | Env Var |
+|---------|---------|-----------|---------|
+| [Protomaps](https://protomaps.com) | Map tile rendering | Free (non-commercial) | `NEXT_PUBLIC_PROTOMAPS_API_KEY` |
+| [OpenRouteService](https://openrouteservice.org) | Route polylines (driving-hgv) | 2,000 req/day | `NEXT_PUBLIC_ORS_API_KEY` |
+| [LocationIQ](https://locationiq.com) | Geocoding (autocomplete + reverse) | 5,000 req/day | `NEXT_PUBLIC_LOCATIONIQ_KEY` |
 
 ## Related Repos
 
