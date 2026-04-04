@@ -93,7 +93,6 @@ export function OrdersTable({
           <TableRow>
             <TableHead className="w-8" />
             <TableHead>Order #</TableHead>
-            <TableHead>Status</TableHead>
             <TableHead>Origin</TableHead>
             <TableHead>Destination</TableHead>
             <TableHead>Pickup</TableHead>
@@ -109,7 +108,7 @@ export function OrdersTable({
           {isLoading &&
             Array.from({ length: 10 }).map((_, i) => (
               <TableRow key={`skeleton-${i}`}>
-                {Array.from({ length: 12 }).map((_, j) => (
+                {Array.from({ length: 11 }).map((_, j) => (
                   <TableCell key={j}>
                     <Skeleton className="h-4 w-full" />
                   </TableCell>
@@ -119,7 +118,7 @@ export function OrdersTable({
 
           {!isLoading && orders.length === 0 && (
             <TableRow>
-              <TableCell colSpan={12} className="h-24 text-center">
+              <TableCell colSpan={11} className="h-24 text-center">
                 <div className="space-y-2">
                   <p className="text-muted-foreground">No orders found.</p>
                   {onClearFilters && (
@@ -166,11 +165,6 @@ export function OrdersTable({
                     )}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={isClosed ? "destructive" : "secondary"}>
-                      {isClosed ? "Closed" : "Open"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
                     {order.origin_city}, {order.origin_state}
                   </TableCell>
                   <TableCell>
@@ -201,7 +195,7 @@ export function OrdersTable({
 
                 {isExpanded && (
                   <TableRow key={`${order.order_id}-detail`}>
-                    <TableCell colSpan={12} className="bg-muted/30 p-0">
+                    <TableCell colSpan={11} className="bg-muted/30 p-0">
                       <InlineDetail companyId={companyId} order={order} />
                     </TableCell>
                   </TableRow>
@@ -309,7 +303,7 @@ function InlineDetail({ companyId, order }: { companyId: string; order: Order })
             <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
               <DetailField label="Commodity" value={fullOrder.commodity} />
               {fullOrder.feet_remaining && <DetailField label="Feet Remaining" value={fullOrder.feet_remaining} />}
-              {fullOrder.agent_phone && <DetailField label="Agent Phone" value={fullOrder.agent_phone} />}
+
             </div>
           )}
 
