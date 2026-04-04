@@ -12,7 +12,7 @@ export interface DrawableRouteLeg {
   destination_state: string;
 }
 
-/** Minimal map interface for route drawing — matches the mapbox-gl methods we use */
+/** Minimal map interface for route drawing — matches the maplibre-gl methods we use */
 export interface MapLike {
   getLayer(id: string): unknown;
   removeLayer(id: string): void;
@@ -24,7 +24,7 @@ export interface MapLike {
   addImage(id: string, image: unknown): void;
   fitBounds(bounds: unknown, options?: unknown): void;
   getZoom(): number;
-  isStyleLoaded(): boolean;
+  isStyleLoaded(): boolean | void;
 }
 
 export interface RouteChainLike {

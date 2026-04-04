@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useCallback } from "react";
 import { useTheme } from "next-themes";
-import mapboxgl from "mapbox-gl";
+import maplibregl from "maplibre-gl";
+import { Protocol } from "pmtiles";
+import { layersWithCustomTheme, namedTheme } from "protomaps-themes-base";
 import { cleanupRouteLayers, type DrawableRouteLeg } from "@/core/utils/map/draw-route";
 import { LEG_COLORS, DEADHEAD_COLOR } from "@/core/utils/route-colors";
 
@@ -21,9 +23,30 @@ interface RouteMapProps {
   fullScreen?: boolean;
 }
 
-const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
+const PMTILES_URL = process.env.NEXT_PUBLIC_PMTILES_URL ?? "";
+const ORS_API_KEY = process.env.NEXT_PUBLIC_ORS_API_KEY ?? "";
 
-// Cache Mapbox Directions responses to avoid re-fetching when scrolling between cards
+// Register PMTiles protocol once
+const protocol = new Protocol();
+maplibregl.addProtocol("pmtiles", protocol.tile);
+
+/** Protomaps style object for a given theme */
+function pmtilesStyle(theme: "light" | "dark"): maplibregl.StyleSpecification {
+  return {
+    version: 8,
+    glyphs: "https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf",
+    sources: {
+      protomaps: {
+        type: "vector",
+        url: `pmtiles://${PMTILES_URL}`,
+        attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>',
+      },
+    },
+    layers: layersWithCustomTheme("protomaps", namedTheme(theme), "en"),
+  };
+}
+
+// Cache directions responses to avoid re-fetching when scrolling between cards
 const directionsCache = new Map<string, [number, number][]>();
 
 export function RouteMap({
@@ -34,7 +57,7 @@ export function RouteMap({
   fullScreen = false,
 }: RouteMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const mapRef = useRef<maplibregl.Map | null>(null);
   const legCountRef = useRef(0);
   const { resolvedTheme } = useTheme();
 
@@ -42,27 +65,17 @@ export function RouteMap({
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
-    mapboxgl.accessToken = MAPBOX_TOKEN;
-
     const isMobile = window.innerWidth < 768;
     const isDarkInit = document.documentElement.classList.contains("dark");
-    const map = new mapboxgl.Map({
+    const map = new maplibregl.Map({
       container: containerRef.current,
-      style: isDarkInit ? "mapbox://styles/mapbox/dark-v11" : "mapbox://styles/mwbhtx/cmncvt3ha007401qs35xhdqfg",
+      style: pmtilesStyle(isDarkInit ? "dark" : "light"),
       center: [-95.7, 37.1],
       zoom: 4,
       attributionControl: false,
-      projection: isMobile ? "mercator" : "globe",
     });
 
     mapRef.current = map;
-
-    // Apply theme config on style load
-    map.on("style.load", () => {
-      const isDark = document.documentElement.classList.contains("dark");
-      map.setConfigProperty("basemap", "lightPreset", isDark ? "night" : "day");
-      map.setConfigProperty("basemap", "theme", isDark ? "default" : "monochrome");
-    });
 
     return () => {
       map.remove();
@@ -74,26 +87,14 @@ export function RouteMap({
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    const newStyle = resolvedTheme === "light"
-      ? "mapbox://styles/mwbhtx/cmncvt3ha007401qs35xhdqfg"
-      : "mapbox://styles/mapbox/dark-v11";
+    const theme = resolvedTheme === "light" ? "light" : "dark";
     if (map.isStyleLoaded()) {
-      map.setStyle(newStyle);
+      map.setStyle(pmtilesStyle(theme));
     } else {
-      const onLoad = () => map.setStyle(newStyle);
+      const onLoad = () => map.setStyle(pmtilesStyle(theme));
       map.once("style.load", onLoad);
       return () => { map.off("style.load", onLoad); };
     }
-  }, [resolvedTheme]);
-
-
-  // Swap theme config when theme changes
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-    const isDark = resolvedTheme === "dark";
-    map.setConfigProperty("basemap", "lightPreset", isDark ? "night" : "day");
-    map.setConfigProperty("basemap", "theme", isDark ? "default" : "monochrome");
   }, [resolvedTheme]);
 
   // Draw selected route on map
@@ -272,7 +273,7 @@ export function RouteMap({
       });
 
       // Fit bounds to route (include deadhead segments)
-      const bounds = new mapboxgl.LngLatBounds();
+      const bounds = new maplibregl.LngLatBounds();
       for (const leg of legs) {
         bounds.extend(leg.origin);
         bounds.extend(leg.dest);
@@ -314,10 +315,12 @@ export function RouteMap({
           const key = `${a[0]},${a[1]};${b[0]},${b[1]}`;
           if (directionsCache.has(key)) return { id: seg.id, coords: directionsCache.get(key)! };
           try {
-            const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${key}?geometries=geojson&access_token=${MAPBOX_TOKEN}`;
-            const res = await fetch(url);
+            const url = `https://api.openrouteservice.org/v2/directions/driving-hgv?start=${a[0]},${a[1]}&end=${b[0]},${b[1]}`;
+            const res = await fetch(url, {
+              headers: { "Authorization": ORS_API_KEY },
+            });
             const data = await res.json();
-            const coords: [number, number][] = data.routes?.[0]?.geometry?.coordinates ?? [a, b];
+            const coords: [number, number][] = data.features?.[0]?.geometry?.coordinates ?? [a, b];
             directionsCache.set(key, coords);
             return { id: seg.id, coords };
           } catch {
@@ -327,7 +330,7 @@ export function RouteMap({
       ).then((results) => {
         if (cancelled) return;
         for (const { id, coords } of results) {
-          const source = map.getSource(id) as mapboxgl.GeoJSONSource | undefined;
+          const source = map.getSource(id) as maplibregl.GeoJSONSource | undefined;
           if (source) {
             source.setData({ type: "Feature", geometry: { type: "LineString", coordinates: coords }, properties: {} });
           }
