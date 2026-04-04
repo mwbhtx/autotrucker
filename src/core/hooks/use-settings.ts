@@ -24,6 +24,7 @@ export interface Settings {
   work_days: string[] | null;
   work_start_hour: number | null;
   work_end_hour: number | null;
+  max_deadhead_pct: number | null;
   onboarding_completed: boolean;
   disabled_settings?: string[];
   last_login: string;
