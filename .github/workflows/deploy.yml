@@ -34,7 +34,9 @@ jobs:
           NEXT_PUBLIC_API_URL: /api
           NEXT_PUBLIC_COGNITO_USER_POOL_ID: ${{ secrets.COGNITO_USER_POOL_ID }}
           NEXT_PUBLIC_COGNITO_CLIENT_ID: ${{ secrets.COGNITO_CLIENT_ID }}
-          NEXT_PUBLIC_MAPBOX_TOKEN: ${{ secrets.NEXT_PUBLIC_MAPBOX_TOKEN }}
+          NEXT_PUBLIC_PROTOMAPS_API_KEY: ${{ secrets.NEXT_PUBLIC_PROTOMAPS_API_KEY }}
+          NEXT_PUBLIC_ORS_API_KEY: ${{ secrets.NEXT_PUBLIC_ORS_API_KEY }}
+          NEXT_PUBLIC_LOCATIONIQ_KEY: ${{ secrets.NEXT_PUBLIC_LOCATIONIQ_KEY }}
 
       - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v4
