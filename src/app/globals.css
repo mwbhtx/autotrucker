@@ -185,18 +185,16 @@ html {
   color: var(--muted-foreground) !important;
   font-size: 12px !important;
 }
-.hv-tour-popover .driver-popover-footer .driver-popover-prev-btn {
+.hv-tour-popover .driver-popover-footer button {
   color: var(--foreground) !important;
   border-color: var(--border) !important;
   background: transparent !important;
   text-shadow: none !important;
 }
-.hv-tour-popover .driver-popover-footer .driver-popover-next-btn,
-.hv-tour-popover .driver-popover-footer .driver-popover-close-btn-text {
+.hv-tour-popover .driver-popover-footer button.driver-popover-next-btn {
   background-color: var(--primary) !important;
   color: var(--primary-foreground) !important;
   border: none !important;
-  text-shadow: none !important;
 }
 .hv-tour-popover .driver-popover-close-btn {
   color: var(--muted-foreground) !important;
