@@ -6,11 +6,13 @@ import { Skeleton } from "@/platform/web/components/ui/skeleton";
 import { RouteCard } from "@/features/routes/components/route-card";
 import type { RouteChain } from "@/core/types";
 import { type SortKey, SORT_OPTIONS, sortRouteChains } from "@/features/routes/utils/sort-options";
+import type { SearchProgress } from "@/core/hooks/use-routes";
 
 interface ResultsScreenProps {
   searchText: string;
   chains: RouteChain[];
   isLoading: boolean;
+  progress?: SearchProgress | null;
   onSearchBarTap: () => void;
   onFiltersTap: () => void;
   onRouteSelect: (chain: RouteChain) => void;
@@ -20,6 +22,7 @@ export function ResultsScreen({
   searchText,
   chains,
   isLoading,
+  progress,
   onSearchBarTap,
   onFiltersTap,
   onRouteSelect,
@@ -75,6 +78,12 @@ export function ResultsScreen({
 
       {/* Results */}
       <div className="flex-1 overflow-y-auto px-4 pt-2 pb-4 space-y-2">
+        {isLoading && progress && progress.pairs_total > 0 && (
+          <div className="px-0 py-1 text-sm text-muted-foreground">
+            Checking {progress.pairs_checked.toLocaleString()} / {progress.pairs_total.toLocaleString()} pairs
+            {progress.routes_found > 0 && ` — ${progress.routes_found} routes found`}
+          </div>
+        )}
         {isLoading && (
           <>
             {Array.from({ length: 5 }).map((_, i) => (
