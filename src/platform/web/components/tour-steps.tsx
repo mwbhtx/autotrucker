@@ -7,7 +7,7 @@ export const tourSteps: DriveStep[] = [
     element: "#onborda-origin",
     popover: {
       title: "📍 Set Your Origin",
-      description: `Select a <strong class="${hl}">starting city</strong> to see available routes from that location. This is the only required field to begin searching.`,
+      description: `Select a <strong class="${hl}">origin city</strong> to see available routes from that location. This is the only required field to begin searching.`,
       side: "bottom",
       align: "center",
     },
