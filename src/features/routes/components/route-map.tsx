@@ -316,6 +316,11 @@ export function RouteMap({
             const res = await fetch(url, {
               headers: { "Authorization": ORS_API_KEY },
             });
+            if (!res.ok) {
+              // ORS can't route between these points — fall back to straight line
+              directionsCache.set(key, [a, b]);
+              return { id: seg.id, coords: [a, b] as [number, number][] };
+            }
             const data = await res.json();
             const coords: [number, number][] = data.features?.[0]?.geometry?.coordinates ?? [a, b];
             directionsCache.set(key, coords);
