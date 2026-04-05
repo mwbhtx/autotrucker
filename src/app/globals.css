@@ -178,6 +178,9 @@ html {
 }
 .hv-tour-popover .driver-popover-description strong {
   color: var(--primary) !important;
+  background-color: var(--primary-foreground) !important;
+  padding: 1px 5px !important;
+  border-radius: 3px !important;
 }
 .hv-tour-popover .driver-popover-footer button {
   color: var(--foreground) !important;
