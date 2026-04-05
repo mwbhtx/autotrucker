@@ -57,6 +57,7 @@ export function MobileRoutesView() {
 
   // Fire query
   const routeQuery = useRouteSearch(activeCompanyId ?? "", searchParams);
+  const { progress } = routeQuery;
 
   // Build chain list from results (sorting handled by ResultsScreen)
   const chains = useMemo(() => {
@@ -200,14 +201,22 @@ export function MobileRoutesView() {
       )}
 
       {currentScreen.type === "results" && (
-        <ResultsScreen
-          searchText={searchText}
-          chains={chains}
-          isLoading={routeQuery.isLoading}
-          onSearchBarTap={handleSearchBarTap}
-          onFiltersTap={handleFiltersTap}
-          onRouteSelect={handleRouteSelect}
-        />
+        <>
+          {routeQuery.isLoading && progress && progress.pairs_total > 0 && (
+            <div className="px-4 py-2 text-sm text-muted-foreground">
+              Checking {progress.pairs_checked.toLocaleString()} / {progress.pairs_total.toLocaleString()} pairs
+              {progress.routes_found > 0 && ` — ${progress.routes_found} routes found`}
+            </div>
+          )}
+          <ResultsScreen
+            searchText={searchText}
+            chains={chains}
+            isLoading={routeQuery.isLoading}
+            onSearchBarTap={handleSearchBarTap}
+            onFiltersTap={handleFiltersTap}
+            onRouteSelect={handleRouteSelect}
+          />
+        </>
       )}
 
       {/* Overlay screens with animation */}

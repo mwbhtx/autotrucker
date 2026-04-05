@@ -54,7 +54,7 @@ export function DesktopRoutesView() {
     return selectedChain.legs.map((l) => l.order_id ?? "spec").join("|");
   }, [selectedChain]);
 
-  const { data, isLoading, isFetched } = useRouteSearch(activeCompanyId ?? "", searchParams);
+  const { data, isLoading, isFetched, progress } = useRouteSearch(activeCompanyId ?? "", searchParams);
   const routes = useMemo(() => data?.routes ?? [], [data?.routes]);
 
   const orderUrlTemplate = data?.order_url_template;
@@ -280,6 +280,20 @@ export function DesktopRoutesView() {
         {/* Column 1: Route list */}
         {hasActiveSearch && (
           <div className="w-[35%] min-w-[280px] max-w-[450px] shrink-0 min-h-0">
+            {isLoading && progress && progress.pairs_total > 0 && (
+              <div className="px-4 pt-3 pb-1 space-y-1.5">
+                <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full bg-primary rounded-full transition-all duration-300"
+                    style={{ width: `${Math.min(100, (progress.pairs_checked / progress.pairs_total) * 100)}%` }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Checking {progress.pairs_checked.toLocaleString()} / {progress.pairs_total.toLocaleString()} pairs
+                  {progress.routes_found > 0 && ` — ${progress.routes_found} routes found`}
+                </p>
+              </div>
+            )}
             <RouteList
               chains={displayLocation.routeChains}
               selectedIndex={selectedItemIndex}
