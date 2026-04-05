@@ -36,7 +36,7 @@ function formatDateRange(early?: string | null, late?: string | null): string {
     const time = date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
     return `${day} ${time}`;
   };
-  if (!late || early === late) return fmtDateTime(early);
+  if (!late) return fmtDateTime(early);
   return `${fmtDateTime(early)} – ${fmtDateTime(late)}`;
 }
 
