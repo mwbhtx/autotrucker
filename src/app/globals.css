@@ -186,15 +186,17 @@ html {
   font-size: 12px !important;
 }
 .hv-tour-popover .driver-popover-prev-btn {
-  color: var(--muted-foreground) !important;
+  color: var(--foreground) !important;
   border-color: var(--border) !important;
   background: transparent !important;
+  text-shadow: none !important;
 }
 .hv-tour-popover .driver-popover-next-btn,
 .hv-tour-popover .driver-popover-close-btn-text {
   background-color: var(--primary) !important;
   color: var(--primary-foreground) !important;
   border: none !important;
+  text-shadow: none !important;
 }
 .hv-tour-popover .driver-popover-close-btn {
   color: var(--muted-foreground) !important;
