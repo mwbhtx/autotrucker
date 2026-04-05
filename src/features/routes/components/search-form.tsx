@@ -498,40 +498,18 @@ export function SearchFilters({
     setDestination(null);
   }, [resetKey]);
 
-  // Pre-fill from settings (or restore from sessionStorage)
-  // compactBar instances only mirror state — they never auto-fire searches on mount.
-  // The desktop instance (or MobileFilterSheet when opened) is the sole search trigger.
+  // Pre-fill origin from settings or sessionStorage (no auto-search)
   const searchEnabled = useRef(false);
   useEffect(() => {
     if (!settings) return;
     if (defaultsLoaded) {
-      // Restored from sessionStorage — enable search and fire with restored state
       if (!searchEnabled.current) {
         searchEnabled.current = true;
-        if (!compactBar) {
-          setTimeout(() => {
-            if (origin) {
-              onOriginChange?.(origin ? { lat: origin.lat, lng: origin.lng, city: origin.name.split(",")[0] } : null);
-              if (destination) {
-                onDestinationChange?.(destination ? { lat: destination.lat, lng: destination.lng, city: destination.name.split(",")[0] } : null);
-              }
-              onSearch({
-                origin_lat: origin.lat,
-                origin_lng: origin.lng,
-                departure_date: departureDate,
-                ...(destination ? { destination_lat: destination.lat, destination_lng: destination.lng, destination_city: destination.name.split(",")[0] } : {}),
-                max_trip_days: daysOut,
-                num_orders: numOrders,
-                origin_radius_miles: originRadius,
-                ...(destination ? { dest_radius_miles: destRadius } : {}),
-                ...(maxDeadheadPct != null ? { max_deadhead_pct: maxDeadheadPct } : {}),
-                ...(minDailyProfit != null ? { min_daily_profit: minDailyProfit } : {}),
-                ...(minRpm != null ? { min_rpm: minRpm } : {}),
-                ...(maxInterlegDh != null ? { max_interleg_deadhead_miles: maxInterlegDh } : {}),
-                ...driverProfile,
-              });
-            }
-          }, 0);
+        if (!compactBar && origin) {
+          onOriginChange?.(origin ? { lat: origin.lat, lng: origin.lng, city: origin.name.split(",")[0] } : null);
+          if (destination) {
+            onDestinationChange?.(destination ? { lat: destination.lat, lng: destination.lng, city: destination.name.split(",")[0] } : null);
+          }
         }
       }
       return;
@@ -545,19 +523,7 @@ export function SearchFilters({
     if (!compactBar) {
       setTimeout(() => {
         if (homePlace) {
-          onSearch({
-            origin_lat: homePlace.lat,
-            origin_lng: homePlace.lng,
-            departure_date: departureDate,
-            max_trip_days: daysOut,
-            num_orders: numOrders,
-            origin_radius_miles: originRadius,
-            ...(maxDeadheadPct != null ? { max_deadhead_pct: maxDeadheadPct } : {}),
-            ...(minDailyProfit != null ? { min_daily_profit: minDailyProfit } : {}),
-            ...(minRpm != null ? { min_rpm: minRpm } : {}),
-            ...(maxInterlegDh != null ? { max_interleg_deadhead_miles: maxInterlegDh } : {}),
-            ...driverProfile,
-          });
+          onOriginChange?.({ lat: homePlace.lat, lng: homePlace.lng, city: (homePlace.name ?? '').split(",")[0] });
         }
       }, 0);
     }

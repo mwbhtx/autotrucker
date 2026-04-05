@@ -288,7 +288,7 @@ export function DesktopRoutesView() {
                     style={{ width: `${Math.min(100, (progress.pairs_checked / progress.pairs_total) * 100)}%` }}
                   />
                 </div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground text-center">
                   Checking {progress.pairs_checked.toLocaleString()} / {progress.pairs_total.toLocaleString()} pairs
                   {progress.routes_found > 0 && ` — ${progress.routes_found} routes found`}
                 </p>
