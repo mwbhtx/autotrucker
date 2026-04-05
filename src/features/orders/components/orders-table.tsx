@@ -30,21 +30,14 @@ function formatCurrency(value: number): string {
 
 function formatDateRange(early?: string | null, late?: string | null): string {
   if (!early) return "—";
-  const fmt = (d: string) => {
+  const fmtDateTime = (d: string) => {
     const date = new Date(d);
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    const day = date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    const time = date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+    return `${day} ${time}`;
   };
-  const fmtTime = (d: string) => {
-    const date = new Date(d);
-    return date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-  };
-  if (!late || early === late) return `${fmt(early)} ${fmtTime(early)}`;
-  const earlyDate = new Date(early);
-  const lateDate = new Date(late);
-  if (earlyDate.toDateString() === lateDate.toDateString()) {
-    return `${fmt(early)} ${fmtTime(early)} – ${fmtTime(late)}`;
-  }
-  return `${fmt(early)} – ${fmt(late)}`;
+  if (!late || early === late) return fmtDateTime(early);
+  return `${fmtDateTime(early)} – ${fmtDateTime(late)}`;
 }
 
 function formatWeight(lbs: number | undefined): string {
