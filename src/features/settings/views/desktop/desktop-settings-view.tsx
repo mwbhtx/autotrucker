@@ -81,7 +81,6 @@ export function DesktopSettingsView() {
   const [twicCard, setTwicCard] = useState(false);
   const [teamDriver, setTeamDriver] = useState(false);
   const [noTarps, setNoTarps] = useState(false);
-  const [workDays, setWorkDays] = useState<string[]>([]);
   const [workStartHour, setWorkStartHour] = useState<string>("6");
   const [workEndHour, setWorkEndHour] = useState<string>("16");
 
@@ -132,7 +131,6 @@ export function DesktopSettingsView() {
     setTwicCard(settings.twic_card ?? false);
     setTeamDriver(settings.team_driver ?? false);
     setNoTarps(settings.no_tarps ?? false);
-    setWorkDays(settings.work_days ?? []);
     setWorkStartHour(settings.work_start_hour != null ? String(settings.work_start_hour) : "6");
     setWorkEndHour(settings.work_end_hour != null ? String(settings.work_end_hour) : "16");
     // Mark initialized after a tick so the first render doesn't trigger saves
@@ -471,60 +469,10 @@ export function DesktopSettingsView() {
         <section id="settings-schedule" className="max-w-2xl space-y-6">
           <div>
             <h3 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">Schedule</h3>
-            <p className="text-xs text-muted-foreground mt-1">Set your available work days.</p>
+            <p className="text-xs text-muted-foreground mt-1">Set your working hours.</p>
           </div>
 
           <div className="space-y-3">
-            <div className="flex flex-wrap gap-2">
-              {(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const).map((day) => {
-                const allSelected = workDays.length === 0 || workDays.length === 7;
-                const selected = allSelected || workDays.includes(day);
-                return (
-                  <button
-                    key={day}
-                    type="button"
-                    onClick={() => {
-                      const next = workDays.includes(day)
-                        ? workDays.filter((d) => d !== day)
-                        : [...workDays, day];
-                      const resolved = next.length === 7 ? [] : next;
-                      setWorkDays(resolved);
-                      if (initialized.current) save({ work_days: resolved.length > 0 ? resolved : null });
-                    }}
-                    className={`rounded-lg border px-3 py-1.5 text-sm transition-colors ${
-                      selected
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-input bg-transparent hover:bg-accent hover:text-accent-foreground"
-                    }`}
-                  >
-                    {day}
-                  </button>
-                );
-              })}
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => { setWorkDays([]); if (initialized.current) save({ work_days: null }); }}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                All days
-              </button>
-              <span className="text-sm text-muted-foreground">/</span>
-              <button
-                type="button"
-                onClick={() => { const wd = ["Mon", "Tue", "Wed", "Thu", "Fri"]; setWorkDays(wd); if (initialized.current) save({ work_days: wd }); }}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Weekdays only
-              </button>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Routes won&apos;t include pickups or deliveries on your off days.
-            </p>
-          </div>
-
-          <div className="space-y-3 pt-4 border-t border-border">
             <h4 className="text-sm font-medium text-muted-foreground">Working Hours</h4>
             <p className="text-xs text-muted-foreground">Set your preferred driving window. The trip schedule will start and end each day within these hours.</p>
             <div className="flex items-center gap-4">

@@ -43,7 +43,7 @@ export const tourSteps: DriveStep[] = [
     element: "#onborda-all-filters",
     popover: {
       title: "⚙️ All Filters",
-      description: `Fine-tune your search with <strong class="${hl}">trailer type</strong>, <strong class="${hl}">weight limits</strong>, <strong class="${hl}">hazmat</strong>, <strong class="${hl}">TWIC</strong>, and <strong class="${hl}">work days</strong>. Set your work days to avoid routes that require pickups or deliveries on your off days.`,
+      description: `Fine-tune your search with <strong class="${hl}">trailer type</strong>, <strong class="${hl}">weight limits</strong>, <strong class="${hl}">hazmat</strong>, <strong class="${hl}">TWIC</strong>, and <strong class="${hl}">route quality</strong> filters.`,
       side: "bottom",
       align: "end",
     },

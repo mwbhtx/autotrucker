@@ -21,7 +21,6 @@ export interface Settings {
   home_base_lng: number | null;
   avg_mpg: number | null;
   avg_driving_hours_per_day: number | null;
-  work_days: string[] | null;
   work_start_hour: number | null;
   work_end_hour: number | null;
   onboarding_completed: boolean;
