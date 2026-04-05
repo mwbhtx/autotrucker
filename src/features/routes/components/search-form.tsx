@@ -591,42 +591,16 @@ export function SearchFilters({
     });
   }, [origin, destination, departureDate, daysOut, numOrders, originRadius, destRadius, maxDeadheadPct, minDailyProfit, minRpm, maxInterlegDh, profileKey, onClearSearch]);
 
-  // Auto-search on filter changes (only after initial load settles)
-  useEffect(() => {
-    if (!searchEnabled.current) return;
-    fireSearch();
-  }, [departureDate, daysOut, numOrders, originRadius, destRadius, maxDeadheadPct, minDailyProfit, minRpm, maxInterlegDh]);
-
-  // Auto-search on driver profile changes (debounced)
-  // Signal loading immediately so the UI feels responsive, then fire the actual query after 400ms
-  // Skip the first fire — the settings-restore effect already handled it
-  const profileInitialized = useRef(false);
-  useEffect(() => {
-    if (!searchEnabled.current) return;
-    if (!profileInitialized.current) {
-      profileInitialized.current = true;
-      return;
-    }
-    onFilterPending?.();
-    const id = setTimeout(() => fireSearch(), 1000);
-    return () => clearTimeout(id);
-  }, [profileKey]);
-
+  // Update map markers when origin/destination change (no auto-search)
   useEffect(() => {
     if (!searchEnabled.current) return;
     onOriginChange?.(origin ? { lat: origin.lat, lng: origin.lng, city: origin.name.split(",")[0] } : null);
-    if (!origin) {
-      onClearSearch?.();
-      return;
-    }
-    fireSearch();
+    if (!origin) onClearSearch?.();
   }, [origin]);
 
   useEffect(() => {
     if (!searchEnabled.current) return;
     onDestinationChange?.(destination ? { lat: destination.lat, lng: destination.lng, city: destination.name.split(",")[0] } : null);
-    if (!origin) return;
-    fireSearch();
   }, [destination]);
 
   const handleSaveAsHome = () => {
@@ -783,6 +757,13 @@ export function SearchFilters({
           {departureDatePill}
           <DaysOutPill value={daysOut} onChange={setDaysOut} departureDate={departureDate} />
           <NumOrdersPill value={numOrders} onChange={setNumOrders} />
+          <Button
+            onClick={fireSearch}
+            disabled={!origin}
+            className="h-9 rounded-full px-5 text-sm font-medium"
+          >
+            Search
+          </Button>
         </div>
       </div>
     );
@@ -829,6 +810,13 @@ export function SearchFilters({
         minRpm={minRpm} setMinRpm={setMinRpm}
         maxInterlegDh={maxInterlegDh} setMaxInterlegDh={setMaxInterlegDh}
       /></div>
+      <Button
+        onClick={fireSearch}
+        disabled={!origin}
+        className="h-9 rounded-full px-5 text-sm font-medium"
+      >
+        Search
+      </Button>
       {clearButton}
     </div>
   );
