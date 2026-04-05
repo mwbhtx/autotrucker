@@ -280,17 +280,27 @@ export function DesktopRoutesView() {
         {/* Column 1: Route list */}
         {hasActiveSearch && (
           <div className="w-[35%] min-w-[280px] max-w-[450px] shrink-0 min-h-0">
-            {isLoading && progress && progress.pairs_total > 0 && (
+            {isLoading && (
               <div className="px-4 pt-3 pb-1 space-y-1.5">
                 <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
-                  <div
-                    className="h-full bg-primary rounded-full transition-all duration-300"
-                    style={{ width: `${Math.min(100, (progress.pairs_checked / progress.pairs_total) * 100)}%` }}
-                  />
+                  {progress && progress.pairs_total > 0 ? (
+                    <div
+                      className="h-full bg-primary rounded-full transition-all duration-300"
+                      style={{ width: `${Math.min(100, (progress.pairs_checked / progress.pairs_total) * 100)}%` }}
+                    />
+                  ) : (
+                    <div className="h-full w-1/3 bg-primary rounded-full animate-[shimmer_1.5s_ease-in-out_infinite]" />
+                  )}
                 </div>
                 <p className="text-xs text-muted-foreground text-center">
-                  Checking {progress.pairs_checked.toLocaleString()} / {progress.pairs_total.toLocaleString()} pairs
-                  {progress.routes_found > 0 && ` — ${progress.routes_found} routes found`}
+                  {progress && progress.pairs_total > 0 ? (
+                    <>
+                      Checking {progress.pairs_checked.toLocaleString()} / {progress.pairs_total.toLocaleString()} pairs
+                      {progress.routes_found > 0 && ` — ${progress.routes_found} routes found`}
+                    </>
+                  ) : (
+                    "Warming up the search engine..."
+                  )}
                 </p>
               </div>
             )}
