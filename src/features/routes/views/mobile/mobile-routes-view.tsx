@@ -86,7 +86,7 @@ export function MobileRoutesView() {
         departure_date: filters.departureDate,
         ...(dest ? { destination_lat: dest.lat, destination_lng: dest.lng } : {}),
         max_trip_days: filters.daysOut,
-        ...(filters.numOrders > 0 ? { num_orders: filters.numOrders } : {}),
+        num_orders: filters.numOrders,
         ...driverProfile,
       };
       setSearchParams(params);
