@@ -579,7 +579,7 @@ export function SearchFilters({
   useEffect(() => {
     if (!searchEnabled.current) return;
     fireSearch();
-  }, [departureDate, daysOut, numOrders]);
+  }, [departureDate, daysOut, numOrders, originRadius, destRadius]);
 
   // Auto-search on driver profile changes (debounced)
   // Signal loading immediately so the UI feels responsive, then fire the actual query after 400ms
