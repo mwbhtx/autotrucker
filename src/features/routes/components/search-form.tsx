@@ -768,10 +768,14 @@ export function SearchFilters({
   const nudge1Active = !origin && defaultsLoaded && !originPopoverOpen && !isOnboarding;
   useEffect(() => {
     if (nudge1Active) {
-      // Re-show nudge if it was dismissed or not yet created
       const show = () => {
-        if (nudgeRef.current) return; // already showing
-        nudgeRef.current = driver({ overlayOpacity: 0, allowClose: false, popoverClass: "hv-tour-popover" });
+        nudgeRef.current?.destroy();
+        nudgeRef.current = driver({ overlayOpacity: 0, allowClose: true, popoverClass: "hv-tour-popover", onDestroyStarted: () => {
+          // Re-show after user dismisses, if condition still holds
+          nudgeRef.current?.destroy();
+          nudgeRef.current = null;
+          setTimeout(show, 1000);
+        }});
         nudgeRef.current.highlight({
           element: "#onborda-origin",
           popover: {
@@ -783,7 +787,11 @@ export function SearchFilters({
         });
       };
       const timer = setTimeout(show, 500);
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(timer);
+        nudgeRef.current?.destroy();
+        nudgeRef.current = null;
+      };
     } else {
       nudgeRef.current?.destroy();
       nudgeRef.current = null;
@@ -795,8 +803,12 @@ export function SearchFilters({
   useEffect(() => {
     if (nudge2Active) {
       const show = () => {
-        if (searchNudgeRef.current) return;
-        searchNudgeRef.current = driver({ overlayOpacity: 0, allowClose: false, popoverClass: "hv-tour-popover" });
+        searchNudgeRef.current?.destroy();
+        searchNudgeRef.current = driver({ overlayOpacity: 0, allowClose: true, popoverClass: "hv-tour-popover", onDestroyStarted: () => {
+          searchNudgeRef.current?.destroy();
+          searchNudgeRef.current = null;
+          setTimeout(show, 1000);
+        }});
         searchNudgeRef.current.highlight({
           element: "#onborda-search-btn",
           popover: {
@@ -808,7 +820,11 @@ export function SearchFilters({
         });
       };
       const timer = setTimeout(show, 500);
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(timer);
+        searchNudgeRef.current?.destroy();
+        searchNudgeRef.current = null;
+      };
     } else {
       searchNudgeRef.current?.destroy();
       searchNudgeRef.current = null;
