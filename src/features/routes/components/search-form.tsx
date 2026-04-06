@@ -802,12 +802,12 @@ export function SearchFilters({
       </div>
       {/* Inline hints — no overlay, no click blocking */}
       {showOriginHint && (
-        <div className="px-1 pt-2 text-sm text-muted-foreground">
+        <div className="px-1 pt-2 text-sm font-medium text-muted-foreground">
           Enter an <strong className="bg-primary text-primary-foreground px-1 py-0.5 rounded">origin city</strong> and click <strong className="bg-primary text-primary-foreground px-1 py-0.5 rounded">Search</strong> to get route suggestions.
         </div>
       )}
       {!showOriginHint && showSearchHint && (
-        <div className="px-1 pt-2 text-sm text-muted-foreground">
+        <div className="px-1 pt-2 text-sm font-medium text-muted-foreground">
           Click <strong className="bg-primary text-primary-foreground px-1 py-0.5 rounded">Search</strong> to analyze routes from your origin city.
         </div>
       )}
