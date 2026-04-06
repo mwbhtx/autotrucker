@@ -203,6 +203,7 @@ export function DesktopRoutesView() {
     setFilterPending(false);
     setSearchParams(p);
     setSelectedItemIndex(0);
+    setSelectedChain(null);
     setSelectedRouteLegs(null);
   };
 
