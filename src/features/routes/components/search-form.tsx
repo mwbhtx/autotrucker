@@ -546,14 +546,14 @@ export function SearchFilters({
   const lastSearchedParamsKey = useRef<string>("");
   const hasSearched = lastSearchedParamsKey.current !== "";
 
-  // Reset search state when search is cancelled (isSearching goes false with no results)
+  // When a search ends (isSearching transitions true→false), allow re-searching with same params
   const prevSearching = useRef(false);
   useEffect(() => {
-    if (prevSearching.current && !isSearching && !hasResults) {
+    if (prevSearching.current && !isSearching) {
       lastSearchedParamsKey.current = "";
     }
     prevSearching.current = !!isSearching;
-  }, [isSearching, hasResults]);
+  }, [isSearching]);
   const paramsChanged = currentParamsKey !== lastSearchedParamsKey.current;
 
   // Fire search (shared helper)
