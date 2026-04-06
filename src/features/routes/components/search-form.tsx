@@ -12,7 +12,7 @@ import {
 
 import { driver } from "driver.js";
 import "driver.js/dist/driver.css";
-import { ChevronDown, LocateIcon, SlidersHorizontal, XIcon } from "lucide-react";
+import { ChevronDown, LocateIcon, SlidersHorizontal, XIcon, SearchIcon } from "lucide-react";
 import { BorderBeam } from "@/platform/web/components/ui/border-beam";
 import { Calendar } from "@/platform/web/components/ui/calendar";
 import { useSettings, useUpdateSettings } from "@/core/hooks/use-settings";
@@ -771,107 +771,46 @@ export function SearchFilters({
   }
 
   /* ---- Desktop layout ---- */
-  const nudgeRef = useRef<ReturnType<typeof driver> | null>(null);
-  const searchNudgeRef = useRef<ReturnType<typeof driver> | null>(null);
-
-  // Nudge 1: No origin set — point to origin input
-  const nudge1Active = !origin && defaultsLoaded && !originPopoverOpen && !isOnboarding;
-  useEffect(() => {
-    if (nudge1Active) {
-      const timer = setTimeout(() => {
-        nudgeRef.current?.destroy();
-        nudgeRef.current = driver({
-          overlayOpacity: 0,
-          allowClose: false,
-          stagePadding: 0,
-          stageRadius: 0,
-          popoverClass: "hv-tour-popover",
-        });
-        nudgeRef.current.highlight({
-          element: "#onborda-origin",
-          popover: {
-            title: "Set an origin",
-            description: `Enter an <strong>origin city</strong> and click <strong>Search</strong> to get route suggestions.`,
-            side: "bottom",
-            align: "start",
-          },
-        });
-        // Allow clicks to pass through the overlay
-        const overlay = document.querySelector('.driver-overlay') as HTMLElement | null;
-        if (overlay) overlay.style.pointerEvents = 'none';
-      }, 500);
-      return () => {
-        clearTimeout(timer);
-        nudgeRef.current?.destroy();
-        nudgeRef.current = null;
-      };
-    } else {
-      nudgeRef.current?.destroy();
-      nudgeRef.current = null;
-    }
-  }, [nudge1Active]);
-
-  // Nudge 2: Origin set, no results, not searching — point to Search button
-  const nudge2Active = !!origin && !hasResults && !isSearching && !hasSearched && defaultsLoaded && !isOnboarding;
-  useEffect(() => {
-    if (nudge2Active) {
-      const timer = setTimeout(() => {
-        searchNudgeRef.current?.destroy();
-        searchNudgeRef.current = driver({
-          overlayOpacity: 0,
-          allowClose: false,
-          stagePadding: 0,
-          stageRadius: 0,
-          popoverClass: "hv-tour-popover",
-        });
-        searchNudgeRef.current.highlight({
-          element: "#onborda-search-btn",
-          popover: {
-            title: "Search for routes",
-            description: `Click <strong>Search</strong> to analyze routes from your origin city.`,
-            side: "bottom",
-            align: "end",
-          },
-        });
-        const overlay = document.querySelector('.driver-overlay') as HTMLElement | null;
-        if (overlay) overlay.style.pointerEvents = 'none';
-      }, 500);
-      return () => {
-        clearTimeout(timer);
-        searchNudgeRef.current?.destroy();
-        searchNudgeRef.current = null;
-      };
-    } else {
-      searchNudgeRef.current?.destroy();
-      searchNudgeRef.current = null;
-    }
-  }, [nudge2Active]);
+  const showOriginHint = !origin && defaultsLoaded && !isOnboarding;
+  const showSearchHint = !!origin && !isSearching && defaultsLoaded && !isOnboarding;
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      {originPill}
-      {destPill}
-      {departureDatePill}
-      <div id="onborda-days-out"><DaysOutPill value={daysOut} onChange={setDaysOut} departureDate={departureDate} /></div>
-      <NumOrdersPill value={numOrders} onChange={setNumOrders} />
-      <div id="onborda-all-filters"><AllFiltersPopover
-        maxDeadheadPct={maxDeadheadPct} setMaxDeadheadPct={setMaxDeadheadPct}
-        minDailyProfit={minDailyProfit} setMinDailyProfit={setMinDailyProfit}
-        minRpm={minRpm} setMinRpm={setMinRpm}
-        maxInterlegDh={maxInterlegDh} setMaxInterlegDh={setMaxInterlegDh}
-      /></div>
-      {!isSearching && (
-        <div id="onborda-search-btn">
-        <Button
-          onClick={fireSearch}
-          disabled={!origin}
-          className="h-9 rounded-full px-5 text-sm font-medium"
-        >
-          Search
-        </Button>
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-2">
+        {originPill}
+        {destPill}
+        {departureDatePill}
+        <div id="onborda-days-out"><DaysOutPill value={daysOut} onChange={setDaysOut} departureDate={departureDate} /></div>
+        <NumOrdersPill value={numOrders} onChange={setNumOrders} />
+        <div id="onborda-all-filters"><AllFiltersPopover
+          maxDeadheadPct={maxDeadheadPct} setMaxDeadheadPct={setMaxDeadheadPct}
+          minDailyProfit={minDailyProfit} setMinDailyProfit={setMinDailyProfit}
+          minRpm={minRpm} setMinRpm={setMinRpm}
+          maxInterlegDh={maxInterlegDh} setMaxInterlegDh={setMaxInterlegDh}
+        /></div>
+        {!isSearching && (
+          <Button
+            onClick={fireSearch}
+            disabled={!origin}
+            className="h-9 rounded-full px-5 text-sm font-medium"
+          >
+            <SearchIcon className="h-4 w-4" />
+            Search
+          </Button>
+        )}
+        {clearButton}
+      </div>
+      {/* Inline hints — no overlay, no click blocking */}
+      {showOriginHint && (
+        <div className="bg-card rounded-lg px-4 py-2.5 text-sm text-foreground">
+          Enter an <strong className="bg-primary text-primary-foreground px-1 py-0.5 rounded">origin city</strong> and click <strong className="bg-primary text-primary-foreground px-1 py-0.5 rounded">Search</strong> to get route suggestions.
         </div>
       )}
-      {clearButton}
+      {!showOriginHint && showSearchHint && (
+        <div className="bg-card rounded-lg px-4 py-2.5 text-sm text-foreground">
+          Click <strong className="bg-primary text-primary-foreground px-1 py-0.5 rounded">Search</strong> to analyze routes from your origin city.
+        </div>
+      )}
     </div>
   );
 }
