@@ -801,15 +801,14 @@ export function SearchFilters({
         {clearButton}
       </div>
       {/* Inline hints — no overlay, no click blocking */}
-      {(showOriginHint || (!showOriginHint && showSearchHint)) && <div className="pt-1" />}
       {showOriginHint && (
-        <div className="bg-card rounded-lg px-4 py-2.5 text-sm text-foreground">
-          Enter an <strong className="bg-primary text-primary-foreground px-1 py-0.5 rounded">origin city</strong> and click <strong className="bg-primary text-primary-foreground px-1 py-0.5 rounded">Search</strong> to get route suggestions.
+        <div className="px-1 pt-2 text-sm text-muted-foreground">
+          Enter an <strong className="bg-primary text-primary-foreground px-1 py-0.5 rounded">origin city</strong> and click <span className="inline-flex items-center gap-1 bg-primary text-primary-foreground px-1.5 py-0.5 rounded text-xs font-medium align-middle"><SearchIcon className="h-3 w-3" />Search</span> to get route suggestions.
         </div>
       )}
       {!showOriginHint && showSearchHint && (
-        <div className="bg-card rounded-lg px-4 py-2.5 text-sm text-foreground">
-          Click <strong className="bg-primary text-primary-foreground px-1 py-0.5 rounded">Search</strong> to analyze routes from your origin city.
+        <div className="px-1 pt-2 text-sm text-muted-foreground">
+          Click <span className="inline-flex items-center gap-1 bg-primary text-primary-foreground px-1.5 py-0.5 rounded text-xs font-medium align-middle"><SearchIcon className="h-3 w-3" />Search</span> to analyze routes from your origin city.
         </div>
       )}
     </div>
