@@ -203,7 +203,7 @@ html {
 .hv-tour-popover .driver-popover-arrow-side-top .driver-popover-arrow,
 .hv-tour-popover .driver-popover-arrow-side-left .driver-popover-arrow,
 .hv-tour-popover .driver-popover-arrow-side-right .driver-popover-arrow {
-  border-color: var(--card) !important;
+  border-color: var(--primary) !important;
 }
 
 /* react-day-picker v9: selected day highlight */

@@ -403,6 +403,8 @@ interface SearchFiltersProps {
   isSearching?: boolean;
   /** Cancel the current search */
   onCancel?: () => void;
+  /** Whether route results are currently available */
+  hasResults?: boolean;
 }
 
 export function SearchFilters({
@@ -420,6 +422,7 @@ export function SearchFilters({
   children,
   isSearching,
   onCancel,
+  hasResults,
 }: SearchFiltersProps) {
   const { data: settings } = useSettings();
   const updateSettings = useUpdateSettings();
@@ -760,6 +763,9 @@ export function SearchFilters({
 
   /* ---- Desktop layout ---- */
   const nudgeRef = useRef<ReturnType<typeof driver> | null>(null);
+  const searchNudgeRef = useRef<ReturnType<typeof driver> | null>(null);
+
+  // Nudge 1: No origin set — point to origin input
   useEffect(() => {
     const shouldShow = !origin && defaultsLoaded && searchEnabled.current && !originPopoverOpen && !isOnboarding;
     if (shouldShow) {
@@ -769,7 +775,7 @@ export function SearchFilters({
           element: "#onborda-origin",
           popover: {
             title: "Set an origin",
-            description: "Pick a starting city to get route suggestions",
+            description: `Enter an <strong>origin city</strong> and click <strong>Search</strong> to get route suggestions.`,
             side: "bottom",
             align: "start",
           },
@@ -786,6 +792,33 @@ export function SearchFilters({
     }
   }, [origin, defaultsLoaded, originPopoverOpen, isOnboarding]);
 
+  // Nudge 2: Origin set, no results, not searching — point to Search button
+  useEffect(() => {
+    const shouldShow = origin && !hasResults && !isSearching && !hasSearched && defaultsLoaded && searchEnabled.current && !isOnboarding;
+    if (shouldShow) {
+      const timer = setTimeout(() => {
+        searchNudgeRef.current = driver({ overlayOpacity: 0, allowClose: true, popoverClass: "hv-tour-popover" });
+        searchNudgeRef.current.highlight({
+          element: "#onborda-search-btn",
+          popover: {
+            title: "Search for routes",
+            description: `Click <strong>Search</strong> to analyze routes from your origin city.`,
+            side: "bottom",
+            align: "end",
+          },
+        });
+      }, 1000);
+      return () => {
+        clearTimeout(timer);
+        searchNudgeRef.current?.destroy();
+        searchNudgeRef.current = null;
+      };
+    } else {
+      searchNudgeRef.current?.destroy();
+      searchNudgeRef.current = null;
+    }
+  }, [origin, hasResults, isSearching, hasSearched, defaultsLoaded, isOnboarding]);
+
   return (
     <div className="flex flex-wrap items-center gap-2">
       {originPill}
@@ -800,6 +833,7 @@ export function SearchFilters({
         maxInterlegDh={maxInterlegDh} setMaxInterlegDh={setMaxInterlegDh}
       /></div>
       {(!isSearching && (!hasSearched || paramsChanged)) && (
+        <div id="onborda-search-btn">
         <Button
           onClick={fireSearch}
           disabled={!origin}
@@ -807,6 +841,7 @@ export function SearchFilters({
         >
           Search
         </Button>
+        </div>
       )}
       {clearButton}
     </div>
