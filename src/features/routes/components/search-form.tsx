@@ -780,7 +780,7 @@ export function SearchFilters({
             align: "start",
           },
         });
-      }, 2000);
+      }, 500);
       return () => {
         clearTimeout(timer);
         nudgeRef.current?.destroy();
@@ -807,7 +807,7 @@ export function SearchFilters({
             align: "end",
           },
         });
-      }, 1000);
+      }, 500);
       return () => {
         clearTimeout(timer);
         searchNudgeRef.current?.destroy();
