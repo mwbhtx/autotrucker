@@ -298,7 +298,6 @@ export function DesktopRoutesView() {
                   {progress && progress.pairs_total > 0 ? (
                     <>
                       Checking {progress.pairs_checked.toLocaleString()} / {progress.pairs_total.toLocaleString()} pairs
-                      {progress.routes_found > 0 && ` — ${progress.routes_found} routes found`}
                     </>
                   ) : (
                     "Warming up the search engine..."
