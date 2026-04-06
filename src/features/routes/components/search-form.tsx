@@ -768,14 +768,15 @@ export function SearchFilters({
   const nudge1Active = !origin && defaultsLoaded && !originPopoverOpen && !isOnboarding;
   useEffect(() => {
     if (nudge1Active) {
-      const show = () => {
+      const timer = setTimeout(() => {
         nudgeRef.current?.destroy();
-        nudgeRef.current = driver({ overlayOpacity: 0, allowClose: true, popoverClass: "hv-tour-popover", onDestroyStarted: () => {
-          // Re-show after user dismisses, if condition still holds
-          nudgeRef.current?.destroy();
-          nudgeRef.current = null;
-          setTimeout(show, 1000);
-        }});
+        nudgeRef.current = driver({
+          overlayOpacity: 0,
+          allowClose: false,
+          stagePadding: 0,
+          stageRadius: 0,
+          popoverClass: "hv-tour-popover",
+        });
         nudgeRef.current.highlight({
           element: "#onborda-origin",
           popover: {
@@ -785,8 +786,10 @@ export function SearchFilters({
             align: "start",
           },
         });
-      };
-      const timer = setTimeout(show, 500);
+        // Allow clicks to pass through the overlay
+        const overlay = document.querySelector('.driver-overlay') as HTMLElement | null;
+        if (overlay) overlay.style.pointerEvents = 'none';
+      }, 500);
       return () => {
         clearTimeout(timer);
         nudgeRef.current?.destroy();
@@ -802,13 +805,15 @@ export function SearchFilters({
   const nudge2Active = !!origin && !hasResults && !isSearching && !hasSearched && defaultsLoaded && !isOnboarding;
   useEffect(() => {
     if (nudge2Active) {
-      const show = () => {
+      const timer = setTimeout(() => {
         searchNudgeRef.current?.destroy();
-        searchNudgeRef.current = driver({ overlayOpacity: 0, allowClose: true, popoverClass: "hv-tour-popover", onDestroyStarted: () => {
-          searchNudgeRef.current?.destroy();
-          searchNudgeRef.current = null;
-          setTimeout(show, 1000);
-        }});
+        searchNudgeRef.current = driver({
+          overlayOpacity: 0,
+          allowClose: false,
+          stagePadding: 0,
+          stageRadius: 0,
+          popoverClass: "hv-tour-popover",
+        });
         searchNudgeRef.current.highlight({
           element: "#onborda-search-btn",
           popover: {
@@ -818,8 +823,9 @@ export function SearchFilters({
             align: "end",
           },
         });
-      };
-      const timer = setTimeout(show, 500);
+        const overlay = document.querySelector('.driver-overlay') as HTMLElement | null;
+        if (overlay) overlay.style.pointerEvents = 'none';
+      }, 500);
       return () => {
         clearTimeout(timer);
         searchNudgeRef.current?.destroy();
