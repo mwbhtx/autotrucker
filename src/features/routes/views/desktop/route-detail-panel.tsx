@@ -206,7 +206,7 @@ function RouteDetailContent({
                 onClick={onToggleWatchlist}
                 className="shrink-0 p-1 -mt-1 rounded transition-colors hover:bg-white/10"
               >
-                <BookmarkIcon className={`h-5 w-5 ${isWatchlisted ? "fill-primary text-primary" : "text-muted-foreground/40"}`} />
+                <BookmarkIcon className={`h-5 w-5 ${isWatchlisted ? "fill-primary text-primary" : "text-primary"}`} />
               </button>
             )}
           </div>
