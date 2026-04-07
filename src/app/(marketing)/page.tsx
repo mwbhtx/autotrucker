@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/core/services/auth-provider";
+import { brand } from "@mwbhtx/haulvisor-core";
 import { MarketingNav } from "@/platform/web/components/marketing-nav";
 import { ArrowRight, CalendarCheck, Bookmark, DollarSign, BarChart3 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -73,7 +74,7 @@ export default function HomePage() {
             Haulvisor
           </h1>
           <p className="text-white font-normal whitespace-nowrap" style={{ fontSize: '25px', marginTop: '15px' }}>
-            Stop guessing. Start hauling.
+            {brand.tagline}
           </p>
 
           <ShaderGradientButton onClick={handleDemo} />
