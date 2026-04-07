@@ -145,7 +145,7 @@ export default function LoginPage() {
         <MarketingNav variant="light" hideAuth />
 
         <div className="flex-1 flex flex-col items-center justify-center px-6 pb-20">
-          <div className="w-full max-w-sm">
+          <div className="w-full max-w-sm rounded-2xl bg-black/10 backdrop-blur-sm p-8">
             <h2 className="font-display text-3xl font-normal tracking-wide mb-2 text-white">
               {needsNewPassword ? "Set new password" : "Welcome back"}
             </h2>
