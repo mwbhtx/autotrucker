@@ -60,7 +60,7 @@ export default function HomePage() {
         {/* Hero background image */}
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: "url('/city_digital_graphics_hero.jpg')" }}
+          style={{ backgroundImage: "url('/digital_black.jpg')" }}
         />
         <div className="absolute inset-0 bg-black/50" />
 

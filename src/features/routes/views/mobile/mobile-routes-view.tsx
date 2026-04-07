@@ -7,7 +7,7 @@ import { useSettings } from "@/core/hooks/use-settings";
 import { useRouteSearch, type RouteSearchParams } from "@/core/hooks/use-routes";
 import { useMobileRouteNav } from "@/features/routes/hooks/use-mobile-route-nav";
 import { useSaveRecentSearch, type RecentSearch } from "@/features/routes/hooks/use-recent-searches";
-import { DEFAULT_COST_PER_MILE, DEFAULT_MAX_TRIP_DAYS } from "@mwbhtx/haulvisor-core";
+import { DEFAULT_COST_PER_MILE, DEFAULT_MAX_TRIP_DAYS, DEFAULT_NUM_ORDERS } from "@mwbhtx/haulvisor-core";
 import type { RouteChain } from "@/core/types";
 import type { PlaceResult } from "@/features/routes/components/search-form";
 import type { AdvancedFilters } from "./screens/filters-sheet";
@@ -33,7 +33,7 @@ export function MobileRoutesView() {
   }, []);
 
   const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>({
-    numOrders: 0,
+    numOrders: DEFAULT_NUM_ORDERS,
     departureDate: tomorrow,
     daysOut: DEFAULT_MAX_TRIP_DAYS,
   });
@@ -132,7 +132,7 @@ export function MobileRoutesView() {
       const orig: PlaceResult = { name: search.origin.label, lat: search.origin.coordinates[0], lng: search.origin.coordinates[1] };
       const dest: PlaceResult = { name: search.destination.label, lat: search.destination.coordinates[0], lng: search.destination.coordinates[1] };
       const filters: AdvancedFilters = {
-        numOrders: 0,
+        numOrders: DEFAULT_NUM_ORDERS,
         departureDate: tomorrow,
         daysOut: DEFAULT_MAX_TRIP_DAYS,
       };
