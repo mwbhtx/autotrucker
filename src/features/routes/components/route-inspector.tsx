@@ -4,6 +4,10 @@ import { TruckIcon, ClockIcon, Package, PackageOpen, Fuel, Coffee, Bed, Layers }
 import type { RouteChain, TripPhase, TripSimulationSummary } from "@/core/types";
 import { TRIP_DEFAULTS } from "@mwbhtx/haulvisor-core";
 
+function cityOnly(name?: string): string {
+  return name?.split(",")[0]?.trim() ?? "";
+}
+
 function formatDuration(hours: number | undefined): string {
   if (hours === undefined || isNaN(hours)) return "—";
   if (hours >= 24) {
@@ -174,11 +178,11 @@ export function RouteInspector({
           days.map((day) => (
             <div key={day.dayNumber} className="border-b border-border">
               {/* Day header */}
-              <div className="flex items-baseline justify-between px-4 py-2.5 bg-muted/50">
-                <span className="text-sm font-semibold text-foreground">
-                  Day {day.dayNumber} <span className="font-normal">— {day.dateLabel}</span>
+              <div className="flex items-baseline justify-between px-4 py-2.5">
+                <span className="text-sm font-extrabold text-caution">
+                  Day {day.dayNumber} — {day.dateLabel}
                 </span>
-                <span className="text-xs text-foreground tabular-nums">
+                <span className="text-xs font-bold text-foreground tabular-nums">
                   {day.totalMiles > 0 && <>{day.totalMiles.toLocaleString()} mi · </>}
                   {formatDuration(day.driveHours)} drive
                 </span>
@@ -210,11 +214,24 @@ export function RouteInspector({
       )}
 
       {/* Assumptions footer */}
-      <div className="px-3 py-2.5 shrink-0 bg-caution">
-        <p className="text-sm text-black leading-relaxed">
-          <span className="font-bold">Assumptions:</span>{" "}
-          Loaded @ {TRIP_DEFAULTS.loaded_speed_mph.value} mph · DH @ {TRIP_DEFAULTS.deadhead_speed_mph.value} mph · HOS {TRIP_DEFAULTS.avg_driving_hours_per_day.value}h avg drive day / 10h rest · Loading {TRIP_DEFAULTS.loading_hours.value}h · Unloading {TRIP_DEFAULTS.unloading_hours.value}h
-        </p>
+      <div className="flex bg-card overflow-hidden shrink-0">
+        <div className="w-[2px] shrink-0 bg-caution" />
+        <div className="flex-1 px-3 py-2.5">
+          <p className="text-sm font-bold text-caution mb-1">Timeline Assumptions</p>
+          {[
+            ["Loaded speed", `${TRIP_DEFAULTS.loaded_speed_mph.value} mph`],
+            ["Deadhead speed", `${TRIP_DEFAULTS.deadhead_speed_mph.value} mph`],
+            ["Drive hours/day", `${TRIP_DEFAULTS.avg_driving_hours_per_day.value} hrs`],
+            ["Rest period", "10 hrs"],
+            ["Loading time", `${TRIP_DEFAULTS.loading_hours.value} hrs`],
+            ["Unloading time", `${TRIP_DEFAULTS.unloading_hours.value} hrs`],
+          ].map(([label, value]) => (
+            <div key={label} className="flex justify-between py-0.5">
+              <span className="text-sm text-muted-foreground">{label}</span>
+              <span className="text-sm font-semibold text-foreground">{value}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -242,15 +259,15 @@ function PhaseRow({ phase, timestamp, showTimeOnly, originCity, returnCity }: { 
   const label = (() => {
     switch (phase.kind) {
       case 'deadhead':
-        return <>{phase.origin_city || originCity} → {phase.destination_city || returnCity || originCity} <span className="font-normal text-xs">(DH)</span></>;
+        return <>{cityOnly(phase.origin_city) || cityOnly(originCity)} → {cityOnly(phase.destination_city) || cityOnly(returnCity) || cityOnly(originCity)}</>;
       case 'driving':
-        return <>{phase.origin_city} → {phase.destination_city}</>;
+        return <>{cityOnly(phase.origin_city)} → {cityOnly(phase.destination_city)}</>;
       case 'loading':
-        return <>Loading at {phase.origin_city}</>;
+        return <>Loading at {cityOnly(phase.origin_city)}</>;
       case 'tarping':
-        return <>Tarping at {phase.origin_city}</>;
+        return <>Tarping at {cityOnly(phase.origin_city)}</>;
       case 'unloading':
-        return <>Unloading at {phase.destination_city}</>;
+        return <>Unloading at {cityOnly(phase.destination_city)}</>;
       case 'rest':
         return <>Rest</>;
       case 'break':
@@ -271,11 +288,6 @@ function PhaseRow({ phase, timestamp, showTimeOnly, originCity, returnCity }: { 
       <span className={`flex-1 text-sm text-foreground ${hasMiles ? 'font-semibold' : ''}`}>
         {label}
       </span>
-      {hasMiles && (
-        <span className="text-sm tabular-nums shrink-0 text-foreground/60">
-          {phase.miles?.toLocaleString()} mi
-        </span>
-      )}
       <span className="text-sm tabular-nums font-medium ml-2 w-14 text-right shrink-0 text-foreground">
         {formatDuration(phase.duration_hours)}
       </span>

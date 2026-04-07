@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { ChevronDownIcon, ChevronUpIcon, FlameIcon, ClipboardListIcon, BookmarkIcon, PlayIcon } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { ChevronDownIcon, ChevronUpIcon, FlameIcon, ClipboardListIcon, BookmarkIcon } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/platform/web/components/ui/tooltip";
 import { RouteInspector } from "@/features/routes/components/route-inspector";
 import { useTimeline } from "@/core/hooks/use-timeline";
 import { useAuth } from "@/core/services/auth-provider";
-import { calcAvgLoadedRpm, DEFAULT_LOADED_SPEED_MPH, DEFAULT_AVG_SPEED_MPH } from "@mwbhtx/haulvisor-core";
-import { LEG_COLORS } from "@/core/utils/route-colors";
+import { calcAvgLoadedRpm, DEFAULT_LOADED_SPEED_MPH } from "@mwbhtx/haulvisor-core";
 
 function estDriveTime(miles: number, speed: number): string {
   const hours = miles / speed;
@@ -61,13 +60,12 @@ export function RouteDetailPanel({
   returnByTime,
   searchParams,
 }: RouteDetailPanelProps) {
-  const [showInspector, setShowInspector] = useState(false);
+  const showInspector = true;
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Reset inspector and scroll to top when route changes
   const chainKey = chain?.legs.map(l => l.order_id).join(",") ?? "";
   useEffect(() => {
-    setShowInspector(false);
     scrollRef.current?.scrollTo(0, 0);
   }, [chainKey]);
 
@@ -103,8 +101,7 @@ export function RouteDetailPanel({
             onShowComments={onShowComments}
             isWatchlisted={isWatchlisted}
             onToggleWatchlist={onToggleWatchlist}
-            showInspector={showInspector}
-            onToggleInspector={() => setShowInspector((v) => !v)}
+            showInspector={true}
             departureTime={departureTime}
             returnByTime={returnByTime}
             searchParams={searchParams}
@@ -127,7 +124,6 @@ interface RouteDetailContentProps {
   onHoverLeg?: (legIndex: number | null) => void;
   onShowComments?: (orderId: string) => void;
   showInspector: boolean;
-  onToggleInspector: () => void;
   isWatchlisted?: boolean;
   onToggleWatchlist?: () => void;
   departureTime?: Date;
@@ -156,7 +152,6 @@ function RouteDetailContent({
   onHoverLeg,
   onShowComments,
   showInspector,
-  onToggleInspector,
   isWatchlisted,
   onToggleWatchlist,
   departureTime,
@@ -256,7 +251,7 @@ function RouteDetailContent({
                 onMouseEnter={() => onHoverLeg?.(legIdx)}
                 onMouseLeave={() => onHoverLeg?.(null)}
               >
-                <div className="w-[5px] shrink-0 bg-primary" />
+                <div className="w-[2px] shrink-0 bg-primary" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-semibold text-foreground truncate">
@@ -298,166 +293,41 @@ function RouteDetailContent({
           })}
         </div>
 
-        {/* Route section — left-border accent cards */}
+        {/* Timeline section */}
         <div className="px-4 pt-3 pb-1.5">
-          <p className="text-xs font-semibold uppercase tracking-widest text-foreground">Route</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-foreground">Timeline</p>
         </div>
 
         <div className="px-3 space-y-2 pb-3">
           {/* Suggested Departure */}
           {chain.suggested_departure && (
-            <>
-              <div className="bg-card px-4 py-3 flex gap-3">
-                <div className="w-[5px] shrink-0 bg-foreground" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs uppercase tracking-wider font-medium text-foreground">Suggested Departure</p>
-                  <p className="text-lg font-bold text-foreground">
-                    {new Date(chain.suggested_departure).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })} at {new Date(chain.suggested_departure).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+            <div className="bg-card px-4 py-3 flex gap-3">
+              <div className="w-[2px] shrink-0 bg-foreground" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs uppercase tracking-wider font-medium text-foreground">Suggested Departure</p>
+                <p className="text-lg font-bold text-foreground">
+                  {new Date(chain.suggested_departure).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })} at {new Date(chain.suggested_departure).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+                </p>
+                {chain.trip_summary && (
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Arrive{returnCity && returnCity === origin ? " home" : ""}: {new Date(new Date(chain.suggested_departure).getTime() + chain.trip_summary.total_hours * 3_600_000).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })} at {new Date(new Date(chain.suggested_departure).getTime() + chain.trip_summary.total_hours * 3_600_000).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
                   </p>
-                  {chain.trip_summary && (
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Arrive{returnCity && returnCity === origin ? " home" : ""}: {new Date(new Date(chain.suggested_departure).getTime() + chain.trip_summary.total_hours * 3_600_000).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })} at {new Date(new Date(chain.suggested_departure).getTime() + chain.trip_summary.total_hours * 3_600_000).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* Start deadhead */}
-          {startDh > 0 && firstLeg.origin_city !== origin && (
-            <div className="bg-card px-4 py-2.5 flex gap-3">
-              <div className="w-[5px] shrink-0 bg-transit" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-foreground">{origin} → {firstLeg.origin_city}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Deadhead · {startDh.toLocaleString()} mi · {estDriveTime(startDh, DEFAULT_AVG_SPEED_MPH)}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Legs */}
-          {chain.legs.map((leg: RouteLeg, legIdx: number) => {
-            const color = LEG_COLORS[legIdx % LEG_COLORS.length];
-            const showBetweenDh = leg.deadhead_miles > 0 && legIdx > 0;
-            const hasTarp = leg.tarp_height != null && parseInt(leg.tarp_height, 10) > 0;
-            return (
-              <div key={leg.leg_number} className="space-y-2">
-                {/* Between-leg deadhead */}
-                {showBetweenDh && (
-                  <div className="bg-card px-4 py-2.5 flex gap-3">
-                    <div className="w-[5px] shrink-0 bg-transit" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-foreground">{chain.legs[legIdx - 1].destination_city} → {leg.origin_city}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">Deadhead · {leg.deadhead_miles.toLocaleString()} mi · {estDriveTime(leg.deadhead_miles, DEFAULT_AVG_SPEED_MPH)}</p>
-                    </div>
-                  </div>
                 )}
-
-                {/* Pickup card */}
-                <div
-                  className="bg-card px-4 py-3 flex gap-3"
-                  onMouseEnter={() => onHoverLeg?.(legIdx)}
-                  onMouseLeave={() => onHoverLeg?.(null)}
-                >
-                  <div className="w-[5px] shrink-0 bg-primary" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-primary-foreground bg-primary px-2 py-1 -mx-1">Pickup</p>
-                    <p className="text-sm font-semibold text-foreground mt-1.5" style={{ padding: '5px 0' }}>{leg.origin_city}, {leg.origin_state}</p>
-                    {(() => {
-                      const earlyDate = leg.stopoffs?.[0]?.early_date_local ?? leg.pickup_date_early_local;
-                      const lateDate = leg.stopoffs?.[0]?.late_date_local ?? leg.pickup_date_late_local;
-                      return (earlyDate || lateDate) ? (
-                        <div className="mt-1.5 space-y-0.5 text-xs text-muted-foreground">
-                          {earlyDate && <p>Early: {new Date(earlyDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })} {new Date(earlyDate).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}</p>}
-                          {lateDate && <p>Late: {new Date(lateDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })} {new Date(lateDate).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}</p>}
-                        </div>
-                      ) : null;
-                    })()}
-                    <div className="flex items-center gap-2 mt-1.5 text-xs text-muted-foreground flex-wrap">
-                      {leg.weight != null && <span>{leg.weight.toLocaleString()} lbs</span>}
-                      {leg.miles > 0 && <span>${(leg.pay / leg.miles).toFixed(2)}/mi</span>}
-                      {hasTarp && <span className="font-semibold uppercase tracking-wide text-warning bg-black px-1.5 py-0.5">TARP</span>}
-                      {leg.lane_rank != null && <FlameIcon className="h-3.5 w-3.5 shrink-0" style={{ color: '#ff2200' }} />}
-                      {leg.order_id && onShowComments && (
-                        <button type="button" onClick={(e) => { e.stopPropagation(); onShowComments(leg.order_id!); }} className="text-muted-foreground hover:text-primary transition-colors shrink-0" title="View comments">
-                          <ClipboardListIcon className="h-3.5 w-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* In transit */}
-                <div className="bg-card px-4 py-2.5 flex gap-3" onMouseEnter={() => onHoverLeg?.(legIdx)} onMouseLeave={() => onHoverLeg?.(null)}>
-                  <div className="w-[5px] shrink-0 bg-transit" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground">{leg.origin_city} → {leg.destination_city}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">In Transit · {leg.miles?.toLocaleString()} mi · {estDriveTime(leg.miles, DEFAULT_LOADED_SPEED_MPH)}</p>
-                  </div>
-                </div>
-
-                {/* Dropoff card */}
-                <div className="bg-card px-4 py-3 flex gap-3" onMouseEnter={() => onHoverLeg?.(legIdx)} onMouseLeave={() => onHoverLeg?.(null)}>
-                  <div className="w-[5px] shrink-0 bg-delivery" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-primary-foreground bg-delivery px-2 py-1 -mx-1">Dropoff</p>
-                    <p className="text-sm font-semibold text-foreground mt-1.5" style={{ padding: '5px 0' }}>{leg.destination_city}, {leg.destination_state}</p>
-                    {(() => {
-                      const lastStop = leg.stopoffs?.[leg.stopoffs.length - 1];
-                      const earlyDate = lastStop?.early_date_local ?? leg.delivery_date_early_local;
-                      const lateDate = lastStop?.late_date_local ?? leg.delivery_date_late_local;
-                      return (earlyDate || lateDate) ? (
-                        <div className="mt-1.5 space-y-0.5 text-xs text-muted-foreground">
-                          {earlyDate && <p>Early: {new Date(earlyDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })} {new Date(earlyDate).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}</p>}
-                          {lateDate && <p>Late: {new Date(lateDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })} {new Date(lateDate).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}</p>}
-                        </div>
-                      ) : null;
-                    })()}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-
-          {/* Return deadhead — only when destination is explicitly set */}
-          {returnDh > 0 && destCity && lastLeg.destination_city !== returnCity && (
-            <div className="bg-card px-4 py-2.5 flex gap-3">
-              <div className="w-[5px] shrink-0 bg-transit" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-foreground">{lastLeg.destination_city} → {returnCity}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Deadhead · {returnDh.toLocaleString()} mi · {estDriveTime(returnDh, DEFAULT_AVG_SPEED_MPH)}</p>
               </div>
             </div>
           )}
-        </div>
-        {/* Timeline section */}
-        <div className="px-4 pt-3 pb-1.5">
-          <p className="text-xs font-semibold uppercase tracking-widest text-foreground">Timeline</p>
-        </div>
-        <div className="px-3 pb-3">
-          {!showInspector ? (
-            <div className="py-2">
-            <button
-              type="button"
-              onClick={onToggleInspector}
-              className="flex items-center gap-2 rounded-md bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:brightness-110 transition-all"
-            >
-              <PlayIcon className="h-4 w-4 fill-current" />
-              Show Timeline
-            </button>
-            </div>
-          ) : (
-            <RouteInspector
-              chain={chain}
-              originCity={origin}
-              returnCity={returnCity}
-              onClose={onToggleInspector}
-              departureTime={departureTime}
-              returnByTime={returnByTime}
-              timelineData={timelineData}
-              timelineLoading={timelineLoading}
-            />
-          )}
+
+          {/* Auto-loaded timeline */}
+          <RouteInspector
+            chain={chain}
+            originCity={origin}
+            returnCity={returnCity}
+            onClose={() => {}}
+            departureTime={departureTime}
+            returnByTime={returnByTime}
+            timelineData={timelineData}
+            timelineLoading={timelineLoading}
+          />
         </div>
       </div>
     </>

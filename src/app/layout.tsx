@@ -64,7 +64,7 @@ export const viewport = {
 };
 
 export const metadata: Metadata = {
-  title: brand.name,
+  title: "Haulvisor",
   description: brand.tagline,
 };
 

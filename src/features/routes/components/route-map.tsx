@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useTheme } from "next-themes";
 import maplibregl from "maplibre-gl";
 import { layersWithCustomTheme } from "protomaps-themes-base";
@@ -80,21 +80,19 @@ export function RouteMap({
     };
   }, []);
 
-  // Swap map style when theme changes
+  // Swap map style when theme changes, then redraw route
+  const [styleVersion, setStyleVersion] = useState(0);
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
     const theme = resolvedTheme === "light" ? "light" : "dark";
-    if (map.isStyleLoaded()) {
-      map.setStyle(protomapsStyle(theme));
-    } else {
-      const onLoad = () => map.setStyle(protomapsStyle(theme));
-      map.once("style.load", onLoad);
-      return () => { map.off("style.load", onLoad); };
-    }
+    const onStyleLoad = () => setStyleVersion((v) => v + 1);
+    map.once("style.load", onStyleLoad);
+    map.setStyle(protomapsStyle(theme));
+    return () => { map.off("style.load", onStyleLoad); };
   }, [resolvedTheme]);
 
-  // Draw selected route on map
+  // Draw selected route on map (re-runs after theme swap via styleVersion)
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -188,7 +186,7 @@ export function RouteMap({
           type: "line",
           source: seg.id,
           layout: { "line-join": "round", "line-cap": "round" },
-          paint: { "line-color": "#ff2200", "line-width": 4, "line-dasharray": [6, 4] },
+          paint: { "line-color": "#ff2200", "line-width": 5 },
         });
       }
 
@@ -350,7 +348,7 @@ export function RouteMap({
     };
     tryDraw();
     return () => { cancelled = true; clearTimeout(timerId); };
-  }, [selectedRoute, originCoords, destCoords]);
+  }, [selectedRoute, originCoords, destCoords, styleVersion]);
 
   // Expose imperative hover handler — bypasses React render cycle for instant feedback
   const handleHoverLeg = useCallback((legIndex: number | null) => {
@@ -392,7 +390,7 @@ export function RouteMap({
             </div>
           ))}
           <div className="flex items-center gap-2">
-            <span className="w-5 h-0 border-t-[2px] border-dashed shrink-0" style={{ borderColor: "#ff2200" }} />
+            <span className="w-5 h-[3px] rounded-full shrink-0" style={{ backgroundColor: "#ff2200" }} />
             <span className="text-white/80">Deadhead</span>
           </div>
         </div>
