@@ -149,27 +149,27 @@ export default function LoginPage() {
             <h2 className="font-display text-3xl font-normal tracking-wide mb-2 text-white">
               {needsNewPassword ? "Set new password" : "Welcome back"}
             </h2>
-            <p className="text-sm text-white/40 mb-8">
+            <p className="text-sm text-white mb-8">
               {needsNewPassword ? "Choose a secure password" : "Log in to Haulvisor"}
             </p>
 
             {needsNewPassword ? (
               <form onSubmit={handleNewPassword} className="flex flex-col gap-3">
-                <Input type="password" placeholder="New password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="h-11 bg-white/[0.06] border-white/[0.1] text-sm px-4 text-white placeholder:text-white/30 focus-visible:!border-primary focus-visible:!ring-primary/50" required autoFocus />
-                <Input type="password" placeholder="Confirm password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="h-11 bg-white/[0.06] border-white/[0.1] text-sm px-4 text-white placeholder:text-white/30 focus-visible:!border-primary focus-visible:!ring-primary/50" required />
+                <Input type="password" placeholder="New password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="h-11 bg-white/[0.06] border-white/[0.1] text-sm px-4 text-white placeholder:text-white/70 focus-visible:!border-primary focus-visible:!ring-primary/50" required autoFocus />
+                <Input type="password" placeholder="Confirm password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="h-11 bg-white/[0.06] border-white/[0.1] text-sm px-4 text-white placeholder:text-white/70 focus-visible:!border-primary focus-visible:!ring-primary/50" required />
                 {error && <p className="text-xs text-destructive">{error}</p>}
                 <button type="submit" className="w-full h-11 mt-1 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:brightness-110 transition-all">Set password</button>
               </form>
             ) : (
               <form onSubmit={handleLogin} className="flex flex-col gap-3">
-                <Input type={isDev ? "text" : "email"} placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="h-11 bg-white/[0.06] border-white/[0.1] text-sm px-4 text-white placeholder:text-white/30 focus-visible:!border-primary focus-visible:!ring-primary/50" autoFocus {...(!isDev ? { required: true } : {})} />
-                <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} className="h-11 bg-white/[0.06] border-white/[0.1] text-sm px-4 text-white placeholder:text-white/30 focus-visible:!border-primary focus-visible:!ring-primary/50" {...(!isDev ? { required: true } : {})} />
+                <Input type={isDev ? "text" : "email"} placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="h-11 bg-white/[0.06] border-white/[0.1] text-sm px-4 text-white placeholder:text-white/70 focus-visible:!border-primary focus-visible:!ring-primary/50" autoFocus {...(!isDev ? { required: true } : {})} />
+                <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} className="h-11 bg-white/[0.06] border-white/[0.1] text-sm px-4 text-white placeholder:text-white/70 focus-visible:!border-primary focus-visible:!ring-primary/50" {...(!isDev ? { required: true } : {})} />
                 {error && <p className="text-xs text-destructive">{error}</p>}
                 <button type="submit" className="w-full h-11 mt-1 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:brightness-110 transition-all">Log in</button>
               </form>
             )}
 
-            <p className="mt-6 text-sm text-white/40 text-center">
+            <p className="mt-6 text-sm text-white text-center">
               Don&apos;t have an account?{" "}
               <button type="button" className="text-white font-medium hover:underline">Sign up</button>
             </p>
