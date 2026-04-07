@@ -11,6 +11,7 @@ import {
   DISCLAIMER,
   ACCEPTABLE_USE,
   LEGAL_LAST_UPDATED,
+  brand,
 } from "@mwbhtx/haulvisor-core";
 
 /* ── Section definitions ── */
@@ -110,7 +111,7 @@ export default function LegalPage() {
       {/* ── Top bar ── */}
       <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-7 h-14 bg-black/90 backdrop-blur-xl border-b border-white/[0.06]">
         <Link href="/" className="font-display text-[22px] tracking-wide leading-none text-white">
-          Haulvisor
+          {brand.name}
         </Link>
         <Link
           href="/"
@@ -184,7 +185,7 @@ export default function LegalPage() {
               Terms &amp; Policies
             </h1>
             <p className="text-[15px] text-muted-foreground/60 max-w-[520px] leading-[1.7]">
-              Please read these documents carefully before using Haulvisor. By
+              Please read these documents carefully before using {brand.name}. By
               creating an account or using our service, you agree to be bound by
               these terms.
             </p>
@@ -231,18 +232,18 @@ export default function LegalPage() {
             </p>
             <div className="rounded-lg border border-white/[0.06] bg-[#141414] p-7">
               <h3 className="font-display text-lg font-bold text-foreground mb-3">
-                Haulvisor Legal
+                {brand.legalEntity} Legal
               </h3>
               <p className="text-sm text-muted-foreground/60 mb-2">
                 Email:{" "}
-                <a href="mailto:legal@haulvisor.com" className="text-primary hover:underline">
-                  legal@haulvisor.com
+                <a href={`mailto:${brand.legalEmail}`} className="text-primary hover:underline">
+                  {brand.legalEmail}
                 </a>
               </p>
               <p className="text-sm text-muted-foreground/60">
                 Website:{" "}
-                <a href="https://haulvisor.com" className="text-primary hover:underline">
-                  haulvisor.com
+                <a href={`https://${brand.website}`} className="text-primary hover:underline">
+                  {brand.website}
                 </a>
               </p>
             </div>

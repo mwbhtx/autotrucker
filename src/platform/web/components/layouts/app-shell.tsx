@@ -6,6 +6,7 @@ import { RouteIcon, ClipboardList, BarChart3, Settings, Shield, LogOut, Moon, Su
 import { useTheme } from "next-themes";
 import { cn } from "@/core/utils";
 import { useAuth } from "@/core/services/auth-provider";
+import { brand } from "@mwbhtx/haulvisor-core";
 
 const navItems = [
   { href: "/routes", label: "Routes", icon: RouteIcon },
@@ -34,7 +35,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <header className="flex h-14 shrink-0 items-center bg-sidebar px-4">
         {/* Logo */}
         <Link href="/routes" className="font-display text-3xl text-foreground tracking-wide">
-          HAULVISOR
+          {brand.name}
         </Link>
 
         {/* Desktop nav */}
@@ -64,7 +65,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         {/* User section */}
         <div className="flex items-center gap-1">
-          <span className="text-sm text-muted-foreground mr-2">
+          <span className="hidden xl:inline text-sm text-muted-foreground mr-2">
             {user?.email || user?.username || "Guest"}
           </span>
           <button
@@ -82,7 +83,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
           >
             <LogOut className="h-4 w-4" />
-            Sign Out
+            <span className="hidden xl:inline">Sign Out</span>
           </button>
         </div>
       </header>

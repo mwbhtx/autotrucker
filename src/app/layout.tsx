@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { brand } from "@mwbhtx/haulvisor-core";
 
 import { Providers } from "@/platform/web/components/providers";
 import "./globals.css";
@@ -63,8 +64,8 @@ export const viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "haulvisor",
-  description: "Stop guessing. Start hauling.",
+  title: brand.name,
+  description: brand.tagline,
 };
 
 export default function RootLayout({

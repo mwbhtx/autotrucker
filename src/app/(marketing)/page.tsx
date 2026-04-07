@@ -71,7 +71,7 @@ export default function HomePage() {
         {/* ── Hero ── */}
         <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-6">
           <h1 className="font-display tracking-wide leading-[0.85] text-white text-[56px] sm:text-[95px]">
-            Haulvisor
+            {brand.name}
           </h1>
           <p className="text-white font-normal whitespace-nowrap" style={{ fontSize: '25px', marginTop: '15px' }}>
             {brand.tagline}
@@ -144,7 +144,7 @@ export default function HomePage() {
           <div className="flex flex-col sm:flex-row gap-12 sm:gap-8">
             <div className="sm:w-40 shrink-0">
               <span className="font-display text-3xl tracking-wide leading-none">
-                Haulvisor
+                {brand.name}
               </span>
             </div>
             <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-8">
@@ -184,7 +184,7 @@ export default function HomePage() {
           <div className="mt-12 pt-6 border-t border-white/[0.06] flex items-center gap-6 text-xs text-muted-foreground/40">
             <Link href="/legal#privacy" className="hover:text-foreground transition-colors">Privacy</Link>
             <Link href="/legal#terms" className="hover:text-foreground transition-colors">Terms</Link>
-            <span>&copy; {new Date().getFullYear()} Haulvisor</span>
+            <span>&copy; {new Date().getFullYear()} {brand.name}</span>
           </div>
         </div>
       </footer>

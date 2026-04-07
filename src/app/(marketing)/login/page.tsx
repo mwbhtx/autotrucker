@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Input } from "@/platform/web/components/ui/input";
 import { useAuth } from "@/core/services/auth-provider";
 import { MarketingNav } from "@/platform/web/components/marketing-nav";
 import Waves from "@/components/Waves";
+import { brand } from "@mwbhtx/haulvisor-core";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -150,7 +152,7 @@ export default function LoginPage() {
               {needsNewPassword ? "Set new password" : "Welcome back"}
             </h2>
             <p className="text-sm text-white mb-8">
-              {needsNewPassword ? "Choose a secure password" : "Log in to Haulvisor"}
+              {needsNewPassword ? "Choose a secure password" : `Log in to ${brand.name}`}
             </p>
 
             {needsNewPassword ? (
@@ -173,22 +175,27 @@ export default function LoginPage() {
               Don&apos;t have an account?{" "}
               <button type="button" className="text-white font-medium hover:underline">Sign up</button>
             </p>
+            <p className="mt-4 text-xs text-white/40 text-center">
+              By signing in, you agree to our{" "}
+              <Link href="/legal" className="text-white/60 underline hover:text-white transition-colors">Terms &amp; Privacy Policy</Link>
+            </p>
           </div>
         </div>
       </div>
 
       {/* Right column — product screenshots */}
-      <div className="relative z-10 hidden lg:flex flex-[1.2] items-center justify-center overflow-hidden">
+      <div className="relative z-10 hidden lg:flex flex-[1.2] items-center justify-center overflow-visible">
         <img
           src="/668shots_so.png"
           alt="Haulvisor route search"
           className="w-full h-full object-cover object-left"
         />
-        {/* Mobile mockup overlay — straddles left edge of webapp image */}
+        {/* Mobile mockup — fixed position relative to webapp */}
         <img
           src="/516shots_so.png"
           alt="Haulvisor mobile app"
-          className="absolute bottom-0 left-[-28%] h-[80%] w-auto z-10 drop-shadow-[0_20px_80px_rgba(0,0,0,0.9)]"
+          className="absolute bottom-0 left-[-300px] z-10 pointer-events-none drop-shadow-[0_20px_80px_rgba(0,0,0,0.9)]"
+          style={{ height: "750px", width: "1000px", minWidth: "1000px", objectFit: "contain" }}
         />
       </div>
     </div>

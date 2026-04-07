@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { brand } from "@mwbhtx/haulvisor-core";
 
 export function MarketingNav({ variant = "dark", hideAuth = false }: { variant?: "dark" | "light"; hideAuth?: boolean }) {
   const isDark = variant === "dark";
@@ -7,7 +8,7 @@ export function MarketingNav({ variant = "dark", hideAuth = false }: { variant?:
     <header className="relative z-10 bg-transparent backdrop-blur-sm">
       <div className="max-w-6xl mx-auto flex items-center justify-between px-6 h-14">
         <Link href="/" className={`font-display text-3xl tracking-wide leading-none ${isDark ? "text-white" : "text-white"}`}>
-          Haulvisor
+          {brand.name}
         </Link>
         {!hideAuth && (
           <div className="flex items-center gap-3">
