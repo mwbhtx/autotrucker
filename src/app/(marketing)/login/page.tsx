@@ -192,7 +192,7 @@ export default function LoginPage() {
         />
         {/* Mobile mockup — fixed position relative to webapp */}
         <img
-          src="/516shots_so.png"
+          src="/403shots_so.png"
           alt="Haulvisor mobile app"
           className="absolute bottom-0 left-[-300px] z-10 pointer-events-none drop-shadow-[0_20px_80px_rgba(0,0,0,0.9)]"
           style={{ height: "750px", width: "1000px", minWidth: "1000px", objectFit: "contain" }}
