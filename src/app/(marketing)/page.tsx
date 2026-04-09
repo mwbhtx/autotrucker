@@ -75,7 +75,7 @@ export default function HomePage() {
             alt={brand.name}
             className="h-[39px] sm:h-[67px] w-auto"
           />
-          <p className="font-display text-white font-medium whitespace-nowrap" style={{ fontSize: '25px', marginTop: '15px' }}>
+          <p className="font-display text-white font-medium whitespace-nowrap" style={{ fontSize: '25px', marginTop: '8px' }}>
             {brand.tagline}
           </p>
 
