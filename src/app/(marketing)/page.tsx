@@ -70,9 +70,11 @@ export default function HomePage() {
 
         {/* ── Hero ── */}
         <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-6">
-          <h1 className="font-display tracking-wide leading-[0.85] text-white text-[56px] sm:text-[95px]">
-            {brand.name}
-          </h1>
+          <img
+            src="/haulvisor-logo-text-white.svg"
+            alt={brand.name}
+            className="h-[56px] sm:h-[95px] w-auto"
+          />
           <p className="text-white font-normal whitespace-nowrap" style={{ fontSize: '25px', marginTop: '15px' }}>
             {brand.tagline}
           </p>

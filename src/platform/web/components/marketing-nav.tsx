@@ -5,16 +5,16 @@ export function MarketingNav({ variant = "dark", hideAuth = false }: { variant?:
   const isDark = variant === "dark";
 
   return (
-    <header className="relative z-10 bg-transparent backdrop-blur-sm">
+    <header className="relative z-10">
       <div className="max-w-6xl mx-auto flex items-center justify-between px-6 h-14">
-        <Link href="/" className={`font-display text-3xl tracking-wide leading-none ${isDark ? "text-white" : "text-white"}`}>
-          {brand.name}
+        <Link href="/">
+          <img src="/haulvisor-logo-white.svg" alt={brand.name} className="h-7" />
         </Link>
         {!hideAuth && (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Link
               href="/login"
-              className="h-9 px-5 rounded-full bg-black border border-white/[0.08] text-sm font-medium text-white hover:bg-black/80 transition-colors inline-flex items-center"
+              className="h-9 px-5 rounded-full border-2 border-white/30 text-sm font-medium text-white hover:bg-white/10 transition-colors inline-flex items-center"
             >
               Log in
             </Link>
