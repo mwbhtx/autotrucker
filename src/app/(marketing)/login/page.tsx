@@ -124,7 +124,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row relative">
+    <div className="h-screen flex flex-col lg:flex-row relative overflow-hidden">
       {/* Waves background */}
       <div className="absolute inset-0 z-0">
         <Waves
@@ -184,11 +184,11 @@ export default function LoginPage() {
       </div>
 
       {/* Right column — product screenshots */}
-      <div className="relative z-10 hidden lg:flex flex-[1.2] items-center justify-center overflow-visible">
+      <div className="relative z-10 hidden lg:block flex-[1.2] overflow-hidden">
         <img
           src="/668shots_so.png"
           alt="Haulvisor route search"
-          className="w-full h-full object-cover object-left"
+          className="absolute inset-0 w-full h-full object-cover object-left"
         />
         {/* Mobile mockup — fixed position relative to webapp */}
         <img
