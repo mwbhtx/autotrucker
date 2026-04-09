@@ -184,18 +184,19 @@ export default function LoginPage() {
       </div>
 
       {/* Right column — product screenshots */}
-      <div className="relative z-10 hidden lg:block flex-[1.2] overflow-hidden">
+      <div className="relative z-10 hidden lg:flex flex-[1.2] overflow-hidden">
         <img
-          src="/668shots_so.png"
+          src="/781shots_so.png"
           alt="Haulvisor route search"
-          className="absolute inset-0 w-full h-full object-cover object-left"
+          className="absolute rounded-tl-xl"
+          style={{ width: "250%", height: "auto", bottom: "0%", right: "-60%", scale: "180%" }}
         />
         {/* Mobile mockup — fixed position relative to webapp */}
         <img
           src="/403shots_so.png"
           alt="Haulvisor mobile app"
           className="absolute bottom-0 left-[-300px] z-10 pointer-events-none drop-shadow-[0_20px_80px_rgba(0,0,0,0.9)]"
-          style={{ height: "750px", width: "1000px", minWidth: "1000px", objectFit: "contain" }}
+          style={{ bottom: "-5%", height: "750px", width: "1000px", minWidth: "1000px", objectFit: "contain" }}
         />
       </div>
     </div>
