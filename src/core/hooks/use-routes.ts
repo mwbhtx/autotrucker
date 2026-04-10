@@ -20,6 +20,7 @@ export interface RouteSearchParams {
   twic_card?: boolean;
   team_driver?: boolean;
   no_tarps?: boolean;
+  deliver_early?: boolean;
   ignore_radius?: boolean;
   origin_radius_miles?: number;
   dest_radius_miles?: number;
