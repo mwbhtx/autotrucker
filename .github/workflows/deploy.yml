@@ -45,11 +45,11 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Deploy to S3
-        run: aws s3 sync out s3://haulvisor-frontend --delete
+        run: aws s3 sync out s3://haulvisor-web --delete
 
       - name: Invalidate CloudFront
         run: |
-          DIST_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[?Origins.Items[?DomainName=='haulvisor-frontend.s3.us-east-1.amazonaws.com']].Id" --output text)
+          DIST_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[?Origins.Items[?DomainName=='haulvisor-web.s3.us-east-1.amazonaws.com']].Id" --output text)
           if [ -n "$DIST_ID" ]; then
             aws cloudfront create-invalidation --distribution-id "$DIST_ID" --paths "/*"
           fi
