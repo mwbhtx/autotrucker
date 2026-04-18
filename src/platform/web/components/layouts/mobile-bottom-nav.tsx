@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Search, ClipboardList, BarChart3, Settings } from "lucide-react";
+import { Search, ClipboardList, BarChart3, Settings, User } from "lucide-react";
 import { cn } from "@/core/utils";
 
 const tabs = [
   { href: "/routes", label: "Routes", icon: Search },
   { href: "/orders", label: "Orders", icon: ClipboardList },
+  { href: "/driver", label: "Driver", icon: User },
   { href: "/dashboard", label: "Dashboard", icon: BarChart3 },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
