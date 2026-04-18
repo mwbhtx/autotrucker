@@ -8,6 +8,19 @@ function cityOnly(name?: string): string {
   return name?.split(",")[0]?.trim() ?? "";
 }
 
+/**
+ * Source orders store city names in ALL CAPS ("KANSAS CITY"). For display,
+ * title-case the city portion and leave the state code uppercase.
+ *   "KANSAS CITY, MO" → "Kansas City, MO"
+ *   "EDGERTON"        → "Edgerton"
+ */
+function prettyCity(raw?: string): string {
+  if (!raw) return "";
+  const [city, ...rest] = raw.split(",");
+  const titled = city.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+  return rest.length ? `${titled},${rest.join(",")}` : titled;
+}
+
 function formatDuration(hours: number | undefined): string {
   if (hours === undefined || isNaN(hours)) return "—";
   if (hours >= 24) {
@@ -260,24 +273,26 @@ function PhaseRow({ phase, timestamp, showTimeOnly, originCity, returnCity }: { 
     switch (phase.kind) {
       case 'deadhead': {
         const dest = phase.destination_city || returnCity || originCity || '';
-        return <>Deadhead to {dest}</>;
+        return <>Deadhead to {prettyCity(dest)}</>;
       }
       case 'driving':
-        return <>Driving to {phase.destination_city}</>;
+        return <>Driving to {prettyCity(phase.destination_city)}</>;
       case 'loading':
-        return <>Loading at {cityOnly(phase.origin_city)}</>;
+        return <>Loading at {prettyCity(phase.origin_city)}</>;
       case 'tarping':
-        return <>Tarping at {cityOnly(phase.origin_city)}</>;
+        return <>Tarping at {prettyCity(phase.origin_city)}</>;
       case 'unloading':
-        return <>Unloading at {cityOnly(phase.destination_city)}</>;
+        return <>Unloading at {prettyCity(phase.destination_city)}</>;
       case 'rest':
         return <>Rest</>;
       case 'break':
         return <>Break</>;
       case 'fuel':
         return <>Fueling</>;
-      case 'waiting':
-        return <>Waiting for {phase.waiting_for === 'pickup_window' ? 'pickup' : 'delivery'} window{phase.origin_city ? ` at ${phase.origin_city}` : phase.destination_city ? ` at ${phase.destination_city}` : ''}</>;
+      case 'waiting': {
+        const loc = phase.origin_city ? prettyCity(phase.origin_city) : phase.destination_city ? prettyCity(phase.destination_city) : '';
+        return <>Waiting for {phase.waiting_for === 'pickup_window' ? 'pickup' : 'delivery'} window{loc ? ` at ${loc}` : ''}</>;
+      }
     }
   })();
 
