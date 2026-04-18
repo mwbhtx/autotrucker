@@ -619,10 +619,6 @@ export function DesktopSettingsView() {
               <label className="text-sm font-medium block">Tank Size (gallons)</label>
               <Input type="number" min={50} max={300} step={1} value={tankSize} onChange={(e) => handleNumberChange("tank_size_gallons", e.target.value, setTankSize)} placeholder="150" />
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium block">Avg. Driving Hours/Day</label>
-              <Input type="number" min={6} max={11} step={1} value={avgDrivingHours} onChange={(e) => handleNumberChange("avg_driving_hours_per_day", e.target.value, setAvgDrivingHours)} placeholder="11" />
-            </div>
           </div>
           {avgMpg && tankSize && (
             <p className="text-sm text-muted-foreground">
@@ -750,6 +746,16 @@ export function DesktopSettingsView() {
                   ))}
                 </select>
               </div>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <h4 className="text-sm font-medium text-muted-foreground">Driving Hours Per Day</h4>
+            <p className="text-xs text-muted-foreground">
+              Wheels-moving time within your working window, not total working hours. Loading, fueling, and HOS breaks happen outside of this. FMCSA caps daily driving at 11; lower values pace the trip more conservatively.
+            </p>
+            <div className="w-40">
+              <Input type="number" min={6} max={11} step={1} value={avgDrivingHours} onChange={(e) => handleNumberChange("avg_driving_hours_per_day", e.target.value, setAvgDrivingHours)} placeholder="8" />
             </div>
           </div>
         </section>
