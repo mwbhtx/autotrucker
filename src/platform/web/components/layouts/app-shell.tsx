@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { RouteIcon, ClipboardList, BarChart3, Settings, Shield, LogOut, Moon, Sun } from "lucide-react";
+import { RouteIcon, ClipboardList, BarChart3, Settings, Shield, LogOut, Moon, Sun, User } from "lucide-react";
 import { useTheme } from "next-themes";
 import { cn } from "@/core/utils";
 import { useAuth } from "@/core/services/auth-provider";
@@ -11,6 +11,7 @@ import { brand } from "@mwbhtx/haulvisor-core";
 const navItems = [
   { href: "/routes", label: "Routes", icon: RouteIcon },
   { href: "/orders", label: "Board", icon: ClipboardList },
+  { href: "/driver", label: "Driver", icon: User },
   { href: "/dashboard", label: "Analytics", icon: BarChart3 },
   { href: "/settings", label: "Settings", icon: Settings },
 ];

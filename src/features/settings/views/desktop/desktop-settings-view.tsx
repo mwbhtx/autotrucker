@@ -28,6 +28,7 @@ import { Input } from "@/platform/web/components/ui/input";
 import { Separator } from "@/platform/web/components/ui/separator";
 import { Skeleton } from "@/platform/web/components/ui/skeleton";
 import { CheckIcon, LogOut, PlusIcon, XIcon } from "lucide-react";
+import Link from "next/link";
 import { ThemeSelector } from "@/features/settings/components/theme-selector";
 import { useIsMobile } from "@/platform/web/hooks/use-is-mobile";
 import { useAuth } from "@/core/services/auth-provider";
@@ -67,6 +68,7 @@ const NAV_SECTIONS = [
   { id: "certifications", label: "Certifications" },
   { id: "load-preferences", label: "Load Preferences" },
   { id: "schedule", label: "Schedule" },
+  { id: "driver-fees", label: "Driver Fees" },
   { id: "appearance", label: "Appearance" },
 ] as const;
 
@@ -758,6 +760,24 @@ export function DesktopSettingsView() {
               <Input type="number" min={6} max={11} step={1} value={avgDrivingHours} onChange={(e) => handleNumberChange("avg_driving_hours_per_day", e.target.value, setAvgDrivingHours)} placeholder="8" />
             </div>
           </div>
+        </section>
+
+        <Separator />
+
+        {/* Driver Fees */}
+        <section id="settings-driver-fees" className="max-w-2xl space-y-4">
+          <div>
+            <h3 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">Driver Fees</h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              Configure recurring monthly carrier charges (trailer lease, insurance, ELD, etc.) used by the Monthly Net dashboard.
+            </p>
+          </div>
+          <Link
+            href="/settings/driver-fees"
+            className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm transition-colors hover:bg-muted"
+          >
+            Manage driver fees →
+          </Link>
         </section>
 
         <Separator />
