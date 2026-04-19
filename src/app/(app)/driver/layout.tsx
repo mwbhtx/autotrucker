@@ -5,8 +5,8 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/core/utils";
 
 const TABS = [
-  { href: "/driver/assigned-orders", label: "Assigned Orders" },
-  { href: "/driver/monthly-net", label: "Monthly Net" },
+  { href: "/driver/assigned-orders", label: "My Orders" },
+  { href: "/driver/monthly-net", label: "My Earnings" },
 ];
 
 export default function DriverLayout({ children }: { children: React.ReactNode }) {

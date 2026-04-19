@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Loader2, RotateCw } from "lucide-react";
 import { Button } from "@/platform/web/components/ui/button";
 import { refreshAssignedOrders } from "../api";
 
@@ -45,8 +46,14 @@ export function RefreshButton({ onRefreshed }: { onRefreshed: () => void }) {
         size="sm"
         disabled={busy}
         onClick={handleClick}
+        className="gap-2"
       >
-        {busy ? "Syncing…" : "Refresh"}
+        {busy ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <RotateCw className="h-4 w-4" />
+        )}
+        <span>{busy ? "Syncing…" : "Refresh"}</span>
       </Button>
       {error && (
         <div className="text-xs text-destructive" role="alert">
