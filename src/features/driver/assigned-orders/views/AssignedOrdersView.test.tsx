@@ -128,19 +128,19 @@ describe("AssignedOrdersView", () => {
     );
     render(<AssignedOrdersView />);
     await waitFor(() => screen.getByText("E2"));
-    // Per-row stub button on unlinked rows
-    const stub = screen.getByRole("button", { name: /sync order/i });
+    // Per-row stub button on unlinked rows — matched by exact aria-label
+    const stub = screen.getByRole("button", { name: "Sync order" });
     expect(stub).toBeDisabled();
   });
 
-  it("renders the Sync All button", async () => {
+  it("renders the Sync Orders button", async () => {
     (api.listAssignedOrders as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(
       listResponse([]),
     );
     render(<AssignedOrdersView />);
     await waitFor(() =>
       expect(
-        screen.getByRole("button", { name: /sync all/i }),
+        screen.getByRole("button", { name: /sync orders/i }),
       ).toBeInTheDocument(),
     );
   });

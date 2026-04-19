@@ -24,7 +24,7 @@ describe("SyncAllButton", () => {
   beforeEach(() => vi.clearAllMocks());
   afterEach(() => cleanup());
 
-  it("renders 'Sync All' when ready (cooldown elapsed)", () => {
+  it("renders 'Sync Orders' when ready (cooldown elapsed)", () => {
     render(
       <SyncAllButton
         activeSyncTask={null}
@@ -34,11 +34,11 @@ describe("SyncAllButton", () => {
       />,
     );
     const btn = screen.getByRole("button");
-    expect(btn).toHaveTextContent(/sync all/i);
+    expect(btn).toHaveTextContent(/sync orders/i);
     expect(btn).toBeEnabled();
   });
 
-  it("renders 'Sync All' when never synced (nextSyncAvailableAt null)", () => {
+  it("renders 'Sync Orders' when never synced (nextSyncAvailableAt null)", () => {
     render(
       <SyncAllButton
         activeSyncTask={null}
@@ -48,7 +48,7 @@ describe("SyncAllButton", () => {
       />,
     );
     const btn = screen.getByRole("button");
-    expect(btn).toHaveTextContent(/sync all/i);
+    expect(btn).toHaveTextContent(/sync orders/i);
     expect(btn).toBeEnabled();
   });
 

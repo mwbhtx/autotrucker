@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { PlusIcon, ReceiptIcon } from "lucide-react";
 import { Button } from "@/platform/web/components/ui/button";
+import { Skeleton } from "@/platform/web/components/ui/skeleton";
 import {
   listDriverFees,
   createDriverFee,
@@ -39,23 +41,56 @@ export function DriverFeesView() {
   }
 
   if (loading) {
-    return <div className="text-sm text-muted-foreground">Loading…</div>;
+    return (
+      <div className="flex max-w-2xl flex-col gap-2">
+        <Skeleton className="h-11 w-full rounded-lg" />
+        <Skeleton className="h-11 w-full rounded-lg" />
+        <Skeleton className="h-11 w-full rounded-lg" />
+      </div>
+    );
+  }
+
+  if (fees.length === 0) {
+    return (
+      <>
+        <div className="flex max-w-2xl flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border bg-muted/20 px-6 py-10 text-center">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
+            <ReceiptIcon className="h-5 w-5" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm font-medium">No fees configured yet</p>
+            <p className="text-xs text-muted-foreground max-w-sm">
+              Add your recurring monthly carrier charges — trailer lease, insurance, ELD, etc. — to power the Monthly Net dashboard.
+            </p>
+          </div>
+          <Button onClick={() => setDialogOpen(true)} className="gap-2 mt-1">
+            <PlusIcon className="h-4 w-4" />
+            <span>Add Your First Fee</span>
+          </Button>
+        </div>
+
+        <AddDriverFeeDialog
+          open={dialogOpen}
+          onClose={() => setDialogOpen(false)}
+          onAdd={handleAdd}
+        />
+      </>
+    );
   }
 
   return (
-    <div className="flex max-w-2xl flex-col gap-4">
-      <div className="flex items-center justify-end">
-        <Button onClick={() => setDialogOpen(true)}>Add Fee</Button>
-      </div>
-
-      {fees.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          No fees configured yet. Add your recurring monthly carrier charges
-          (trailer lease, insurances, ELD, etc.) to power the Monthly Net
-          dashboard.
-        </p>
-      ) : (
-        <div className="flex flex-col">
+    <div className="flex max-w-2xl flex-col gap-3">
+      <div className="overflow-hidden rounded-lg border border-border bg-background">
+        <div className="flex items-center justify-between border-b border-border bg-muted/40 px-3 py-2">
+          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {fees.length} fee{fees.length === 1 ? "" : "s"}
+          </span>
+          <Button size="sm" onClick={() => setDialogOpen(true)} className="gap-1.5">
+            <PlusIcon className="h-3.5 w-3.5" />
+            <span>Add Fee</span>
+          </Button>
+        </div>
+        <div className="divide-y divide-border">
           {fees.map((f) => (
             <DriverFeeRow
               key={f.id}
@@ -65,13 +100,14 @@ export function DriverFeesView() {
             />
           ))}
         </div>
-      )}
-
-      <div className="text-right text-sm text-muted-foreground">
-        Total monthly fees:{" "}
-        <span className="font-medium text-foreground tabular-nums">
-          ${total.toFixed(2)}
-        </span>
+        <div className="flex items-center justify-between border-t border-border bg-muted/40 px-3 py-2">
+          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Total monthly
+          </span>
+          <span className="text-sm font-semibold tabular-nums">
+            ${total.toFixed(2)}
+          </span>
+        </div>
       </div>
 
       <AddDriverFeeDialog

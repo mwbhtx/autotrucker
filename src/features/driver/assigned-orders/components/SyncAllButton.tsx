@@ -57,6 +57,7 @@ export function SyncAllButton({
       if (err instanceof ApiError) {
         if (err.status === 429) msg = "Cooldown still active";
         else if (err.status === 409) msg = "Sync already in progress";
+        else if (err.status === 422) msg = "No orders to sync";
       }
       setErrorDwell(msg);
       if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
@@ -88,7 +89,7 @@ export function SyncAllButton({
     label = `Available in ${formatRemaining(remainingMs)}`;
   } else {
     icon = <RotateCw className="h-4 w-4" />;
-    label = "Sync All";
+    label = "Sync Orders";
   }
 
   return (

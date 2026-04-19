@@ -12,7 +12,7 @@ const navItems = [
   { href: "/routes", label: "Routes", icon: RouteIcon },
   { href: "/orders", label: "Board", icon: ClipboardList },
   { href: "/driver", label: "Driver", icon: User },
-  { href: "/dashboard", label: "Analytics", icon: BarChart3 },
+  { href: "/dashboard", label: "Company", icon: BarChart3 },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
