@@ -335,7 +335,7 @@ function RouteDetailContent({
                         <div className="flex items-baseline gap-2">
                           <span
                             className={`font-semibold uppercase tracking-wide text-xs w-[74px] shrink-0 ${
-                              s.type === "pickup" ? "text-primary" : "text-muted-foreground"
+                              s.type === "pickup" ? "text-primary" : "text-foreground"
                             }`}
                           >
                             {s.type === "pickup" ? "Pickup" : "Delivery"}
