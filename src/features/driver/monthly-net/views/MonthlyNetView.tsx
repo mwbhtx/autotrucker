@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Input } from "@/platform/web/components/ui/input";
 import { getMonthlyNet } from "../api";
 import type { MonthlyNet } from "../types";
 import { EarningsProgressBar } from "../components/EarningsProgressBar";
 import { FeesBreakdown } from "../components/FeesBreakdown";
+import { MonthPicker } from "../components/MonthPicker";
 import { useSettings } from "@/core/hooks/use-settings";
 
 function currentMonth() {
@@ -87,15 +87,10 @@ export function MonthlyNetView() {
             Your earnings, fees, and loads for the month.
           </p>
         </div>
-        <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+        <div className="flex flex-col gap-1 text-xs text-muted-foreground">
           <span className="uppercase tracking-wide">Month</span>
-          <Input
-            type="month"
-            value={month}
-            onChange={(e) => setMonth(e.target.value)}
-            className="w-44"
-          />
-        </label>
+          <MonthPicker value={month} onChange={setMonth} />
+        </div>
       </div>
 
       {loading || !data ? (
