@@ -1,15 +1,15 @@
 import { fetchApi } from "@/core/services/api";
 import type { AssignedOrder } from "./types";
 
-export async function listAssignedOrders(
-  from?: string,
-  to?: string,
-): Promise<AssignedOrder[]> {
-  const params = new URLSearchParams();
-  if (from) params.set("from", from);
-  if (to) params.set("to", to);
-  const qs = params.toString();
-  return fetchApi<AssignedOrder[]>(
-    `/driver/assigned-orders${qs ? `?${qs}` : ""}`,
+export async function listAssignedOrders(): Promise<AssignedOrder[]> {
+  const res = await fetchApi<{ orders: AssignedOrder[]; count: number }>(
+    "/driver/assigned-orders",
   );
+  return res.orders;
+}
+
+export async function refreshAssignedOrders(): Promise<{ queued: true }> {
+  return fetchApi<{ queued: true }>("/driver/assigned-orders/refresh", {
+    method: "POST",
+  });
 }

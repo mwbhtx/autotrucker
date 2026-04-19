@@ -69,6 +69,7 @@ const NAV_SECTIONS = [
   { id: "load-preferences", label: "Load Preferences" },
   { id: "schedule", label: "Schedule" },
   { id: "driver-fees", label: "Driver Fees" },
+  { id: "company-integration", label: "Company Integration" },
   { id: "appearance", label: "Appearance" },
 ] as const;
 
@@ -777,6 +778,24 @@ export function DesktopSettingsView() {
             className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm transition-colors hover:bg-muted"
           >
             Manage driver fees →
+          </Link>
+        </section>
+
+        <Separator />
+
+        {/* Company Integration */}
+        <section id="settings-company-integration" className="max-w-2xl space-y-4">
+          <div>
+            <h3 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">Company Integration</h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              Connect your Mercer account so assigned orders sync into Haulvisor automatically.
+            </p>
+          </div>
+          <Link
+            href="/settings/company-integration"
+            className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm transition-colors hover:bg-muted"
+          >
+            Manage company integration →
           </Link>
         </section>
 
