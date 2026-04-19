@@ -85,7 +85,7 @@ export function AddRouteDialog({ open, onClose, onCreated }: AddRouteDialogProps
 
   return (
     <Dialog open={open} onOpenChange={(next) => { if (!next) onClose(); }}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>Add Route</DialogTitle>
         </DialogHeader>
