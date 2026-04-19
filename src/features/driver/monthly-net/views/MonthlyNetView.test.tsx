@@ -4,6 +4,9 @@ import { MonthlyNetView } from "./MonthlyNetView";
 import * as api from "../api";
 
 vi.mock("../api");
+vi.mock("@/core/hooks/use-settings", () => ({
+  useSettings: () => ({ data: { order_url_template: undefined } }),
+}));
 
 describe("MonthlyNetView", () => {
   beforeEach(() => vi.clearAllMocks());
@@ -19,6 +22,7 @@ describe("MonthlyNetView", () => {
       paid_off: true,
       paid_off_amount: 1455,
       remaining_to_cover: 0,
+      orders: [],
     });
     render(<MonthlyNetView />);
     // Dollar amounts render as separate "$" and numeric text nodes; use a

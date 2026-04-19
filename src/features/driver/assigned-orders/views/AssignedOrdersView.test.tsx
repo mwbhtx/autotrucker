@@ -10,6 +10,9 @@ import { AssignedOrdersView } from "./AssignedOrdersView";
 import * as api from "../api";
 
 vi.mock("../api");
+vi.mock("@/core/hooks/use-settings", () => ({
+  useSettings: () => ({ data: { order_url_template: undefined } }),
+}));
 
 function listResponse(orders: unknown[]) {
   return {

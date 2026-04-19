@@ -14,8 +14,10 @@ import {
   type AssignedOrdersFilter,
 } from "../components/AssignedOrdersFilterStrip";
 import { SyncAllButton } from "../components/SyncAllButton";
+import { useSettings } from "@/core/hooks/use-settings";
 
 export function AssignedOrdersView() {
+  const { data: settings } = useSettings();
   const [orders, setOrders] = useState<AssignedOrder[]>([]);
   const [activeSyncTask, setActiveSyncTask] =
     useState<ActiveSyncTask | null>(null);
@@ -120,6 +122,7 @@ export function AssignedOrdersView() {
           hasNextPage={false}
           onLoadMore={() => {}}
           error={null}
+          orderUrlTemplate={settings?.order_url_template as string | undefined}
         />
       )}
     </div>
