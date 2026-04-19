@@ -1,0 +1,78 @@
+// src/features/driver/routes/components/RouteCard.tsx
+"use client";
+
+import { Trash2 } from "lucide-react";
+import type { DriverRouteSummary } from "../types";
+
+export interface RouteCardProps {
+  route: DriverRouteSummary;
+  onOpen: (id: string) => void;
+  onDelete: (id: string) => void;
+}
+
+function formatCurrency(n: number): string {
+  return `$${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+}
+
+function formatMiles(n: number): string {
+  return n.toLocaleString();
+}
+
+function formatDate(d: string | null): string {
+  if (!d) return "—";
+  const date = new Date(`${d}T12:00:00`);
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+export function RouteCard({ route, onOpen, onDelete }: RouteCardProps) {
+  const dateRange =
+    route.earliest_pickup_date === route.latest_pickup_date
+      ? formatDate(route.earliest_pickup_date)
+      : `${formatDate(route.earliest_pickup_date)} – ${formatDate(route.latest_pickup_date)}`;
+
+  return (
+    <div className="flex items-stretch rounded-md border border-border bg-card">
+      <button
+        type="button"
+        data-testid="route-card-body"
+        onClick={() => onOpen(route.id)}
+        className="flex-1 px-4 py-3 text-left hover:bg-accent/30"
+      >
+        <div className="text-sm font-medium">
+          {route.origin.city}, {route.origin.state} → {route.destination.city}, {route.destination.state}
+        </div>
+        <div className="text-xs text-muted-foreground">{dateRange}</div>
+        {route.summary ? (
+          <div className="mt-2 flex gap-6 text-xs tabular-nums">
+            <span>
+              <span className="text-muted-foreground">Pay </span>
+              {formatCurrency(route.summary.total_pay)}
+            </span>
+            <span>
+              <span className="text-muted-foreground">Miles </span>
+              {formatMiles(route.summary.total_miles)}
+            </span>
+            <span>
+              <span className="text-muted-foreground">RPM </span>
+              ${route.summary.effective_rpm.toFixed(2)}
+            </span>
+            <span>
+              <span className="text-muted-foreground">Net </span>
+              {formatCurrency(route.summary.profit)}
+            </span>
+          </div>
+        ) : (
+          <div className="mt-2 text-xs text-muted-foreground">Analysis unavailable</div>
+        )}
+      </button>
+      <button
+        type="button"
+        aria-label="Delete route"
+        onClick={() => onDelete(route.id)}
+        className="flex items-center justify-center px-3 text-muted-foreground hover:bg-destructive/10 hover:text-destructive border-l border-border"
+      >
+        <Trash2 className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}

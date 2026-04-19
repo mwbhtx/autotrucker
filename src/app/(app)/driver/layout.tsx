@@ -7,6 +7,7 @@ import { cn } from "@/core/utils";
 const TABS = [
   { href: "/driver/orders", label: "Orders" },
   { href: "/driver/earnings", label: "Earnings" },
+  { href: "/driver/routes", label: "Routes" },
 ];
 
 export default function DriverLayout({ children }: { children: React.ReactNode }) {
