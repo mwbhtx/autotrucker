@@ -48,14 +48,6 @@ export function CompanyIntegrationView() {
 
   return (
     <div className="flex max-w-2xl flex-col gap-4">
-      <div>
-        <h2 className="text-lg font-semibold">Company Integration</h2>
-        <p className="text-sm text-muted-foreground">
-          Connect your Mercer account so assigned orders sync into Haulvisor
-          automatically.
-        </p>
-      </div>
-
       {status?.configured && !editing ? (
         <div className="flex flex-col gap-3">
           <p className="text-sm">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { AlertTriangle, Check, Loader2, RotateCw } from "lucide-react";
 import { Button } from "@/platform/web/components/ui/button";
 import { ApiError } from "@/core/services/api";
 import { syncAllAssignedOrders } from "../api";
@@ -68,19 +69,26 @@ export function SyncAllButton({
     }
   }
 
+  let icon: React.ReactNode;
   let label: string;
   if (errorDwell) {
-    label = `\u26A0 ${errorDwell}`;
+    icon = <AlertTriangle className="h-4 w-4" />;
+    label = errorDwell;
   } else if (state === "in_flight" && progress) {
-    label = `\u27F3 Syncing ${progress.completed}/${progress.total}`;
+    icon = <Loader2 className="h-4 w-4 animate-spin" />;
+    label = `Syncing ${progress.completed}/${progress.total}`;
   } else if (state === "just_finished") {
-    label = "\u2713 Synced";
+    icon = <Check className="h-4 w-4" />;
+    label = "Synced";
   } else if (state === "failed") {
-    label = "\u26A0 Sync failed";
+    icon = <AlertTriangle className="h-4 w-4" />;
+    label = "Sync failed";
   } else if (state === "cooldown") {
-    label = `\u21BB Available in ${formatRemaining(remainingMs)}`;
+    icon = <RotateCw className="h-4 w-4" />;
+    label = `Available in ${formatRemaining(remainingMs)}`;
   } else {
-    label = "\u21BB Sync All";
+    icon = <RotateCw className="h-4 w-4" />;
+    label = "Sync All";
   }
 
   return (
@@ -91,8 +99,10 @@ export function SyncAllButton({
       onClick={handleClick}
       disabled={!enabled || isPosting || !!errorDwell}
       aria-live="polite"
+      className="gap-2"
     >
-      {label}
+      {icon}
+      <span>{label}</span>
     </Button>
   );
 }

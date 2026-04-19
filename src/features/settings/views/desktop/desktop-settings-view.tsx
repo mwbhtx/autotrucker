@@ -30,6 +30,7 @@ import { Skeleton } from "@/platform/web/components/ui/skeleton";
 import { CheckIcon, LogOut, PlusIcon, XIcon } from "lucide-react";
 import Link from "next/link";
 import { ThemeSelector } from "@/features/settings/components/theme-selector";
+import { CompanyIntegrationView } from "@/features/settings/company-integration/views/CompanyIntegrationView";
 import { useIsMobile } from "@/platform/web/hooks/use-is-mobile";
 import { useAuth } from "@/core/services/auth-provider";
 import { Button } from "@/platform/web/components/ui/button";
@@ -108,29 +109,11 @@ export function DesktopSettingsView() {
   // Track whether initial sync has happened to avoid triggering saves
   const initialized = useRef(false);
 
-  // Scroll to section on nav click
-  const scrollToSection = (id: string) => {
-    setActiveSection(id);
-    document.getElementById(`settings-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
+  // Side-nav click swaps the main pane. No scrolling — one section is
+  // rendered at a time and fills the right-hand content area.
+  const selectSection = (id: string) => setActiveSection(id);
 
-  // Track active section on scroll
   const contentRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const container = contentRef.current;
-    if (!container) return;
-    const handleScroll = () => {
-      for (const section of NAV_SECTIONS) {
-        const el = document.getElementById(`settings-${section.id}`);
-        if (el) {
-          const rect = el.getBoundingClientRect();
-          if (rect.top <= 120) setActiveSection(section.id);
-        }
-      }
-    };
-    container.addEventListener("scroll", handleScroll, { passive: true });
-    return () => container.removeEventListener("scroll", handleScroll);
-  }, []);
 
 
   // Sync from API on load
@@ -339,7 +322,7 @@ export function DesktopSettingsView() {
             <button
               key={section.id}
               type="button"
-              onClick={() => scrollToSection(section.id)}
+              onClick={() => selectSection(section.id)}
               className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
                 activeSection === section.id
                   ? "bg-accent text-foreground font-medium"
@@ -355,6 +338,7 @@ export function DesktopSettingsView() {
       {/* Content */}
       <div ref={contentRef} className={`flex-1 overflow-y-auto space-y-10 ${isMobile ? "px-0 py-4" : "p-6"}`}>
         {/* General */}
+        {activeSection === "general" && (
         <section id="settings-general" className="max-w-2xl space-y-6">
           <div>
             <h3 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">General</h3>
@@ -392,10 +376,10 @@ export function DesktopSettingsView() {
           </div>
 
         </section>
-
-        <Separator />
+        )}
 
         {/* Operating Costs */}
+        {activeSection === "costs" && (
         <section id="settings-costs" className="max-w-2xl space-y-6">
           <div>
             <h3 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">Operating Costs</h3>
@@ -603,10 +587,10 @@ export function DesktopSettingsView() {
             <span className="text-lg font-semibold tabular-nums">${effectiveCpm.toFixed(3)}/mi</span>
           </div>
         </section>
-
-        <Separator />
+        )}
 
         {/* Truck & Capacity */}
+        {activeSection === "truck" && (
         <section id="settings-truck" className="max-w-2xl space-y-6">
           <div>
             <h3 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">Truck & Capacity</h3>
@@ -636,10 +620,10 @@ export function DesktopSettingsView() {
 
 
         </section>
-
-        <Separator />
+        )}
 
         {/* Trailer Types */}
+        {activeSection === "trailers" && (
         <section id="settings-trailers" className="max-w-2xl space-y-6">
           <div>
             <h3 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">Trailer Types</h3>
@@ -671,10 +655,10 @@ export function DesktopSettingsView() {
               : `Filtering to ${trailerLabels.join(", ")} and compatible combos.`}
           </p>
         </section>
-
-        <Separator />
+        )}
 
         {/* Certifications */}
+        {activeSection === "certifications" && (
         <section id="settings-certifications" className="max-w-2xl space-y-6">
           <div>
             <h3 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">Certifications</h3>
@@ -687,10 +671,10 @@ export function DesktopSettingsView() {
             <CertToggle label="Team Driver" checked={teamDriver} onChange={() => handleBoolToggle("team_driver", teamDriver, setTeamDriver)} />
           </div>
         </section>
-
-        <Separator />
+        )}
 
         {/* Load Preferences */}
+        {activeSection === "load-preferences" && (
         <section id="settings-load-preferences" className="max-w-2xl space-y-6">
           <div>
             <h3 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">Load Preferences</h3>
@@ -701,10 +685,10 @@ export function DesktopSettingsView() {
             <CertToggle label="No Tarps" checked={noTarps} onChange={() => handleBoolToggle("no_tarps", noTarps, setNoTarps)} />
           </div>
         </section>
-
-        <Separator />
+        )}
 
         {/* Schedule */}
+        {activeSection === "schedule" && (
         <section id="settings-schedule" className="max-w-2xl space-y-6">
           <div>
             <h3 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">Schedule</h3>
@@ -762,10 +746,10 @@ export function DesktopSettingsView() {
             </div>
           </div>
         </section>
-
-        <Separator />
+        )}
 
         {/* Driver Fees */}
+        {activeSection === "driver-fees" && (
         <section id="settings-driver-fees" className="max-w-2xl space-y-4">
           <div>
             <h3 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">Driver Fees</h3>
@@ -780,10 +764,10 @@ export function DesktopSettingsView() {
             Manage driver fees →
           </Link>
         </section>
-
-        <Separator />
+        )}
 
         {/* Company Integration */}
+        {activeSection === "company-integration" && (
         <section id="settings-company-integration" className="max-w-2xl space-y-4">
           <div>
             <h3 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">Company Integration</h3>
@@ -791,17 +775,12 @@ export function DesktopSettingsView() {
               Connect your Mercer account so assigned orders sync into Haulvisor automatically.
             </p>
           </div>
-          <Link
-            href="/settings/company-integration"
-            className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm transition-colors hover:bg-muted"
-          >
-            Manage company integration →
-          </Link>
+          <CompanyIntegrationView />
         </section>
-
-        <Separator />
+        )}
 
         {/* Appearance */}
+        {activeSection === "appearance" && (
         <section id="settings-appearance" className="max-w-2xl space-y-6">
           <div>
             <h3 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">Appearance</h3>
@@ -810,6 +789,7 @@ export function DesktopSettingsView() {
 
           <ThemeSelector />
         </section>
+        )}
 
         {isMobile && (
           <>
