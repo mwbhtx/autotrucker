@@ -434,7 +434,8 @@ export function SearchFilters({
     twic_card: settings.twic_card ?? undefined,
     team_driver: settings.team_driver ?? undefined,
     no_tarps: settings.no_tarps ?? undefined,
-    deliver_early: settings.deliver_early ?? undefined,
+    late_tolerance_hours: settings.late_tolerance_hours ?? undefined,
+    early_tolerance_hours: settings.early_tolerance_hours ?? undefined,
     cost_per_mile: (settings.cost_per_mile as number | undefined) ?? DEFAULT_COST_PER_MILE,
   } : {};
 
@@ -842,7 +843,6 @@ function AllFiltersPopover({
   const [twic, setTwic] = useState(false);
   const [team, setTeam] = useState(false);
   const [noTarps, setNoTarps] = useState(false);
-  const [deliverEarly, setDeliverEarly] = useState(false);
   const initialized = useRef(false);
 
   useEffect(() => {
@@ -853,7 +853,6 @@ function AllFiltersPopover({
     setTwic(settings.twic_card ?? false);
     setTeam(settings.team_driver ?? false);
     setNoTarps(settings.no_tarps ?? false);
-    setDeliverEarly(settings.deliver_early ?? false);
     setTimeout(() => { initialized.current = true; }, 100);
   }, [settings]);
 
@@ -970,7 +969,6 @@ function AllFiltersPopover({
             <div className="space-y-1">
               {[
                 { label: "No Tarps", checked: noTarps, key: "no_tarps", setter: setNoTarps },
-                { label: "Deliver Early", checked: deliverEarly, key: "deliver_early", setter: setDeliverEarly },
               ].map((cert) => (
                 <button
                   key={cert.key}
