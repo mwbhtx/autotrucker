@@ -287,8 +287,17 @@ function PhaseRow({ phase, timestamp, showTimeOnly, originCity, returnCity }: { 
         return <>Rest</>;
       case 'break':
         return <>Break</>;
-      case 'fuel':
-        return <>Fueling</>;
+      case 'fuel': {
+        const parts: string[] = [];
+        if (phase.gallons && phase.gallons > 0) parts.push(`${Math.round(phase.gallons)} gal`);
+        if (phase.price_per_gallon) parts.push(`$${phase.price_per_gallon.toFixed(2)}/gal`);
+        const padd = phase.padd ? ` (${phase.padd})` : '';
+        const detail = parts.length > 0 ? ` — ${parts.join(' × ')}${padd}` : '';
+        const cost = phase.fuel_cost && phase.fuel_cost > 0
+          ? ` = $${phase.fuel_cost.toFixed(2)}`
+          : '';
+        return <>Fueling{detail}{cost}</>;
+      }
       case 'waiting': {
         const loc = phase.origin_city ? prettyCity(phase.origin_city) : phase.destination_city ? prettyCity(phase.destination_city) : '';
         return <>Waiting for {phase.waiting_for === 'pickup_window' ? 'pickup' : 'delivery'} window{loc ? ` at ${loc}` : ''}</>;

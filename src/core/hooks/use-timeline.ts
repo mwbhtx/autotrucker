@@ -7,7 +7,11 @@ import type { RouteChain } from "@/core/types";
 
 interface TimelineResponse {
   timeline: TripPhase[];
-  trip_summary: TripSimulationSummary;
+  trip_summary: TripSimulationSummary & {
+    /** Sum of per-fuel-stop (gallons × PADD price). Null when no stops had
+     *  a resolvable price. Added by the backend enricher. */
+    fuel_cost_actual?: number | null;
+  };
   suggested_departure?: string;
 }
 
