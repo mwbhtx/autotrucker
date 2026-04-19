@@ -133,6 +133,7 @@ export function AssignedOrdersView() {
           error={null}
           orderUrlTemplate={settings?.order_url_template as string | undefined}
           dimClosed={false}
+          dateColumns="dispatch-pickup"
         />
       )}
     </div>

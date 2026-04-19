@@ -46,6 +46,16 @@ function formatWeight(lbs: number | undefined): string {
   return String(lbs);
 }
 
+/** "2026-04-12" → "Apr 12". Parses manually to avoid UTC→local shift. */
+function formatShortDate(raw: string | null | undefined): string {
+  if (!raw) return "—";
+  const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return raw;
+  const [, year, month, day] = m;
+  const d = new Date(Number(year), Number(month) - 1, Number(day));
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
 interface OrdersTableProps {
   companyId: string;
   orders: Order[];
@@ -60,6 +70,11 @@ interface OrdersTableProps {
    *  closed load in a mixed list. On the Driver page every row is closed
    *  (past loads), so dimming them hides everything — set false there. */
   dimClosed?: boolean;
+  /** Which date columns to show. "windows" (default) shows Pickup/Delivery
+   *  with early–late ranges — appropriate for available/board orders.
+   *  "dispatch-pickup" shows Dispatch date + Pickup date — appropriate for
+   *  the driver's past-loads view where ranges aren't meaningful. */
+  dateColumns?: "windows" | "dispatch-pickup";
 }
 
 export function OrdersTable({
@@ -73,6 +88,7 @@ export function OrdersTable({
   error,
   orderUrlTemplate,
   dimClosed = true,
+  dateColumns = "windows",
 }: OrdersTableProps) {
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
 
@@ -93,8 +109,17 @@ export function OrdersTable({
             <TableHead>Order #</TableHead>
             <TableHead>Origin</TableHead>
             <TableHead>Destination</TableHead>
-            <TableHead>Pickup</TableHead>
-            <TableHead>Delivery</TableHead>
+            {dateColumns === "windows" ? (
+              <>
+                <TableHead>Pickup</TableHead>
+                <TableHead>Delivery</TableHead>
+              </>
+            ) : (
+              <>
+                <TableHead>Dispatch</TableHead>
+                <TableHead>Pickup</TableHead>
+              </>
+            )}
             <TableHead className="text-right">Pay</TableHead>
             <TableHead className="text-right">Miles</TableHead>
             <TableHead className="text-right">$/Mi</TableHead>
@@ -168,12 +193,29 @@ export function OrdersTable({
                   <TableCell>
                     {order.destination_city}, {order.destination_state}
                   </TableCell>
-                  <TableCell className="whitespace-nowrap text-sm">
-                    {formatDateRange(order.pickup_date_early_local, order.pickup_date_late_local)}
-                  </TableCell>
-                  <TableCell className="whitespace-nowrap text-sm">
-                    {formatDateRange(order.delivery_date_early_local, order.delivery_date_late_local)}
-                  </TableCell>
+                  {dateColumns === "windows" ? (
+                    <>
+                      <TableCell className="whitespace-nowrap text-sm">
+                        {formatDateRange(order.pickup_date_early_local, order.pickup_date_late_local)}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap text-sm">
+                        {formatDateRange(order.delivery_date_early_local, order.delivery_date_late_local)}
+                      </TableCell>
+                    </>
+                  ) : (
+                    <>
+                      <TableCell className="whitespace-nowrap tabular-nums text-sm text-muted-foreground">
+                        {formatShortDate(
+                          (order as unknown as { dispatch_date?: string | null }).dispatch_date,
+                        )}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap tabular-nums text-sm text-muted-foreground">
+                        {formatShortDate(
+                          (order as unknown as { pickup_date?: string | null }).pickup_date,
+                        )}
+                      </TableCell>
+                    </>
+                  )}
                   <TableCell className="text-right font-medium">
                     {formatCurrency(order.pay)}
                   </TableCell>
