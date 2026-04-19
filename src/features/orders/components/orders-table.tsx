@@ -46,14 +46,13 @@ function formatWeight(lbs: number | undefined): string {
   return String(lbs);
 }
 
-/** "2026-04-12" → "Apr 12". Parses manually to avoid UTC→local shift. */
+/** "2026-04-12" → "04/12/2026". Parses manually to avoid UTC→local shift. */
 function formatShortDate(raw: string | null | undefined): string {
   if (!raw) return "—";
   const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (!m) return raw;
   const [, year, month, day] = m;
-  const d = new Date(Number(year), Number(month) - 1, Number(day));
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return `${month}/${day}/${year}`;
 }
 
 interface OrdersTableProps {
