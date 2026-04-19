@@ -132,6 +132,7 @@ export function AssignedOrdersView() {
           onLoadMore={() => {}}
           error={null}
           orderUrlTemplate={settings?.order_url_template as string | undefined}
+          dimClosed={false}
         />
       )}
     </div>

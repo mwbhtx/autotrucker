@@ -56,6 +56,10 @@ interface OrdersTableProps {
   onClearFilters?: () => void;
   error: Error | null;
   orderUrlTemplate?: string;
+  /** Dim rows with order_status='closed'. On the Board this signals a
+   *  closed load in a mixed list. On the Driver page every row is closed
+   *  (past loads), so dimming them hides everything — set false there. */
+  dimClosed?: boolean;
 }
 
 export function OrdersTable({
@@ -68,6 +72,7 @@ export function OrdersTable({
   onClearFilters,
   error,
   orderUrlTemplate,
+  dimClosed = true,
 }: OrdersTableProps) {
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
 
@@ -126,7 +131,7 @@ export function OrdersTable({
 
           {orders.map((order) => {
             const isExpanded = expandedOrderId === order.order_id;
-            const isClosed = order.order_status === "closed";
+            const isClosed = dimClosed && order.order_status === "closed";
             return (
               <Fragment key={order.order_id}>
                 <TableRow
