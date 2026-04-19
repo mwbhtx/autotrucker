@@ -38,7 +38,7 @@ const TRAILER_TYPES = [
 const NONE = "__none__";
 
 interface OrdersFiltersProps {
-  onSearch: (filters: Omit<OrderFilters, "last_key" | "limit">) => void;
+  onSearch: (filters: Omit<OrderFilters, "offset" | "limit">) => void;
   children?: React.ReactNode;
 }
 

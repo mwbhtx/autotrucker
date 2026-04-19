@@ -13,7 +13,7 @@ import type { OrderFilters } from "@/core/types";
 export function DesktopOrdersView() {
   const { activeCompanyId } = useAuth();
   const { data: settings } = useSettings();
-  const [filters, setFilters] = useState<Omit<OrderFilters, "last_key" | "limit">>({});
+  const [filters, setFilters] = useState<Omit<OrderFilters, "offset" | "limit">>({});
   const [search, setSearch] = useState("");
 
   const {

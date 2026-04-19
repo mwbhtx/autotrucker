@@ -74,5 +74,5 @@ export interface OrderFilters {
   trailer_type?: string;
   min_pay?: number;
   limit?: number;
-  last_key?: string;
+  offset?: number;
 }

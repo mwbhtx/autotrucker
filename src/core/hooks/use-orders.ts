@@ -3,6 +3,7 @@
 import {
   useQuery,
   useInfiniteQuery,
+  type InfiniteData,
 } from "@tanstack/react-query";
 import { fetchApi } from "@/core/services/api";
 import type { Order, PaginatedOrders, OrderFilters } from "@/core/types";
@@ -14,9 +15,10 @@ export type OrderWithTask = Order & { task_status?: string; task_id?: string };
 
 export function useOrders(
   companyId: string,
-  filters: Omit<OrderFilters, "last_key">,
+  filters: Omit<OrderFilters, "offset">,
 ) {
-  return useInfiniteQuery<PaginatedOrders>({
+  const limit = filters.limit ?? 50;
+  return useInfiniteQuery<PaginatedOrders, Error, InfiniteData<PaginatedOrders, number>, readonly unknown[], number>({
     queryKey: ["orders", companyId, filters],
     queryFn: ({ pageParam }) => {
       const params = new URLSearchParams();
@@ -25,16 +27,19 @@ export function useOrders(
         params.set("destination_state", filters.destination_state);
       if (filters.trailer_type) params.set("trailer_type", filters.trailer_type);
       if (filters.min_pay) params.set("min_pay", String(filters.min_pay));
-      if (filters.limit) params.set("limit", String(filters.limit));
-      if (pageParam) params.set("last_key", pageParam as string);
+      params.set("limit", String(limit));
+      if (pageParam > 0) params.set("offset", String(pageParam));
 
       const qs = params.toString();
       return fetchApi<PaginatedOrders>(
         `orders/${companyId}${qs ? `?${qs}` : ""}`,
       );
     },
-    initialPageParam: undefined as string | undefined,
-    getNextPageParam: (lastPage) => lastPage.lastKey ?? undefined,
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      if (lastPage.items.length < limit) return undefined;
+      return allPages.reduce((sum, p) => sum + p.items.length, 0);
+    },
     refetchInterval: 60_000,
     enabled: !!companyId,
   });
