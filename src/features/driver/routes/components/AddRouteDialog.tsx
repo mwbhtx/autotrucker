@@ -8,6 +8,16 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Button } from "@/platform/web/components/ui/button";
 import type { DriverRouteErrorCode } from "../types";
 
+/** "2026-04-12" → "Apr 12". Parses manually to avoid UTC→local shift. */
+function formatPickupDate(raw: string | null | undefined): string {
+  if (!raw) return "—";
+  const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return raw;
+  const [, year, month, day] = m;
+  const d = new Date(Number(year), Number(month) - 1, Number(day));
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
 const ERROR_MESSAGES: Record<DriverRouteErrorCode, string> = {
   INVALID_ORDER_COUNT: "You must select exactly 2 orders.",
   DUPLICATE_ORDERS: "Please select two different orders.",
@@ -94,26 +104,30 @@ export function AddRouteDialog({ open, onClose, onCreated }: AddRouteDialogProps
             No settled orders with details are available. Ensure at least two orders have been synced and settled.
           </div>
         ) : (
-          <div className="max-h-80 overflow-y-auto rounded border border-border">
+          <div className="max-h-96 overflow-y-auto overflow-hidden rounded-md border border-border bg-background">
             <table className="w-full text-sm">
-              <thead className="bg-accent/30 text-xs uppercase tracking-wide text-muted-foreground">
+              <thead className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <th className="px-2 py-2 w-8"></th>
-                  <th className="px-2 py-2 text-left">Order</th>
-                  <th className="px-2 py-2 text-left">Origin</th>
-                  <th className="px-2 py-2 text-left">Destination</th>
-                  <th className="px-2 py-2 text-left">Pickup</th>
-                  <th className="px-2 py-2 text-right">Pay</th>
-                  <th className="px-2 py-2 text-right">Miles</th>
+                  <th className="px-4 py-2 text-left font-medium">Pickup</th>
+                  <th className="px-4 py-2 text-left font-medium">Order</th>
+                  <th className="px-4 py-2 text-left font-medium">Origin</th>
+                  <th className="px-4 py-2 text-left font-medium">Destination</th>
+                  <th className="px-4 py-2 text-right font-medium">Pay</th>
                 </tr>
               </thead>
               <tbody>
-                {orders.map((o) => {
+                {orders.map((o, i) => {
                   const isSelected = selected.includes(o.order_id);
                   const disabled = !isSelected && selectionFull;
                   return (
-                    <tr key={o.order_id} className={disabled ? "opacity-40" : ""}>
-                      <td className="px-2 py-1 text-center">
+                    <tr
+                      key={o.order_id}
+                      className={`border-b border-border last:border-0 transition-colors hover:bg-accent/40 ${
+                        i % 2 === 1 ? "bg-muted/30" : ""
+                      } ${disabled ? "opacity-40" : ""}`}
+                    >
+                      <td className="px-2 py-2 text-center">
                         <input
                           type="checkbox"
                           aria-label={`Select ${o.order_id}`}
@@ -122,12 +136,23 @@ export function AddRouteDialog({ open, onClose, onCreated }: AddRouteDialogProps
                           onChange={() => toggle(o.order_id)}
                         />
                       </td>
-                      <td className="px-2 py-1">{o.order_id}</td>
-                      <td className="px-2 py-1">{o.origin_city}, {o.origin_state}</td>
-                      <td className="px-2 py-1">{o.destination_city}, {o.destination_state}</td>
-                      <td className="px-2 py-1">{o.pickup_date ?? "—"}</td>
-                      <td className="px-2 py-1 text-right tabular-nums">${o.pay?.toFixed(0) ?? "—"}</td>
-                      <td className="px-2 py-1 text-right tabular-nums">{o.loaded_miles ?? "—"}</td>
+                      <td className="px-4 py-2 tabular-nums whitespace-nowrap text-muted-foreground">
+                        {formatPickupDate(o.pickup_date)}
+                      </td>
+                      <td className="px-4 py-2 font-mono">{o.order_id}</td>
+                      <td className="px-4 py-2">
+                        {o.origin_city && o.origin_state
+                          ? `${o.origin_city}, ${o.origin_state}`
+                          : "—"}
+                      </td>
+                      <td className="px-4 py-2">
+                        {o.destination_city && o.destination_state
+                          ? `${o.destination_city}, ${o.destination_state}`
+                          : "—"}
+                      </td>
+                      <td className="px-4 py-2 text-right tabular-nums font-medium">
+                        {o.pay != null ? `$${o.pay.toFixed(2)}` : "—"}
+                      </td>
                     </tr>
                   );
                 })}
