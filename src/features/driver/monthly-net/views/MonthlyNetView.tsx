@@ -73,7 +73,7 @@ export function MonthlyNetView() {
   }, [month]);
 
   const netClass =
-    data && data.net >= 0 ? "text-emerald-500" : "text-red-500";
+    data && data.net >= 0 ? "text-positive" : "text-negative";
 
   return (
     <div className="flex flex-col gap-5">

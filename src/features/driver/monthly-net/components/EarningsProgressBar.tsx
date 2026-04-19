@@ -14,7 +14,7 @@ export function EarningsProgressBar({
       <div className="h-3 w-full rounded bg-muted">
         <div
           className={`h-3 rounded transition-all ${
-            earned >= target ? "bg-emerald-500" : "bg-sky-500"
+            earned >= target ? "bg-positive" : "bg-sky-500"
           }`}
           style={{ width: `${pct}%` }}
         />
@@ -24,7 +24,7 @@ export function EarningsProgressBar({
         <span>Target: ${target.toFixed(2)}</span>
       </div>
       {overage > 0 && (
-        <div className="text-xs text-emerald-600">
+        <div className="text-xs text-positive">
           Above fees: ${overage.toFixed(2)}
         </div>
       )}
