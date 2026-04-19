@@ -234,19 +234,6 @@ function RouteDetailContent({
                 { label1: "Gross", value1: formatCurrency(chain.total_pay), label2: "DH mi.", value2: chain.total_deadhead_miles.toLocaleString() },
                 { label1: "Tarp", value1: needsTarp ? "Yes" : "No", label2: "$/mi loaded", value2: avgLoadedRpm !== null ? `$${avgLoadedRpm.toFixed(2)}` : "—" },
               ];
-              // Conditionally append a fuel row when the backend resolved an
-              // actual per-stop fuel cost (timeline must be loaded). Paired
-              // with total gallons from the same summary.
-              const fuelCost = timelineData?.trip_summary.fuel_cost_actual;
-              const fuelGallons = timelineData?.trip_summary.fuel_gallons;
-              if (fuelCost != null && fuelCost > 0) {
-                rows.push({
-                  label1: "Fuel (est.)",
-                  value1: formatCurrency(fuelCost),
-                  label2: "Gallons",
-                  value2: fuelGallons ? `${Math.round(fuelGallons)}` : "—",
-                });
-              }
               return rows.map((row, i) => (
                 <div key={i} className={`grid grid-cols-subgrid col-span-4 px-3 py-1.5 ${i % 2 === 0 ? "bg-muted/50" : ""}`}>
                   <span className="text-muted-foreground text-left">{row.label1}</span>
