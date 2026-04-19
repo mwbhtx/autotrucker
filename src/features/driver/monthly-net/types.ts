@@ -5,7 +5,9 @@ export interface MonthlyNetOrder {
   destination_city: string | null;
   destination_state: string | null;
   pay: number | null;
-  pickup_date_early_utc: string | null;
+  /** YYYY-MM-DD. Backend prefers assigned_orders.pickup_date, falls back to
+   *  the date portion of orders.pickup_date_early_utc. */
+  pickup_date: string | null;
 }
 
 export interface MonthlyNet {

@@ -13,6 +13,18 @@ function currentMonth() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
+/** "2026-04-12" → "Apr 12". Returns "—" for null/empty. Parses manually to
+ *  avoid UTC→local shift that would make a YYYY-MM-DD appear as the day
+ *  before in western US timezones. */
+function formatPickupDate(raw: string | null): string {
+  if (!raw) return "—";
+  const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return raw;
+  const [, year, month, day] = m;
+  const d = new Date(Number(year), Number(month) - 1, Number(day));
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
 export function MonthlyNetView() {
   const { data: settings } = useSettings();
   const orderUrlTemplate = settings?.order_url_template as string | undefined;
@@ -91,6 +103,7 @@ export function MonthlyNetView() {
           <table className="w-full text-sm">
             <thead className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
+                <th className="px-4 py-2 text-left font-medium">Pickup</th>
                 <th className="px-4 py-2 text-left font-medium">Order</th>
                 <th className="px-4 py-2 text-left font-medium">Origin</th>
                 <th className="px-4 py-2 text-left font-medium">Destination</th>
@@ -100,6 +113,9 @@ export function MonthlyNetView() {
             <tbody>
               {data.orders.map((o) => (
                 <tr key={o.order_id} className="border-b border-border last:border-0">
+                  <td className="px-4 py-2 tabular-nums whitespace-nowrap">
+                    {formatPickupDate(o.pickup_date)}
+                  </td>
                   <td className="px-4 py-2 font-mono">
                     {orderUrlTemplate ? (
                       <a
