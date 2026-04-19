@@ -5,6 +5,18 @@ import { fetchApi } from "@/core/services/api";
 import type { TripPhase, TripSimulationSummary } from "@mwbhtx/haulvisor-core";
 import type { RouteChain } from "@/core/types";
 
+export interface ExpensesBreakdown {
+  total: number;
+  fuel: number;
+  fuel_is_actual: boolean;
+  maintenance: number;
+  tires: number;
+  def: number;
+  custom: { label: string; amount: number }[];
+  /** True in 'simple' cost mode — no component split, just the lump total. */
+  is_lump_sum: boolean;
+}
+
 interface TimelineResponse {
   timeline: TripPhase[];
   trip_summary: TripSimulationSummary & {
@@ -13,6 +25,7 @@ interface TimelineResponse {
     fuel_cost_actual?: number | null;
   };
   suggested_departure?: string;
+  expenses_breakdown?: ExpensesBreakdown;
 }
 
 interface SearchContext {
