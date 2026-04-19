@@ -44,13 +44,7 @@ export function DriverFeesView() {
 
   return (
     <div className="flex max-w-2xl flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-semibold">Driver Fees</h2>
-          <p className="text-sm text-muted-foreground">
-            Recurring monthly carrier charges used by the Monthly Net dashboard.
-          </p>
-        </div>
+      <div className="flex items-center justify-end">
         <Button onClick={() => setDialogOpen(true)}>Add Fee</Button>
       </div>
 

@@ -31,6 +31,7 @@ import { CheckIcon, LogOut, PlusIcon, XIcon } from "lucide-react";
 import Link from "next/link";
 import { ThemeSelector } from "@/features/settings/components/theme-selector";
 import { CompanyIntegrationView } from "@/features/settings/company-integration/views/CompanyIntegrationView";
+import { DriverFeesView } from "@/features/settings/driver-fees/views/DriverFeesView";
 import { useIsMobile } from "@/platform/web/hooks/use-is-mobile";
 import { useAuth } from "@/core/services/auth-provider";
 import { Button } from "@/platform/web/components/ui/button";
@@ -71,7 +72,7 @@ const NAV_SECTIONS = [
   { id: "schedule", label: "Schedule" },
   { id: "driver-fees", label: "Driver Fees" },
   { id: "company-integration", label: "Company Integration" },
-  { id: "appearance", label: "Appearance" },
+  { id: "appearance", label: "Theme" },
 ] as const;
 
 export function DesktopSettingsView() {
@@ -393,7 +394,7 @@ export function DesktopSettingsView() {
               onClick={() => handleCostModeChange("simple")}
               className={`px-4 py-2 text-sm font-medium transition-colors ${
                 costMode === "simple"
-                  ? "bg-accent text-foreground"
+                  ? "bg-primary text-primary-foreground"
                   : "bg-background text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -404,7 +405,7 @@ export function DesktopSettingsView() {
               onClick={() => handleCostModeChange("auto")}
               className={`px-4 py-2 text-sm font-medium border-l border-border transition-colors ${
                 costMode === "auto"
-                  ? "bg-accent text-foreground"
+                  ? "bg-primary text-primary-foreground"
                   : "bg-background text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -415,7 +416,7 @@ export function DesktopSettingsView() {
               onClick={() => handleCostModeChange("detailed")}
               className={`px-4 py-2 text-sm font-medium border-l border-border transition-colors ${
                 costMode === "detailed"
-                  ? "bg-accent text-foreground"
+                  ? "bg-primary text-primary-foreground"
                   : "bg-background text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -757,12 +758,7 @@ export function DesktopSettingsView() {
               Configure recurring monthly carrier charges (trailer lease, insurance, ELD, etc.) used by the Monthly Net dashboard.
             </p>
           </div>
-          <Link
-            href="/settings/driver-fees"
-            className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm transition-colors hover:bg-muted"
-          >
-            Manage driver fees →
-          </Link>
+          <DriverFeesView />
         </section>
         )}
 
@@ -779,12 +775,12 @@ export function DesktopSettingsView() {
         </section>
         )}
 
-        {/* Appearance */}
+        {/* Theme */}
         {activeSection === "appearance" && (
         <section id="settings-appearance" className="max-w-2xl space-y-6">
           <div>
-            <h3 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">Appearance</h3>
-            <p className="text-xs text-muted-foreground mt-1">Theme and display preferences.</p>
+            <h3 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">Theme</h3>
+            <p className="text-xs text-muted-foreground mt-1">Display preferences.</p>
           </div>
 
           <ThemeSelector />
