@@ -211,35 +211,51 @@ function RouteDetailContent({
               </button>
             )}
           </div>
-          <div className={`text-sm grid grid-cols-4 gap-x-3 ${routeProfitColor(chain.daily_net_profit)}`}>
-            {[
-              { label1: "$/Day", value1: formatCurrency(chain.daily_net_profit), label2: "Profit", value2: formatCurrency(profit) },
-              { label1: "Net/mi", value1: formatRpm(chain.effective_rpm), label2: "Expenses", value2: formatCurrency(chain.cost_breakdown.total), tooltip2: `${(chain.total_miles + chain.total_deadhead_miles).toLocaleString()} mi × $${(chain.effective_cost_per_mile ?? costPerMile).toFixed(2)}/mi` },
-              { label1: "Total mi.", value1: (chain.total_miles + chain.total_deadhead_miles).toLocaleString(), label2: "Loaded mi.", value2: chain.total_miles.toLocaleString() },
-              { label1: "Days", value1: chain.estimated_days.toFixed(1), label2: "DH %", value2: `${chain.deadhead_pct.toFixed(0)}%` },
-              { label1: "Gross", value1: formatCurrency(chain.total_pay), label2: "DH mi.", value2: chain.total_deadhead_miles.toLocaleString() },
-              { label1: "Tarp", value1: needsTarp ? "Yes" : "No", label2: "$/mi loaded", value2: avgLoadedRpm !== null ? `$${avgLoadedRpm.toFixed(2)}` : "—" },
-            ].map((row, i) => (
-              <div key={i} className={`grid grid-cols-subgrid col-span-4 px-3 py-1.5 ${i % 2 === 0 ? "bg-muted/50" : ""}`}>
-                <span className="text-muted-foreground text-left">{row.label1}</span>
-                <span className="text-right tabular-nums font-bold">{row.value1}</span>
-                <span className="text-muted-foreground text-left">{row.label2}</span>
-                <span className="text-right">
-                  {'tooltip2' in row && row.tooltip2 ? (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="tabular-nums font-bold underline decoration-dashed underline-offset-2 cursor-default">{row.value2}</span>
-                        </TooltipTrigger>
-                        <TooltipContent side="left">{row.tooltip2}</TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  ) : (
-                    <span className="tabular-nums font-bold">{row.value2}</span>
-                  )}
-                </span>
-              </div>
-            ))}
+          <div className="text-sm grid grid-cols-4 gap-x-3">
+            {(() => {
+              const profitColor = routeProfitColor(chain.daily_net_profit);
+              const profitChipClass = `tabular-nums font-bold ${profitColor} bg-black px-2 py-0.5 inline-block`;
+              const rows: Array<{
+                label1: string;
+                value1: React.ReactNode;
+                label2: string;
+                value2: React.ReactNode;
+                tooltip2?: string;
+              }> = [
+                {
+                  label1: "$/Day",
+                  value1: <span className={profitChipClass}>{formatCurrency(chain.daily_net_profit)}</span>,
+                  label2: "Total Profit",
+                  value2: <span className={profitChipClass}>{formatCurrency(profit)}</span>,
+                },
+                { label1: "Net/mi", value1: formatRpm(chain.effective_rpm), label2: "Expenses", value2: formatCurrency(chain.cost_breakdown.total), tooltip2: `${(chain.total_miles + chain.total_deadhead_miles).toLocaleString()} mi × $${(chain.effective_cost_per_mile ?? costPerMile).toFixed(2)}/mi` },
+                { label1: "Total mi.", value1: (chain.total_miles + chain.total_deadhead_miles).toLocaleString(), label2: "Loaded mi.", value2: chain.total_miles.toLocaleString() },
+                { label1: "Days", value1: chain.estimated_days.toFixed(1), label2: "DH %", value2: `${chain.deadhead_pct.toFixed(0)}%` },
+                { label1: "Gross", value1: formatCurrency(chain.total_pay), label2: "DH mi.", value2: chain.total_deadhead_miles.toLocaleString() },
+                { label1: "Tarp", value1: needsTarp ? "Yes" : "No", label2: "$/mi loaded", value2: avgLoadedRpm !== null ? `$${avgLoadedRpm.toFixed(2)}` : "—" },
+              ];
+              return rows.map((row, i) => (
+                <div key={i} className={`grid grid-cols-subgrid col-span-4 px-3 py-1.5 ${i % 2 === 0 ? "bg-muted/50" : ""}`}>
+                  <span className="text-muted-foreground text-left">{row.label1}</span>
+                  <span className="text-right tabular-nums font-bold text-foreground">{row.value1}</span>
+                  <span className="text-muted-foreground text-left">{row.label2}</span>
+                  <span className="text-right">
+                    {row.tooltip2 ? (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="tabular-nums font-bold text-foreground underline decoration-dashed underline-offset-2 cursor-default">{row.value2}</span>
+                          </TooltipTrigger>
+                          <TooltipContent side="left">{row.tooltip2}</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : (
+                      <span className="tabular-nums font-bold text-foreground">{row.value2}</span>
+                    )}
+                  </span>
+                </div>
+              ));
+            })()}
           </div>
         </div>
 
