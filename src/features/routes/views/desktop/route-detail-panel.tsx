@@ -18,7 +18,9 @@ function estDriveTime(miles: number, speed: number): string {
 }
 
 import { formatCurrency, formatDateTime, formatRpm } from "@/core/utils/route-helpers";
+import { routeProfitColor } from "@/core/utils/rate-color";
 import type { RouteChain, RouteLeg } from "@/core/types";
+import type { Stopoff } from "@mwbhtx/haulvisor-core";
 
 export interface RouteDetailPanelProps {
   chain: RouteChain | null;
@@ -209,7 +211,7 @@ function RouteDetailContent({
               </button>
             )}
           </div>
-          <div className="text-sm grid grid-cols-4 gap-x-3">
+          <div className={`text-sm grid grid-cols-4 gap-x-3 ${routeProfitColor(chain.daily_net_profit)}`}>
             {[
               { label1: "$/Day", value1: formatCurrency(chain.daily_net_profit), label2: "Profit", value2: formatCurrency(profit) },
               { label1: "Net/mi", value1: formatRpm(chain.effective_rpm), label2: "Expenses", value2: formatCurrency(chain.cost_breakdown.total), tooltip2: `${(chain.total_miles + chain.total_deadhead_miles).toLocaleString()} mi × $${(chain.effective_cost_per_mile ?? costPerMile).toFixed(2)}/mi` },
@@ -220,20 +222,20 @@ function RouteDetailContent({
             ].map((row, i) => (
               <div key={i} className={`grid grid-cols-subgrid col-span-4 px-3 py-1.5 ${i % 2 === 0 ? "bg-muted/50" : ""}`}>
                 <span className="text-muted-foreground text-left">{row.label1}</span>
-                <span className="text-right tabular-nums font-bold text-foreground">{row.value1}</span>
+                <span className="text-right tabular-nums font-bold">{row.value1}</span>
                 <span className="text-muted-foreground text-left">{row.label2}</span>
                 <span className="text-right">
                   {'tooltip2' in row && row.tooltip2 ? (
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <span className="tabular-nums font-bold text-foreground underline decoration-dashed underline-offset-2 cursor-default">{row.value2}</span>
+                          <span className="tabular-nums font-bold underline decoration-dashed underline-offset-2 cursor-default">{row.value2}</span>
                         </TooltipTrigger>
                         <TooltipContent side="left">{row.tooltip2}</TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   ) : (
-                    <span className="tabular-nums font-bold text-foreground">{row.value2}</span>
+                    <span className="tabular-nums font-bold">{row.value2}</span>
                   )}
                 </span>
               </div>
@@ -286,7 +288,11 @@ function RouteDetailContent({
                     {leg.weight != null && <span>{leg.weight.toLocaleString()} lbs</span>}
                     {leg.trailer_type && <span>{leg.trailer_type}</span>}
                     {leg.miles > 0 && <span>${(leg.pay / leg.miles).toFixed(2)}/mi</span>}
-                    {hasTarp && <span className="font-semibold uppercase tracking-wide text-warning bg-black px-1.5 py-0.5">TARP</span>}
+                    {hasTarp && (
+                      <span className="font-semibold uppercase tracking-wide text-warning bg-black px-1.5 py-0.5">
+                        TARP {leg.tarp_height}
+                      </span>
+                    )}
                   </div>
                   {leg.commodity && (
                     <p className="text-sm text-muted-foreground mt-1">Commodity: {leg.commodity.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')}</p>
@@ -311,9 +317,44 @@ function RouteDetailContent({
           })}
         </div>
 
-        {/* Timeline section */}
+        {/* Stopoffs section — flattened list of every stopoff across every leg */}
+        {chain.legs.some((l) => (l.stopoffs?.length ?? 0) > 0) && (
+          <>
+            <div className="px-4 pt-3 pb-1.5">
+              <p className="text-xs font-semibold uppercase tracking-widest text-foreground">Stopoffs</p>
+            </div>
+            <div className="px-3 pb-3">
+              <div className="bg-card px-4 py-3 flex gap-3">
+                <div className="w-[2px] shrink-0 bg-primary" />
+                <ol className="flex-1 min-w-0 space-y-1.5">
+                  {chain.legs.flatMap((leg, legIdx) =>
+                    (leg.stopoffs ?? []).map((s: Stopoff, i: number) => (
+                      <li
+                        key={`${legIdx}-${i}`}
+                        className="flex items-baseline gap-2 text-sm"
+                      >
+                        <span
+                          className={`font-semibold uppercase tracking-wide text-xs w-[74px] shrink-0 ${
+                            s.type === "pickup" ? "text-primary" : "text-muted-foreground"
+                          }`}
+                        >
+                          {s.type === "pickup" ? "Pickup" : "Delivery"}
+                        </span>
+                        <span className="flex-1 truncate text-foreground">
+                          {s.city}, {s.state}
+                        </span>
+                      </li>
+                    )),
+                  )}
+                </ol>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Schedule section */}
         <div className="px-4 pt-3 pb-1.5">
-          <p className="text-xs font-semibold uppercase tracking-widest text-foreground">Timeline</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-foreground">Schedule</p>
         </div>
 
         <div className="px-3 space-y-2 pb-3">

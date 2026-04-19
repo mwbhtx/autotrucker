@@ -55,8 +55,17 @@ export function AssignedOrdersView() {
   }, []);
 
   const visibleOrders = useMemo(() => {
-    if (filter === "all") return orders;
-    return orders.filter((o) => o.status === filter);
+    const filtered = filter === "all" ? orders : orders.filter((o) => o.status === filter);
+    // Fallback: surface ao.pickup_date (YYYY-MM-DD from the past-loads scrape)
+    // into the pickup_date_early_local slot so the table renders it even when
+    // orders detail hasn't been synced. Synthesize a midday ISO string so
+    // the existing time-aware formatter gives a sensible date-only display.
+    return filtered.map((o) => {
+      if (o.pickup_date && !(o as unknown as { pickup_date_early_local?: string }).pickup_date_early_local) {
+        return { ...o, pickup_date_early_local: `${o.pickup_date}T12:00:00` };
+      }
+      return o;
+    });
   }, [orders, filter]);
 
   const summary = useMemo(() => {

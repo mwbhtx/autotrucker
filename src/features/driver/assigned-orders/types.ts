@@ -3,9 +3,12 @@ export interface AssignedOrder {
   status: "dispatched" | "settled";
   ingested_at: string;
   has_order_details: boolean;
+  /** YYYY-MM-DD from Mercer's past-loads list — present whether or not
+   *  order-details has run. Use this in preference to pickup_date_early_utc
+   *  for display + month bucketing. */
+  pickup_date?: string | null;
+  dispatch_date?: string | null;
   // Merged fields from orders table (present when has_order_details = true):
-  pickup_date?: string;
-  dispatch_date?: string;
   origin_city?: string;
   origin_state?: string;
   destination_city?: string;
@@ -15,6 +18,7 @@ export interface AssignedOrder {
   pay?: number;
   unit_number?: string;
   trailer?: string;
+  pickup_date_early_utc?: string | null;
 }
 
 export type TaskStatus = "pending" | "processing" | "completed" | "failed";
