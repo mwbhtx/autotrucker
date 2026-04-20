@@ -60,8 +60,12 @@ interface DayGroup {
   dayNumber: number;
   dateLabel: string;
   phases: { phase: TripPhase; timestamp: Date }[];
+  /** Miles driven this calendar day (driving + deadhead phases). */
   totalMiles: number;
+  /** Hours spent actually moving (driving + deadhead). */
   driveHours: number;
+  /** On-duty hours — everything in the day except rest. */
+  workingHours: number;
 }
 
 /** Group timeline phases into calendar-day buckets */
@@ -83,16 +87,24 @@ function groupByDay(timeline: TripPhase[], timestamps: Date[]): DayGroup[] {
         phases: [],
         totalMiles: 0,
         driveHours: 0,
+        workingHours: 0,
       });
     }
 
     const day = days[days.length - 1];
     day.phases.push({ phase: timeline[i], timestamp: ts });
 
-    const miles = timeline[i].miles ?? 0;
+    const phase = timeline[i];
+    const duration = phase.duration_hours ?? 0;
+    const miles = phase.miles ?? 0;
     day.totalMiles += miles;
-    if (timeline[i].kind === "driving" || timeline[i].kind === "deadhead") {
-      day.driveHours += timeline[i].duration_hours ?? 0;
+    if (phase.kind === "driving" || phase.kind === "deadhead") {
+      day.driveHours += duration;
+    }
+    // On-duty time = everything except rest. HOS counts load/unload,
+    // fueling, breaks, and waiting at shipper/receiver as on-duty.
+    if (phase.kind !== "rest") {
+      day.workingHours += duration;
     }
   }
 
@@ -196,8 +208,8 @@ export function RouteInspector({
                   Day {day.dayNumber} — {day.dateLabel}
                 </span>
                 <span className="text-xs font-bold text-foreground tabular-nums">
-                  {day.totalMiles > 0 && <>{day.totalMiles.toLocaleString()} mi · </>}
-                  {formatDuration(day.driveHours)} drive
+                  {day.totalMiles > 0 && <>{Math.round(day.totalMiles).toLocaleString()} mi · </>}
+                  {formatDuration(day.driveHours)} driving · {formatDuration(day.workingHours)} on-duty
                 </span>
               </div>
               {/* Phase rows */}
