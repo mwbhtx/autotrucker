@@ -376,7 +376,7 @@ function PhaseRow({ phase, timestamp, showTimeOnly, originCity, returnCity, tz }
       case 'fuel':
         return <>Fueling</>;
       case 'flex':
-        return <>Flex time — park, fuel up, admin</>;
+        return <>Flex Time</>;
       case 'waiting': {
         const loc = phase.origin_city ? prettyCity(phase.origin_city) : phase.destination_city ? prettyCity(phase.destination_city) : '';
         const waitFor = phase.waiting_for === 'pickup_window' ? 'pickup' : 'delivery';
