@@ -246,7 +246,7 @@ export function RouteInspector({
           {[
             ["Loaded speed", `${TRIP_DEFAULTS.loaded_speed_mph.value} mph`],
             ["Deadhead speed", `${TRIP_DEFAULTS.deadhead_speed_mph.value} mph`],
-            ["Drive hours/day", `${TRIP_DEFAULTS.avg_driving_hours_per_day.value} hrs`],
+            ["Drive hours/day", `${TRIP_DEFAULTS.max_driving_hours_per_day.value} hrs`],
             ["Rest period", "10 hrs"],
             ["Loading time", `${TRIP_DEFAULTS.loading_hours.value} hrs`],
             ["Unloading time", `${TRIP_DEFAULTS.unloading_hours.value} hrs`],
