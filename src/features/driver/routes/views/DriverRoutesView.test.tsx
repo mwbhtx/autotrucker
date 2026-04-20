@@ -30,6 +30,7 @@ describe("DriverRoutesView", () => {
           destination: { city: "Chicago", state: "IL" },
           earliest_pickup_date: "2026-04-02",
           latest_pickup_date: "2026-04-05",
+          days_driven: null,
           summary: { total_pay: 2500, total_miles: 1200, effective_rpm: 2.08, profit: 400 },
         },
       ],

@@ -8,6 +8,10 @@ export interface RouteCardProps {
   route: DriverRouteSummary;
   onOpen: (id: string) => void;
   onDelete: (id: string) => void;
+  /** When true, the card shows a primary-color left bar + subtle
+   *  highlight so the user remembers which route's details they're
+   *  viewing on the right. */
+  selected?: boolean;
 }
 
 function formatCurrency(n: number): string {
@@ -24,14 +28,27 @@ function formatDate(d: string | null): string {
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-export function RouteCard({ route, onOpen, onDelete }: RouteCardProps) {
+export function RouteCard({ route, onOpen, onDelete, selected = false }: RouteCardProps) {
   const dateRange =
     route.earliest_pickup_date === route.latest_pickup_date
       ? formatDate(route.earliest_pickup_date)
       : `${formatDate(route.earliest_pickup_date)} – ${formatDate(route.latest_pickup_date)}`;
 
   return (
-    <div className="flex items-stretch rounded-md border border-border bg-card">
+    <div
+      className={`flex items-stretch overflow-hidden rounded-md border bg-card transition-colors ${
+        selected ? "border-primary/40 bg-accent/30" : "border-border"
+      }`}
+    >
+      {/* Left accent bar — primary color when this card's route is the
+          one being previewed on the right. Matches the treatment used on
+          Orders / Stopoffs / Schedule cards in the route-detail panel. */}
+      <div
+        aria-hidden="true"
+        className={`w-[3px] shrink-0 transition-colors ${
+          selected ? "bg-primary" : "bg-transparent"
+        }`}
+      />
       <button
         type="button"
         data-testid="route-card-body"

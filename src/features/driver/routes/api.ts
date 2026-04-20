@@ -26,3 +26,13 @@ export async function createDriverRoute(
 export async function deleteDriverRoute(id: string): Promise<void> {
   await fetchApi(`/driver/routes/${encodeURIComponent(id)}`, { method: "DELETE" });
 }
+
+export async function updateDriverRouteDays(
+  id: string,
+  daysDriven: number | null,
+): Promise<DriverRouteDetail> {
+  return fetchApi<DriverRouteDetail>(`/driver/routes/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: JSON.stringify({ days_driven: daysDriven }),
+  });
+}

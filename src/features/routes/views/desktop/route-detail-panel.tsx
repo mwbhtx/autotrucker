@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronDownIcon, ChevronRightIcon, ChevronUpIcon, FlameIcon, ClipboardListIcon, BookmarkIcon } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/platform/web/components/ui/tooltip";
 import { RouteInspector } from "@/features/routes/components/route-inspector";
-import { useTimeline } from "@/core/hooks/use-timeline";
+import { useTimeline, type ExpensesBreakdown } from "@/core/hooks/use-timeline";
 import { useAuth } from "@/core/services/auth-provider";
 import { calcAvgLoadedRpm, DEFAULT_LOADED_SPEED_MPH } from "@mwbhtx/haulvisor-core";
 
@@ -369,61 +369,63 @@ function RouteDetailContent({
 
         {/* Expenses breakdown — decomposes the headline Expenses value
             into its CPM components. Collapsed by default, click header
-            to expand. Hidden in simple mode (lump sum). */}
-        {timelineData?.expenses_breakdown && !timelineData.expenses_breakdown.is_lump_sum && (
-          <div className="px-4 pb-3">
-            <button
-              type="button"
-              onClick={() => setExpensesOpen((v) => !v)}
-              aria-expanded={expensesOpen}
-              className="mb-2 flex w-full items-center gap-1 text-xs font-semibold uppercase tracking-widest text-foreground hover:text-primary transition-colors"
-            >
-              {expensesOpen ? (
-                <ChevronDownIcon className="h-3.5 w-3.5" />
-              ) : (
-                <ChevronRightIcon className="h-3.5 w-3.5" />
+            to expand. Hidden in simple mode (lump sum).
+            Reads from timelineData (Route Search flow) with a fallback
+            to chain.expenses_breakdown (driver-route flow where the
+            useTimeline fetch is disabled but the breakdown is still
+            inlined on the chain by the profitability snapshot). */}
+        {(() => {
+          const chainBreakdown = (chain as unknown as {
+            expenses_breakdown?: ExpensesBreakdown;
+          }).expenses_breakdown;
+          const b = timelineData?.expenses_breakdown ?? chainBreakdown;
+          if (!b || b.is_lump_sum) return null;
+          const lines: Array<{ label: string; value: number }> = [
+            { label: "Fuel", value: b.fuel },
+            { label: "Maintenance", value: b.maintenance },
+            { label: "Tires", value: b.tires },
+            { label: "DEF", value: b.def },
+            ...b.custom.map((c) => ({ label: c.label, value: c.amount })),
+          ].filter((l) => l.value > 0);
+          return (
+            <div className="px-4 pb-3">
+              <button
+                type="button"
+                onClick={() => setExpensesOpen((v) => !v)}
+                aria-expanded={expensesOpen}
+                className="mb-2 flex w-full items-center gap-1 text-xs font-semibold uppercase tracking-widest text-foreground hover:text-primary transition-colors"
+              >
+                {expensesOpen ? (
+                  <ChevronDownIcon className="h-3.5 w-3.5" />
+                ) : (
+                  <ChevronRightIcon className="h-3.5 w-3.5" />
+                )}
+                Expenses
+              </button>
+              {expensesOpen && (
+                <div className="text-sm">
+                  {lines.map((line, i) => (
+                    <div
+                      key={line.label}
+                      className={`grid grid-cols-2 px-3 py-1.5 ${i % 2 === 0 ? "bg-muted/50" : ""}`}
+                    >
+                      <span className="text-muted-foreground text-left">{line.label}</span>
+                      <span className="text-right tabular-nums font-medium text-foreground">
+                        {formatCurrency(line.value)}
+                      </span>
+                    </div>
+                  ))}
+                  <div className="grid grid-cols-2 px-3 py-1.5 border-t border-border mt-1">
+                    <span className="text-left font-semibold text-foreground">Total</span>
+                    <span className="text-right tabular-nums font-bold text-foreground">
+                      {formatCurrency(b.total)}
+                    </span>
+                  </div>
+                </div>
               )}
-              Expenses
-            </button>
-            {expensesOpen && (
-              <div className="text-sm">
-                {(() => {
-                  const b = timelineData.expenses_breakdown;
-                  const lines: Array<{ label: string; value: number }> = [
-                    { label: "Fuel", value: b.fuel },
-                    { label: "Maintenance", value: b.maintenance },
-                    { label: "Tires", value: b.tires },
-                    { label: "DEF", value: b.def },
-                    ...b.custom.map((c) => ({ label: c.label, value: c.amount })),
-                  ].filter((l) => l.value > 0);
-                  return (
-                    <>
-                      {lines.map((line, i) => (
-                        <div
-                          key={line.label}
-                          className={`grid grid-cols-2 px-3 py-1.5 ${i % 2 === 0 ? "bg-muted/50" : ""}`}
-                        >
-                          <span className="text-muted-foreground text-left">
-                            {line.label}
-                          </span>
-                          <span className="text-right tabular-nums font-medium text-foreground">
-                            {formatCurrency(line.value)}
-                          </span>
-                        </div>
-                      ))}
-                      <div className="grid grid-cols-2 px-3 py-1.5 border-t border-border mt-1">
-                        <span className="text-left font-semibold text-foreground">Total</span>
-                        <span className="text-right tabular-nums font-bold text-foreground">
-                          {formatCurrency(b.total)}
-                        </span>
-                      </div>
-                    </>
-                  );
-                })()}
-              </div>
-            )}
-          </div>
-        )}
+            </div>
+          );
+        })()}
 
         {/* Orders section */}
         <div className="px-4 pt-3 pb-1.5">

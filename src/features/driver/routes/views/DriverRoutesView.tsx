@@ -46,7 +46,13 @@ export function DriverRoutesView() {
         {!loading && !error && routes.length > 0 && (
           <div className="flex flex-col gap-2">
             {routes.map((r) => (
-              <RouteCard key={r.id} route={r} onOpen={setOpenRouteId} onDelete={handleDelete} />
+              <RouteCard
+                key={r.id}
+                route={r}
+                onOpen={setOpenRouteId}
+                onDelete={handleDelete}
+                selected={openRouteId === r.id}
+              />
             ))}
           </div>
         )}
