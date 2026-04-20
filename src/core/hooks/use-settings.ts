@@ -36,6 +36,10 @@ export interface Settings {
   max_on_duty_hours_per_day: number | null;
   earliest_on_duty_hour: number | null;
   latest_on_duty_hour: number | null;
+  loading_hours: number | null;
+  unloading_hours: number | null;
+  tarping_hours: number | null;
+  end_of_day_flex_hours: number | null;
   onboarding_completed: boolean;
   disabled_settings?: string[];
   last_login: string;

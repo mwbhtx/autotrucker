@@ -123,6 +123,10 @@ export function DesktopSettingsView() {
   const [earliestOnDutyHour, setEarliestOnDutyHour] = useState<string>("6");
   const [latestOnDutyHour, setLatestOnDutyHour] = useState<string>("20");
   const [maxOnDutyHours, setMaxOnDutyHours] = useState("");
+  const [loadingHours, setLoadingHours] = useState<string>("2");
+  const [unloadingHours, setUnloadingHours] = useState<string>("2");
+  const [tarpingHours, setTarpingHours] = useState<string>("1.5");
+  const [endOfDayFlexHours, setEndOfDayFlexHours] = useState<string>("1");
   const [costMode, setCostMode] = useState<CostMode>("simple");
   const [dieselPrice, setDieselPrice] = useState("");
   const [maintenancePerMile, setMaintenancePerMile] = useState("");
@@ -163,6 +167,10 @@ export function DesktopSettingsView() {
     setNoTarps(settings.no_tarps ?? false);
     setEarliestOnDutyHour(settings.earliest_on_duty_hour != null ? String(settings.earliest_on_duty_hour) : "6");
     setLatestOnDutyHour(settings.latest_on_duty_hour != null ? String(settings.latest_on_duty_hour) : "20");
+    setLoadingHours(settings.loading_hours != null ? String(settings.loading_hours) : "2");
+    setUnloadingHours(settings.unloading_hours != null ? String(settings.unloading_hours) : "2");
+    setTarpingHours(settings.tarping_hours != null ? String(settings.tarping_hours) : "1.5");
+    setEndOfDayFlexHours(settings.end_of_day_flex_hours != null ? String(settings.end_of_day_flex_hours) : "1");
     setCostMode(settings.cost_mode ?? "simple");
     setDieselPrice(settings.diesel_price_per_gallon != null ? String(settings.diesel_price_per_gallon) : "");
     setMaintenancePerMile(settings.maintenance_per_mile != null ? String(settings.maintenance_per_mile) : "");
@@ -799,6 +807,81 @@ export function DesktopSettingsView() {
             <p className="text-xs text-muted-foreground italic">
               Hard limits on when and how long your day can run. Federal HOS caps (11h driving / 14h on-duty) always apply on top.
             </p>
+          </div>
+
+          <div className="space-y-4">
+            <h4 className="text-sm font-medium text-muted-foreground">Dock & End-of-Day Time</h4>
+            <p className="text-xs text-muted-foreground">
+              How long your typical shipper, receiver, and end-of-shift activities take. Used to estimate how much on-duty budget each stop consumes.
+            </p>
+
+            <div className="space-y-3">
+              <label className="text-sm font-medium block">{TRIP_DEFAULTS.loading_hours.label}</label>
+              <p className="text-xs text-muted-foreground">{TRIP_DEFAULTS.loading_hours.description}</p>
+              <select
+                value={loadingHours}
+                onChange={(e) => {
+                  setLoadingHours(e.target.value);
+                  if (initialized.current) save({ loading_hours: Number(e.target.value) });
+                }}
+                className="rounded-lg border border-input bg-transparent px-3 py-1.5 text-sm"
+              >
+                {[0.25, 0.5, 1, 1.5, 2, 2.5, 3, 4].map((h) => (
+                  <option key={h} value={h}>{h === Math.floor(h) ? `${h}h` : `${h}h`}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-sm font-medium block">{TRIP_DEFAULTS.unloading_hours.label}</label>
+              <p className="text-xs text-muted-foreground">{TRIP_DEFAULTS.unloading_hours.description}</p>
+              <select
+                value={unloadingHours}
+                onChange={(e) => {
+                  setUnloadingHours(e.target.value);
+                  if (initialized.current) save({ unloading_hours: Number(e.target.value) });
+                }}
+                className="rounded-lg border border-input bg-transparent px-3 py-1.5 text-sm"
+              >
+                {[0.25, 0.5, 1, 1.5, 2, 2.5, 3].map((h) => (
+                  <option key={h} value={h}>{h}h</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-sm font-medium block">{TRIP_DEFAULTS.tarping_hours.label}</label>
+              <p className="text-xs text-muted-foreground">{TRIP_DEFAULTS.tarping_hours.description} Only applied on loads flagged as requiring a tarp.</p>
+              <select
+                value={tarpingHours}
+                onChange={(e) => {
+                  setTarpingHours(e.target.value);
+                  if (initialized.current) save({ tarping_hours: Number(e.target.value) });
+                }}
+                className="rounded-lg border border-input bg-transparent px-3 py-1.5 text-sm"
+              >
+                {[0, 0.5, 1, 1.5, 2].map((h) => (
+                  <option key={h} value={h}>{h === 0 ? "None" : `${h}h`}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-sm font-medium block">{TRIP_DEFAULTS.end_of_day_flex_hours.label}</label>
+              <p className="text-xs text-muted-foreground">{TRIP_DEFAULTS.end_of_day_flex_hours.description}</p>
+              <select
+                value={endOfDayFlexHours}
+                onChange={(e) => {
+                  setEndOfDayFlexHours(e.target.value);
+                  if (initialized.current) save({ end_of_day_flex_hours: Number(e.target.value) });
+                }}
+                className="rounded-lg border border-input bg-transparent px-3 py-1.5 text-sm"
+              >
+                {[0.5, 1, 1.5].map((h) => (
+                  <option key={h} value={h}>{h}h</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="space-y-3">
