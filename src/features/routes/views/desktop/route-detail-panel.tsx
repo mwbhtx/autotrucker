@@ -307,6 +307,15 @@ function RouteDetailContent({
             {(() => {
               const profitColor = routeProfitColor(chain.daily_net_profit);
               const profitChipClass = `tabular-nums font-bold ${profitColor} bg-black px-2 py-0.5 inline-block`;
+              // Sim-dependent metrics ($/Day, Days). Driver-routes skip
+              // the sim so these are absent — fall back to a placeholder.
+              const hasSimMetrics = chain.estimated_days != null && chain.estimated_days > 0;
+              const dailyValue = hasSimMetrics
+                ? <span className={profitChipClass}>{formatCurrency(chain.daily_net_profit)}</span>
+                : <span className="text-muted-foreground">—</span>;
+              const daysValue = hasSimMetrics
+                ? chain.estimated_days.toFixed(1)
+                : <span className="text-muted-foreground">—</span>;
               const rows: Array<{
                 label1: string;
                 value1: React.ReactNode;
@@ -316,13 +325,13 @@ function RouteDetailContent({
               }> = [
                 {
                   label1: "$/Day",
-                  value1: <span className={profitChipClass}>{formatCurrency(chain.daily_net_profit)}</span>,
+                  value1: dailyValue,
                   label2: "Total Profit",
                   value2: <span className={profitChipClass}>{formatCurrency(profit)}</span>,
                 },
                 { label1: "Net/mi", value1: formatRpm(chain.effective_rpm), label2: "Expenses", value2: formatCurrency(chain.cost_breakdown.total), tooltip2: `${(chain.total_miles + chain.total_deadhead_miles).toLocaleString()} mi × $${(chain.effective_cost_per_mile ?? costPerMile).toFixed(2)}/mi` },
                 { label1: "Total mi.", value1: (chain.total_miles + chain.total_deadhead_miles).toLocaleString(), label2: "Loaded mi.", value2: chain.total_miles.toLocaleString() },
-                { label1: "Days", value1: chain.estimated_days.toFixed(1), label2: "DH %", value2: `${chain.deadhead_pct.toFixed(0)}%` },
+                { label1: "Days", value1: daysValue, label2: "DH %", value2: `${chain.deadhead_pct.toFixed(0)}%` },
                 { label1: "Gross", value1: formatCurrency(chain.total_pay), label2: "DH mi.", value2: chain.total_deadhead_miles.toLocaleString() },
                 { label1: "Tarp", value1: needsTarp ? "Yes" : "No", label2: "$/mi loaded", value2: avgLoadedRpm !== null ? `$${avgLoadedRpm.toFixed(2)}` : "—" },
               ];
@@ -526,8 +535,11 @@ function RouteDetailContent({
           </>
         )}
 
-        {/* Schedule section */}
-        <div className="px-4 pt-3 pb-1.5">
+        {/* Schedule section — only rendered when the sim produced a
+            timeline. Driver-route snapshots skip the sim and therefore
+            have no schedule to show. */}
+        {(chain.timeline && chain.timeline.length > 0) && (
+        <><div className="px-4 pt-3 pb-1.5">
           <p className="text-xs font-semibold uppercase tracking-widest text-foreground">Schedule</p>
         </div>
 
@@ -561,7 +573,8 @@ function RouteDetailContent({
             timelineData={timelineData}
             timelineLoading={timelineLoading}
           />
-        </div>
+        </div></>
+        )}
       </div>
     </>
   );
