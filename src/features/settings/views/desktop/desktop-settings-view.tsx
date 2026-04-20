@@ -14,6 +14,7 @@ import {
   DEFAULT_MAINTENANCE_PER_MILE,
   DEFAULT_TIRES_PER_MILE,
   DEFAULT_DEF_PER_MILE,
+  TRIP_DEFAULTS,
   type CostMode,
   type CustomCostComponent,
 } from "@mwbhtx/haulvisor-core";
@@ -91,7 +92,7 @@ export function DesktopSettingsView() {
   const [costPerMile, setCostPerMile] = useState("");
   const [avgMpg, setAvgMpg] = useState("");
   const [tankSize, setTankSize] = useState("");
-  const [avgDrivingHours, setAvgDrivingHours] = useState("");
+  const [maxDrivingHours, setMaxDrivingHours] = useState("");
   const [lateToleranceDays, setLateToleranceDays] = useState("");
   const [earlyToleranceDays, setEarlyToleranceDays] = useState("");
   const [maxWeight, setMaxWeight] = useState("");
@@ -100,8 +101,9 @@ export function DesktopSettingsView() {
   const [twicCard, setTwicCard] = useState(false);
   const [teamDriver, setTeamDriver] = useState(false);
   const [noTarps, setNoTarps] = useState(false);
-  const [workStartHour, setWorkStartHour] = useState<string>("6");
-  const [workEndHour, setWorkEndHour] = useState<string>("16");
+  const [earliestOnDutyHour, setEarliestOnDutyHour] = useState<string>("6");
+  const [latestOnDutyHour, setLatestOnDutyHour] = useState<string>("20");
+  const [maxOnDutyHours, setMaxOnDutyHours] = useState("");
   const [costMode, setCostMode] = useState<CostMode>("simple");
   const [dieselPrice, setDieselPrice] = useState("");
   const [maintenancePerMile, setMaintenancePerMile] = useState("");
@@ -130,7 +132,8 @@ export function DesktopSettingsView() {
     setCostPerMile(settings.cost_per_mile != null ? String(settings.cost_per_mile) : "");
     setAvgMpg(settings.avg_mpg != null ? String(settings.avg_mpg) : "");
     setTankSize((settings as any).tank_size_gallons != null ? String((settings as any).tank_size_gallons) : "");
-    setAvgDrivingHours(settings.avg_driving_hours_per_day != null ? String(settings.avg_driving_hours_per_day) : "");
+    setMaxDrivingHours(settings.max_driving_hours_per_day != null ? String(settings.max_driving_hours_per_day) : "");
+    setMaxOnDutyHours(settings.max_on_duty_hours_per_day != null ? String(settings.max_on_duty_hours_per_day) : "");
     setLateToleranceDays(settings.late_tolerance_hours != null ? String(Math.round(settings.late_tolerance_hours / 24)) : "");
     setEarlyToleranceDays(settings.early_tolerance_hours != null ? String(Math.round(settings.early_tolerance_hours / 24)) : "");
     setMaxWeight(settings.max_weight != null ? String(settings.max_weight) : "");
@@ -139,8 +142,8 @@ export function DesktopSettingsView() {
     setTwicCard(settings.twic_card ?? false);
     setTeamDriver(settings.team_driver ?? false);
     setNoTarps(settings.no_tarps ?? false);
-    setWorkStartHour(settings.work_start_hour != null ? String(settings.work_start_hour) : "6");
-    setWorkEndHour(settings.work_end_hour != null ? String(settings.work_end_hour) : "16");
+    setEarliestOnDutyHour(settings.earliest_on_duty_hour != null ? String(settings.earliest_on_duty_hour) : "6");
+    setLatestOnDutyHour(settings.latest_on_duty_hour != null ? String(settings.latest_on_duty_hour) : "20");
     setCostMode(settings.cost_mode ?? "simple");
     setDieselPrice(settings.diesel_price_per_gallon != null ? String(settings.diesel_price_per_gallon) : "");
     setMaintenancePerMile(settings.maintenance_per_mile != null ? String(settings.maintenance_per_mile) : "");
@@ -170,7 +173,8 @@ export function DesktopSettingsView() {
     cost_per_mile: { min: 0.5, max: 10 },
     avg_mpg: { min: 3, max: 12 },
     tank_size_gallons: { min: 50, max: 300 },
-    avg_driving_hours_per_day: { min: 6, max: 11 },
+    max_driving_hours_per_day: { min: 1, max: 11 },
+    max_on_duty_hours_per_day: { min: 1, max: 14 },
     max_weight: { min: 1000, max: 80000 },
     diesel_price_per_gallon: { min: 1, max: 15 },
     maintenance_per_mile: { min: 0.01, max: 1 },
@@ -697,58 +701,85 @@ export function DesktopSettingsView() {
         <section id="settings-schedule" className="max-w-2xl space-y-6">
           <div>
             <h3 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">Schedule</h3>
-            <p className="text-xs text-muted-foreground mt-1">Set your working hours.</p>
+            <p className="text-xs text-muted-foreground mt-1">Daytime envelope and per-shift caps.</p>
           </div>
 
-          <div className="space-y-3">
-            <h4 className="text-sm font-medium text-muted-foreground">Working Hours</h4>
-            <p className="text-xs text-muted-foreground">Set your preferred driving window. The trip schedule will start and end each day within these hours.</p>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-muted-foreground">Start</label>
-                <select
-                  value={workStartHour}
-                  onChange={(e) => {
-                    setWorkStartHour(e.target.value);
-                    if (initialized.current) save({ work_start_hour: Number(e.target.value) });
-                  }}
-                  className="rounded-lg border border-input bg-transparent px-3 py-1.5 text-sm"
-                >
-                  {Array.from({ length: 24 }, (_, h) => (
-                    <option key={h} value={h}>
-                      {h === 0 ? "12:00 AM" : h < 12 ? `${h}:00 AM` : h === 12 ? "12:00 PM" : `${h - 12}:00 PM`}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-muted-foreground">End</label>
-                <select
-                  value={workEndHour}
-                  onChange={(e) => {
-                    setWorkEndHour(e.target.value);
-                    if (initialized.current) save({ work_end_hour: Number(e.target.value) });
-                  }}
-                  className="rounded-lg border border-input bg-transparent px-3 py-1.5 text-sm"
-                >
-                  {Array.from({ length: 24 }, (_, h) => (
-                    <option key={h} value={h}>
-                      {h === 0 ? "12:00 AM" : h < 12 ? `${h}:00 AM` : h === 12 ? "12:00 PM" : `${h - 12}:00 PM`}
-                    </option>
-                  ))}
-                </select>
+          <div className="space-y-4">
+            <h4 className="text-sm font-medium text-muted-foreground">Shift Limits</h4>
+
+            <div className="space-y-3">
+              <label className="text-sm font-medium block">{TRIP_DEFAULTS.earliest_on_duty_hour.label}</label>
+              <p className="text-xs text-muted-foreground">{TRIP_DEFAULTS.earliest_on_duty_hour.description}</p>
+              <select
+                value={earliestOnDutyHour}
+                onChange={(e) => {
+                  setEarliestOnDutyHour(e.target.value);
+                  if (initialized.current) save({ earliest_on_duty_hour: Number(e.target.value) });
+                }}
+                className="rounded-lg border border-input bg-transparent px-3 py-1.5 text-sm"
+              >
+                {Array.from({ length: 24 }, (_, h) => (
+                  <option key={h} value={h}>
+                    {h === 0 ? "12:00 AM" : h < 12 ? `${h}:00 AM` : h === 12 ? "12:00 PM" : `${h - 12}:00 PM`}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-sm font-medium block">{TRIP_DEFAULTS.latest_on_duty_hour.label}</label>
+              <p className="text-xs text-muted-foreground">{TRIP_DEFAULTS.latest_on_duty_hour.description}</p>
+              <select
+                value={latestOnDutyHour}
+                onChange={(e) => {
+                  setLatestOnDutyHour(e.target.value);
+                  if (initialized.current) save({ latest_on_duty_hour: Number(e.target.value) });
+                }}
+                className="rounded-lg border border-input bg-transparent px-3 py-1.5 text-sm"
+              >
+                {Array.from({ length: 24 }, (_, h) => (
+                  <option key={h} value={h}>
+                    {h === 0 ? "12:00 AM" : h < 12 ? `${h}:00 AM` : h === 12 ? "12:00 PM" : `${h - 12}:00 PM`}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-sm font-medium block">{TRIP_DEFAULTS.max_driving_hours_per_day.label}</label>
+              <p className="text-xs text-muted-foreground">{TRIP_DEFAULTS.max_driving_hours_per_day.description}</p>
+              <div className="w-40">
+                <Input
+                  type="number"
+                  min={1}
+                  max={11}
+                  step={1}
+                  value={maxDrivingHours}
+                  onChange={(e) => handleNumberChange("max_driving_hours_per_day", e.target.value, setMaxDrivingHours)}
+                  placeholder={String(TRIP_DEFAULTS.max_driving_hours_per_day.value)}
+                />
               </div>
             </div>
-          </div>
 
-          <div className="space-y-3">
-            <h4 className="text-sm font-medium text-muted-foreground">Driving Hours Per Day</h4>
-            <p className="text-xs text-muted-foreground">
-              Wheels-moving time within your working window, not total working hours. Loading, fueling, and HOS breaks happen outside of this. FMCSA caps daily driving at 11; lower values pace the trip more conservatively.
+            <div className="space-y-3">
+              <label className="text-sm font-medium block">{TRIP_DEFAULTS.max_on_duty_hours_per_day.label}</label>
+              <p className="text-xs text-muted-foreground">{TRIP_DEFAULTS.max_on_duty_hours_per_day.description}</p>
+              <div className="w-40">
+                <Input
+                  type="number"
+                  min={1}
+                  max={14}
+                  step={1}
+                  value={maxOnDutyHours}
+                  onChange={(e) => handleNumberChange("max_on_duty_hours_per_day", e.target.value, setMaxOnDutyHours)}
+                  placeholder={String(TRIP_DEFAULTS.max_on_duty_hours_per_day.value)}
+                />
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground italic">
+              Hard limits on when and how long your day can run. Federal HOS caps (11h driving / 14h on-duty) always apply on top.
             </p>
-            <div className="w-40">
-              <Input type="number" min={6} max={11} step={1} value={avgDrivingHours} onChange={(e) => handleNumberChange("avg_driving_hours_per_day", e.target.value, setAvgDrivingHours)} placeholder="8" />
-            </div>
           </div>
 
           <div className="space-y-3">
