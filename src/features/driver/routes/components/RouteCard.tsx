@@ -62,11 +62,8 @@ export function RouteCard({ route, onOpen, onDelete, selected = false }: RouteCa
         {route.segments && route.segments.length > 0 ? (
           <div className="text-sm font-medium space-y-0.5">
             {route.segments.map((seg, i) => (
-              <div key={`${seg.order_id}-${i}`} className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground font-mono shrink-0">{seg.order_id}</span>
-                <span>
-                  {seg.origin_city}, {seg.origin_state} → {seg.destination_city}, {seg.destination_state}
-                </span>
+              <div key={`${seg.order_id}-${i}`}>
+                {seg.origin_city}, {seg.origin_state} → {seg.destination_city}, {seg.destination_state}
               </div>
             ))}
           </div>
