@@ -32,9 +32,10 @@ export interface Settings {
   home_base_lat: number | null;
   home_base_lng: number | null;
   avg_mpg: number | null;
-  avg_driving_hours_per_day: number | null;
-  work_start_hour: number | null;
-  work_end_hour: number | null;
+  max_driving_hours_per_day: number | null;
+  max_on_duty_hours_per_day: number | null;
+  earliest_on_duty_hour: number | null;
+  latest_on_duty_hour: number | null;
   onboarding_completed: boolean;
   disabled_settings?: string[];
   last_login: string;

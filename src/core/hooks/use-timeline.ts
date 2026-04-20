@@ -36,9 +36,10 @@ interface SearchContext {
   destination_lng?: number;
   destination_city?: string;
   cost_per_mile?: number;
-  avg_driving_hours_per_day?: number;
-  work_start_hour?: number;
-  work_end_hour?: number;
+  max_driving_hours_per_day?: number;
+  max_on_duty_hours_per_day?: number;
+  earliest_on_duty_hour?: number;
+  latest_on_duty_hour?: number;
 }
 
 export function useTimeline(
@@ -62,9 +63,10 @@ export function useTimeline(
       if (searchContext.destination_lng != null) qs.set("destination_lng", String(searchContext.destination_lng));
       if (searchContext.destination_city) qs.set("destination_city", searchContext.destination_city);
       if (searchContext.cost_per_mile != null) qs.set("cost_per_mile", String(searchContext.cost_per_mile));
-      if (searchContext.avg_driving_hours_per_day != null) qs.set("avg_driving_hours_per_day", String(searchContext.avg_driving_hours_per_day));
-      if (searchContext.work_start_hour != null) qs.set("work_start_hour", String(searchContext.work_start_hour));
-      if (searchContext.work_end_hour != null) qs.set("work_end_hour", String(searchContext.work_end_hour));
+      if (searchContext.max_driving_hours_per_day != null) qs.set("max_driving_hours_per_day", String(searchContext.max_driving_hours_per_day));
+      if (searchContext.max_on_duty_hours_per_day != null) qs.set("max_on_duty_hours_per_day", String(searchContext.max_on_duty_hours_per_day));
+      if (searchContext.earliest_on_duty_hour != null) qs.set("earliest_on_duty_hour", String(searchContext.earliest_on_duty_hour));
+      if (searchContext.latest_on_duty_hour != null) qs.set("latest_on_duty_hour", String(searchContext.latest_on_duty_hour));
       return fetchApi<TimelineResponse>(`routes/${companyId}/timeline?${qs.toString()}`);
     },
     enabled: enabled && !!companyId && !!orderIds && !!searchContext,

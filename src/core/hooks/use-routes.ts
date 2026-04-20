@@ -27,9 +27,10 @@ export interface RouteSearchParams {
   dest_radius_miles?: number;
   cost_per_mile?: number;
   avg_mpg?: number;
-  avg_driving_hours_per_day?: number;
-  work_start_hour?: number;
-  work_end_hour?: number;
+  max_driving_hours_per_day?: number;
+  max_on_duty_hours_per_day?: number;
+  earliest_on_duty_hour?: number;
+  latest_on_duty_hour?: number;
   max_deadhead_pct?: number;
   min_daily_profit?: number;
   min_rpm?: number;
