@@ -101,9 +101,12 @@ function groupByDay(timeline: TripPhase[], timestamps: Date[]): DayGroup[] {
     if (phase.kind === "driving" || phase.kind === "deadhead") {
       day.driveHours += duration;
     }
-    // On-duty time = everything except rest. HOS counts load/unload,
-    // fueling, breaks, and waiting at shipper/receiver as on-duty.
-    if (phase.kind !== "rest") {
+    // On-duty time from the driver's perspective: active work only.
+    // Excludes rest (sleeping) AND waiting (parked at shipper/receiver
+    // waiting for an appointment window). HOS technically counts the
+    // wait as on-duty, but drivers interpret "on duty" as time they're
+    // actually working — so we match their mental model in the UI.
+    if (phase.kind !== "rest" && phase.kind !== "waiting") {
       day.workingHours += duration;
     }
   }
