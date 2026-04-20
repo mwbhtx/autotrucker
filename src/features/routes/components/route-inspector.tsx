@@ -1,6 +1,6 @@
 "use client";
 
-import { TruckIcon, ClockIcon, Package, PackageOpen, Fuel, Coffee, Bed, Layers } from "lucide-react";
+import { TruckIcon, ClockIcon, Package, PackageOpen, Fuel, Coffee, Bed, Layers, Pause } from "lucide-react";
 import tzlookup from "tz-lookup";
 import type { RouteChain, TripPhase, TripSimulationSummary } from "@/core/types";
 import { TRIP_DEFAULTS, HOS_MANDATORY_REST_HOURS } from "@mwbhtx/haulvisor-core";
@@ -351,6 +351,7 @@ function PhaseRow({ phase, timestamp, showTimeOnly, originCity, returnCity, tz }
     rest: Bed,
     break: Coffee,
     fuel: Fuel,
+    flex: Pause,
     waiting: isRestWait ? Bed : ClockIcon,
   }[phase.kind];
 
@@ -374,6 +375,8 @@ function PhaseRow({ phase, timestamp, showTimeOnly, originCity, returnCity, tz }
         return <>Break</>;
       case 'fuel':
         return <>Fueling</>;
+      case 'flex':
+        return <>Flex time — park, fuel up, admin</>;
       case 'waiting': {
         const loc = phase.origin_city ? prettyCity(phase.origin_city) : phase.destination_city ? prettyCity(phase.destination_city) : '';
         const waitFor = phase.waiting_for === 'pickup_window' ? 'pickup' : 'delivery';
