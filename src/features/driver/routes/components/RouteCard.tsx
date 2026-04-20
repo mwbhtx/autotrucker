@@ -55,9 +55,26 @@ export function RouteCard({ route, onOpen, onDelete, selected = false }: RouteCa
         onClick={() => onOpen(route.id)}
         className="flex-1 px-4 py-3 text-left hover:bg-accent/30"
       >
-        <div className="text-sm font-medium">
-          {route.origin.city}, {route.origin.state} → {route.destination.city}, {route.destination.state}
-        </div>
+        {/* Per-order segments — one line per load so a multi-order
+            route doesn't collapse to a single "first → last" pair that
+            hides what's actually in it. Falls back to the collapsed
+            pair when segments is absent (older rows). */}
+        {route.segments && route.segments.length > 0 ? (
+          <div className="text-sm font-medium space-y-0.5">
+            {route.segments.map((seg, i) => (
+              <div key={`${seg.order_id}-${i}`} className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground font-mono shrink-0">{seg.order_id}</span>
+                <span>
+                  {seg.origin_city}, {seg.origin_state} → {seg.destination_city}, {seg.destination_state}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-sm font-medium">
+            {route.origin.city}, {route.origin.state} → {route.destination.city}, {route.destination.state}
+          </div>
+        )}
         <div className="text-xs text-muted-foreground">{dateRange}</div>
         {route.summary ? (
           <div className="mt-2 flex gap-6 text-xs tabular-nums">

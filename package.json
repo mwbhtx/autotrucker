@@ -11,7 +11,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@mwbhtx/haulvisor-core": "^1.6.81",
+    "@mwbhtx/haulvisor-core": "^1.6.82",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
     "@shadergradient/react": "^2.4.20",

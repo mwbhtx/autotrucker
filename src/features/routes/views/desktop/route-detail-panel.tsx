@@ -544,10 +544,15 @@ function RouteDetailContent({
           </>
         )}
 
-        {/* Schedule section — only rendered when the sim produced a
-            timeline. Driver-route snapshots skip the sim and therefore
-            have no schedule to show. */}
-        {(chain.timeline && chain.timeline.length > 0) && (
+        {/* Schedule section — shown whenever a timeline can exist.
+            Main Route Search flow: chain.timeline may be empty at
+            first (worker runs with skipTimeline=true) but useTimeline
+            fetches it on demand, so searchParams != null → show.
+            Driver-route flow passes searchParams=null and the chain
+            has no timeline → section stays hidden. */}
+        {((searchParams != null) ||
+          (chain.timeline && chain.timeline.length > 0) ||
+          (timelineData?.timeline && timelineData.timeline.length > 0)) && (
         <><div className="px-4 pt-3 pb-1.5">
           <p className="text-xs font-semibold uppercase tracking-widest text-foreground">Schedule</p>
         </div>
