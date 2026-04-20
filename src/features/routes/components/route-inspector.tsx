@@ -209,7 +209,7 @@ export function RouteInspector({
                 </span>
                 <span className="text-xs font-bold text-foreground tabular-nums">
                   {day.totalMiles > 0 && <>{Math.round(day.totalMiles).toLocaleString()} mi · </>}
-                  {formatDuration(day.driveHours)} driving · {formatDuration(day.workingHours)} working
+                  {formatDuration(day.driveHours)} driving · {formatDuration(day.workingHours)} on duty
                 </span>
               </div>
               {/* Phase rows */}
