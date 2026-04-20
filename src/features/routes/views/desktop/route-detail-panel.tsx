@@ -305,11 +305,18 @@ function RouteDetailContent({
           </div>
           <div className="text-sm grid grid-cols-4 gap-x-3">
             {(() => {
-              const profitColor = routeProfitColor(chain.daily_net_profit);
-              const profitChipClass = `tabular-nums font-bold ${profitColor} bg-black px-2 py-0.5 inline-block`;
               // Sim-dependent metrics ($/Day, Days). Driver-routes skip
               // the sim so these are absent — fall back to a placeholder.
               const hasSimMetrics = chain.estimated_days != null && chain.estimated_days > 0;
+              // Sim-driven routes color the profit chip by how good the
+              // daily-profit is. Driver-route snapshots don't have
+              // daily_net_profit at all, and "profitability tier" of a
+              // completed trip isn't a useful signal in that context —
+              // force primary so the number reads as just-informational.
+              const profitColor = hasSimMetrics
+                ? routeProfitColor(chain.daily_net_profit)
+                : "text-primary";
+              const profitChipClass = `tabular-nums font-bold ${profitColor} bg-black px-2 py-0.5 inline-block`;
               const dailyValue = hasSimMetrics
                 ? <span className={profitChipClass}>{formatCurrency(chain.daily_net_profit)}</span>
                 : <span className="text-muted-foreground">—</span>;
