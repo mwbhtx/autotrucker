@@ -25,6 +25,7 @@ import { calcAvgLoadedRpm, DEFAULT_LOADED_SPEED_MPH } from "@mwbhtx/haulvisor-co
 function getStopoffScheduleBadge(
   stopoff: Stopoff,
   chain: RouteChain,
+  timelineOverride?: TripPhase[] | null,
 ): { kind: "EARLY" | "LATE"; hours: number } | null {
   const rawCity = (stopoff.city ?? "").toString().trim().toLowerCase();
   if (!rawCity) return null;
@@ -47,7 +48,13 @@ function getStopoffScheduleBadge(
 
   // EARLY: find the loading/unloading phase for this stopoff and check
   // whether the preceding phase is a waiting one for the same window.
-  const timeline = chain.timeline;
+  // Prefer the lazy-loaded timeline (Route Search flow) over chain.timeline
+  // since the latter is often empty on search results — the sim is invoked
+  // with skipTimeline=true for the list view and the timeline is fetched
+  // on demand when the detail panel opens.
+  const timeline = (timelineOverride && timelineOverride.length > 0)
+    ? timelineOverride
+    : chain.timeline;
   if (!timeline || timeline.length === 0) return null;
   const phaseKind = stopoff.type === "pickup" ? "loading" : "unloading";
   const expectedWaitFor = stopoff.type === "pickup" ? "pickup_window" : "delivery_window";
@@ -90,7 +97,7 @@ function estDriveTime(miles: number, speed: number): string {
 import { formatCurrency, formatDateTime, formatRpm } from "@/core/utils/route-helpers";
 import { routeProfitColor } from "@/core/utils/rate-color";
 import type { RouteChain, RouteLeg } from "@/core/types";
-import type { Stopoff } from "@mwbhtx/haulvisor-core";
+import type { Stopoff, TripPhase } from "@mwbhtx/haulvisor-core";
 
 /**
  * When set, the panel fills its parent (no 40% cap). Useful when embedded
@@ -491,7 +498,7 @@ function RouteDetailContent({
                 <ol className="flex-1 min-w-0 space-y-3">
                   {chain.legs.flatMap((leg, legIdx) =>
                     (leg.stopoffs ?? []).map((s: Stopoff, i: number) => {
-                      const badge = getStopoffScheduleBadge(s, chain);
+                      const badge = getStopoffScheduleBadge(s, chain, timelineData?.timeline);
                       return (
                         <li key={`${legIdx}-${i}`} className="text-sm">
                           <div className="flex items-baseline gap-2">
