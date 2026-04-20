@@ -996,21 +996,6 @@ function AllFiltersPopover({
                   </div>
                 </button>
               ))}
-              <button
-                type="button"
-                onClick={() => setStrictSchedule(!strictSchedule)}
-                className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-accent transition-colors"
-                title="Reject routes that arrive outside any pickup/delivery window. Ignores your persistent tolerance settings for this search."
-              >
-                <span>Strict schedule</span>
-                <div
-                  className={`flex h-4 w-4 items-center justify-center rounded border transition-colors ${
-                    strictSchedule ? "border-primary bg-primary text-primary-foreground" : "border-input"
-                  }`}
-                >
-                  {strictSchedule && <span className="text-xs">✓</span>}
-                </div>
-              </button>
             </div>
           </div>
 
@@ -1042,10 +1027,25 @@ function AllFiltersPopover({
             </div>
           </div>
 
-          {/* Route Quality */}
+          {/* Route Preferences */}
           <div className="space-y-2">
-            <p className="text-sm font-medium">Route Quality</p>
+            <p className="text-sm font-medium">Route Preferences</p>
             <div className="space-y-3">
+              <button
+                type="button"
+                onClick={() => setStrictSchedule(!strictSchedule)}
+                className="flex w-full items-center justify-between rounded-md py-1 text-sm hover:bg-accent transition-colors"
+                title="Reject routes that arrive outside any pickup/delivery window. Ignores your persistent tolerance settings for this search."
+              >
+                <span className="text-muted-foreground">Strict schedule</span>
+                <div
+                  className={`flex h-4 w-4 items-center justify-center rounded border transition-colors ${
+                    strictSchedule ? "border-primary bg-primary text-primary-foreground" : "border-input"
+                  }`}
+                >
+                  {strictSchedule && <span className="text-xs">✓</span>}
+                </div>
+              </button>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Max DH %</span>
                 <select
