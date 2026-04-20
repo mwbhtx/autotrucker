@@ -118,7 +118,6 @@ export function RouteDetailDrawer({ routeId, onClose }: RouteDetailDrawerProps) 
             costPerMile={detail.analysis.effective_cost_per_mile ?? 0}
             searchParams={null}
             fullWidth
-            hideDeliversEarlyBadge
           />
         )}
         {!loading && !error && detail && !detail.analysis && (

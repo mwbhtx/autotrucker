@@ -97,9 +97,6 @@ import type { Stopoff } from "@mwbhtx/haulvisor-core";
  * in a drawer or dialog that already constrains width. */
 export interface RouteDetailPanelExtras {
   fullWidth?: boolean;
-  /** Suppress the "EARLY" badge — not meaningful for completed/driver
-   *  routes where the sim's early-delivery flag is a modeling artifact. */
-  hideDeliversEarlyBadge?: boolean;
 }
 
 export interface RouteDetailPanelProps extends RouteDetailPanelExtras {
@@ -143,7 +140,6 @@ export function RouteDetailPanel({
   returnByTime,
   searchParams,
   fullWidth = false,
-  hideDeliversEarlyBadge = false,
 }: RouteDetailPanelProps) {
   const showInspector = true;
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -186,7 +182,6 @@ export function RouteDetailPanel({
             chain={chain}
             originCity={originCity}
             destCity={destCity}
-            hideDeliversEarlyBadge={hideDeliversEarlyBadge}
             costPerMile={costPerMile}
             orderUrlTemplate={orderUrlTemplate}
             onHoverLeg={onHoverLeg}
@@ -234,7 +229,6 @@ interface RouteDetailContentProps {
     latest_on_duty_hour?: number;
   } | null;
   scrollRef?: React.RefObject<HTMLDivElement | null>;
-  hideDeliversEarlyBadge?: boolean;
 }
 
 function RouteDetailContent({
@@ -252,7 +246,6 @@ function RouteDetailContent({
   returnByTime,
   searchParams,
   scrollRef,
-  hideDeliversEarlyBadge = false,
 }: RouteDetailContentProps) {
   const { activeCompanyId } = useAuth();
   const [expensesOpen, setExpensesOpen] = useState(false);
@@ -268,8 +261,6 @@ function RouteDetailContent({
   const needsTarp = chain.legs.some(
     (l) => l.tarp_height != null && parseInt(l.tarp_height, 10) > 0,
   );
-  const deliversEarly = chain.trip_summary?.delivers_early === true && !hideDeliversEarlyBadge;
-
   const costPerDhMile =
     chain.total_deadhead_miles > 0
       ? chain.estimated_deadhead_cost / chain.total_deadhead_miles
@@ -293,7 +284,6 @@ function RouteDetailContent({
           <div className="flex items-start justify-between mb-2">
             <div className="flex items-center gap-2">
               <p className="text-xs font-semibold uppercase tracking-widest text-foreground">Route Summary</p>
-              {deliversEarly && <span className="font-semibold uppercase tracking-wide text-blue-400 bg-black px-1.5 py-0.5 text-xs">EARLY</span>}
             </div>
             {onToggleWatchlist && (
               <button

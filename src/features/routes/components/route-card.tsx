@@ -35,9 +35,6 @@ export function RouteCard({ chain, onClick, className }: RouteCardProps) {
         <span className="text-base font-medium">
           {routeStates}
         </span>
-        {chain.trip_summary?.delivers_early === true && (
-          <span className="shrink-0 font-semibold uppercase tracking-wide text-blue-400 bg-black px-1.5 py-0.5 text-xs">EARLY</span>
-        )}
         <span className="ml-auto shrink-0 rounded-full bg-white px-2.5 py-0.5 text-sm text-black font-[800]">
           {chain.legs.length}L
         </span>
