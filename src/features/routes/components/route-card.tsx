@@ -3,7 +3,7 @@
 import { MapPin } from "lucide-react";
 import { cn } from "@/core/utils";
 import { routeProfitColor } from "@/core/utils/rate-color";
-import { getOriginCity, getDestCity, getDailyProfit, getNetProfit, getNetPerMile, getEstimatedDays, getRouteStates, formatCurrency, formatRpm } from "@/core/utils/route-helpers";
+import { getOriginCity, getDestCity, getDailyProfit, getNetProfit, getDeadheadPerMile, getEstimatedDays, getRouteStates, formatCurrency, formatRpm } from "@/core/utils/route-helpers";
 import type { RouteChain } from "@/core/types";
 
 interface RouteCardProps {
@@ -16,7 +16,7 @@ export function RouteCard({ chain, onClick, className }: RouteCardProps) {
   const routeStates = getRouteStates(chain);
   const dailyProfit = getDailyProfit(chain);
   const netProfit = getNetProfit(chain);
-  const netPerMile = getNetPerMile(chain);
+  const deadheadPerMile = getDeadheadPerMile(chain);
   const estDays = getEstimatedDays(chain);
   const color = dailyProfit !== null ? routeProfitColor(dailyProfit) : "text-muted-foreground";
 
@@ -52,9 +52,9 @@ export function RouteCard({ chain, onClick, className }: RouteCardProps) {
             {formatCurrency(netProfit)}
           </span>
         )}
-        {netPerMile !== null && (
+        {deadheadPerMile !== null && (
           <span className={cn("font-semibold bg-black px-1.5 py-0.5", color)}>
-            {formatRpm(netPerMile)}
+            {formatRpm(deadheadPerMile)}
           </span>
         )}
       </div>

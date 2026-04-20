@@ -9,7 +9,7 @@ import { RouteInspector } from "@/features/routes/components/route-inspector";
 import { routeProfitColor } from "@/core/utils/rate-color";
 import { LEG_COLORS } from "@/core/utils/route-colors";
 import {
-  getOriginCity, getDestCity, getDailyProfit, getNetProfit, getNetPerMile,
+  getOriginCity, getDestCity, getDailyProfit, getNetProfit, getDeadheadPerMile,
   getDeadheadPct, formatCurrency, formatDateTime, formatRpm,
 } from "@/core/utils/route-helpers";
 import type { RouteChain, RouteLeg } from "@/core/types";
@@ -31,7 +31,7 @@ export function DetailScreen({ chain, originCity, onBack, originCoords: originCo
   const dest = getDestCity(chain);
   const dailyProfit = getDailyProfit(chain) ?? 0;
   const netProfit = getNetProfit(chain) ?? 0;
-  const netPerMile = getNetPerMile(chain) ?? 0;
+  const deadheadPerMile = getDeadheadPerMile(chain) ?? 0;
   const deadhead = getDeadheadPct(chain);
   const legCount = chain.legs.length;
   const totalMiles = chain.total_miles;
@@ -78,7 +78,7 @@ export function DetailScreen({ chain, originCity, onBack, originCoords: originCo
 
         {/* Overview tab */}
         <TabsContent value="overview" className="flex-1 overflow-y-auto px-4 py-4 pb-24">
-          {/* Key metrics — matches desktop card layout: $/Day, Profit, Net/mi, Miles */}
+          {/* Key metrics — matches desktop card layout: $/Day, Profit, $/mi deadhead, Miles */}
           <div className="grid grid-cols-2 gap-3 mb-2">
             <MetricCard
               label="$/Day"
@@ -91,8 +91,8 @@ export function DetailScreen({ chain, originCity, onBack, originCoords: originCo
               valueClassName={color}
             />
             <MetricCard
-              label="Net/mi"
-              value={formatRpm(netPerMile)}
+              label="$/mi deadhead"
+              value={formatRpm(deadheadPerMile)}
               valueClassName={color}
             />
             <MetricCard

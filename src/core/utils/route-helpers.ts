@@ -22,8 +22,8 @@ export function getNetProfit(chain: RouteChain): number | null {
   return null;
 }
 
-export function getNetPerMile(chain: RouteChain): number | null {
-  if ("effective_rpm" in chain && typeof chain.effective_rpm === "number") return chain.effective_rpm;
+export function getDeadheadPerMile(chain: RouteChain): number | null {
+  if ("gross_rpm_total" in chain && typeof chain.gross_rpm_total === "number") return chain.gross_rpm_total;
   return null;
 }
 

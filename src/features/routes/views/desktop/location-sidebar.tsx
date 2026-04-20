@@ -328,9 +328,9 @@ function RouteChainCard({
             <p className="text-xs tabular-nums text-muted-foreground">{formatCurrency(chain.cost_breakdown.total)} costs</p>
           </div>
           <div>
-            <p className="text-sm uppercase tracking-wide text-muted-foreground">Net/mi</p>
+            <p className="text-sm uppercase tracking-wide text-muted-foreground">$/mi deadhead</p>
             <p className={`text-xl font-bold tabular-nums ${routeProfitColor(chain.daily_net_profit)}`}>
-              {formatRpm(chain.effective_rpm)}
+              {formatRpm(chain.gross_rpm_total)}
             </p>
             {avgLoadedRpm !== null && (
               <p className="text-xs tabular-nums mt-0.5 text-muted-foreground">${avgLoadedRpm.toFixed(2)}/mi loaded</p>
