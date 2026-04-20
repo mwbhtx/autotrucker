@@ -38,27 +38,46 @@ import { useAuth } from "@/core/services/auth-provider";
 import { Button } from "@/platform/web/components/ui/button";
 
 
-/** Debounce hook — returns a function that delays calling `fn` */
+/**
+ * Debounced save that COALESCES patches across rapid calls. If a user
+ * changes several fields in quick succession, all of the changes get
+ * merged into a single PATCH at the end of the debounce window —
+ * previous behavior was "last call wins" which silently dropped earlier
+ * field changes.
+ */
 function useDebouncedSave(delayMs = 800) {
   const updateSettings = useUpdateSettings();
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingRef = useRef<Record<string, unknown>>({});
+  // Mutate fn in a ref so the save callback identity is stable even
+  // when the mutation re-renders with new status.
+  const mutateRef = useRef(updateSettings.mutate);
+  mutateRef.current = updateSettings.mutate;
+
+  const flush = useCallback(() => {
+    const pending = pendingRef.current;
+    pendingRef.current = {};
+    if (Object.keys(pending).length > 0) {
+      mutateRef.current(pending as any);
+    }
+  }, []);
 
   const save = useCallback(
     (data: Record<string, unknown>) => {
+      pendingRef.current = { ...pendingRef.current, ...data };
       if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = setTimeout(() => {
-        updateSettings.mutate(data as any);
-      }, delayMs);
+      timerRef.current = setTimeout(flush, delayMs);
     },
-    [updateSettings, delayMs],
+    [flush, delayMs],
   );
 
-  // Cancel pending save on unmount
+  // Flush any pending patch on unmount so in-flight changes aren't lost.
   useEffect(() => {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
+      flush();
     };
-  }, []);
+  }, [flush]);
 
   return save;
 }

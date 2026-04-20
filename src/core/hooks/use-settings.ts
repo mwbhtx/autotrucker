@@ -58,11 +58,30 @@ export function useUpdateSettings() {
         method: "PUT",
         body: JSON.stringify(data),
       }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["settings"] });
+    // Optimistically apply the patch so the UI doesn't flash back to
+    // the server value between mutate-fires and the post-success refetch.
+    onMutate: async (patch) => {
+      await queryClient.cancelQueries({ queryKey: ["settings"] });
+      const previous = queryClient.getQueryData<Settings>(["settings"]);
+      if (previous) {
+        queryClient.setQueryData<Settings>(["settings"], { ...previous, ...patch });
+      }
+      return { previous };
     },
-    onError: () => {
+    onError: (_err, _patch, ctx) => {
+      // Rollback on failure
+      if (ctx?.previous) {
+        queryClient.setQueryData(["settings"], ctx.previous);
+      }
       toast.error("Failed to save settings");
+    },
+    onSuccess: () => {
+      toast.success("Settings saved");
+    },
+    // Invalidate AFTER settled so the server response becomes source of
+    // truth without racing in-flight optimistic updates.
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["settings"] });
     },
   });
 }
