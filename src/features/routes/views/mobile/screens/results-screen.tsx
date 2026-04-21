@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { Skeleton } from "@/platform/web/components/ui/skeleton";
 import { RouteCard } from "@/features/routes/components/route-card";
+import { SearchProgressBar } from "@/features/routes/components/search-progress";
 import type { RouteChain } from "@/core/types";
 import type { SearchProgress } from "@/core/hooks/use-routes";
 import { type SortKey, SORT_OPTIONS, sortRouteChains } from "@/features/routes/utils/sort-options";
@@ -12,6 +13,7 @@ interface ResultsScreenProps {
   chains: RouteChain[];
   isLoading: boolean;
   progress: SearchProgress | null;
+  elapsedMs: number;
   onCancel: () => void;
   onSearchBarTap: () => void;
   onFiltersTap: () => void;
@@ -23,6 +25,7 @@ export function ResultsScreen({
   chains,
   isLoading,
   progress,
+  elapsedMs,
   onCancel,
   onSearchBarTap,
   onFiltersTap,
@@ -51,34 +54,12 @@ export function ResultsScreen({
 
       {/* Search progress */}
       {isLoading && (
-        <div className="px-4 pt-1 pb-2 space-y-1.5">
-          <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
-            {progress && progress.pairs_total > 0 ? (
-              <div
-                className="h-full bg-primary rounded-full transition-all duration-300"
-                style={{ width: `${Math.min(100, (progress.pairs_checked / progress.pairs_total) * 100)}%` }}
-              />
-            ) : (
-              <div className="h-full w-1/3 bg-primary rounded-full animate-[shimmer_1.5s_ease-in-out_infinite]" />
-            )}
-          </div>
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
-              {progress && progress.pairs_total > 0 ? (
-                <>Analyzing {progress.pairs_checked.toLocaleString()} / {progress.pairs_total.toLocaleString()} routes</>
-              ) : (
-                "Warming up the search engine..."
-              )}
-            </p>
-            <button
-              onClick={onCancel}
-              className="flex items-center gap-1.5 rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground"
-            >
-              <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-              Cancel
-            </button>
-          </div>
-        </div>
+        <SearchProgressBar
+          progress={progress}
+          elapsedMs={elapsedMs}
+          onCancel={onCancel}
+          variant="mobile"
+        />
       )}
 
       {/* Sort bar */}

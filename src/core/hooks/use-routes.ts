@@ -44,6 +44,9 @@ export interface SearchProgress {
   pairs_total: number;
   pairs_checked: number;
   pairs_pruned: number;
+  // Count of candidates that survived Phase A pruning. 0 until Phase A completes;
+  // drives the Phase B progress bar as pairs_simulated / survivors_total.
+  survivors_total: number;
   pairs_simulated: number;
   routes_found: number;
   elapsed_ms: number;
@@ -62,10 +65,12 @@ export function useRouteSearch(companyId: string, params: RouteSearchParams | nu
   const [isFetched, setIsFetched] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [progress, setProgress] = useState<SearchProgress | null>(null);
+  const [elapsedMs, setElapsedMs] = useState(0);
 
   const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const paramsKeyRef = useRef<string>("");
   const cancelledRef = useRef(false);
+  const searchStartRef = useRef<number | null>(null);
 
   const stopPolling = useCallback(() => {
     cancelledRef.current = true;
@@ -87,6 +92,8 @@ export function useRouteSearch(companyId: string, params: RouteSearchParams | nu
     setIsFetched(false);
     setError(null);
     setProgress(null);
+    searchStartRef.current = Date.now();
+    setElapsedMs(0);
 
     const qs = new URLSearchParams();
     for (const [key, value] of Object.entries(params)) {
@@ -155,7 +162,21 @@ export function useRouteSearch(companyId: string, params: RouteSearchParams | nu
     setIsLoading(false);
     setIsFetched(false);
     setProgress(null);
+    searchStartRef.current = null;
+    setElapsedMs(0);
   }, [stopPolling]);
 
-  return { data, isLoading, isFetched, error, progress, cancel };
+  // Locally-ticking elapsed clock so the UI shows smooth mm:ss without
+  // waiting on 1.5s poll cycles.
+  useEffect(() => {
+    if (!isLoading || searchStartRef.current === null) return;
+    const id = setInterval(() => {
+      if (searchStartRef.current !== null) {
+        setElapsedMs(Date.now() - searchStartRef.current);
+      }
+    }, 250);
+    return () => clearInterval(id);
+  }, [isLoading]);
+
+  return { data, isLoading, isFetched, error, progress, elapsedMs, cancel };
 }

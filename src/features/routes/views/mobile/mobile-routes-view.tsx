@@ -58,7 +58,7 @@ export function MobileRoutesView() {
 
   // Fire query
   const routeQuery = useRouteSearch(activeCompanyId ?? "", searchParams);
-  const { progress } = routeQuery;
+  const { progress, elapsedMs } = routeQuery;
 
   // Build chain list from results (sorting handled by ResultsScreen)
   const chains = useMemo(() => {
@@ -207,6 +207,7 @@ export function MobileRoutesView() {
             chains={chains}
             isLoading={routeQuery.isLoading}
             progress={progress ?? null}
+            elapsedMs={elapsedMs}
             onCancel={() => { routeQuery.cancel(); setSearchParams(null); }}
             onSearchBarTap={handleSearchBarTap}
             onFiltersTap={handleFiltersTap}

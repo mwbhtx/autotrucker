@@ -8,6 +8,7 @@ import { RouteMap } from "@/features/routes/components/route-map";
 import { SearchFilters } from "@/features/routes/components/search-form";
 import { RouteList } from "./route-list";
 import { RouteDetailPanel } from "./route-detail-panel";
+import { SearchProgressBar } from "@/features/routes/components/search-progress";
 import { useRouteSearch, type RouteSearchParams } from "@/core/hooks/use-routes";
 import { useAuth } from "@/core/services/auth-provider";
 import { useSettings, useUpdateSettings } from "@/core/hooks/use-settings";
@@ -54,7 +55,7 @@ export function DesktopRoutesView() {
     return selectedChain.legs.map((l) => l.order_id ?? "spec").join("|");
   }, [selectedChain]);
 
-  const { data, isLoading, isFetched, progress, cancel } = useRouteSearch(activeCompanyId ?? "", searchParams);
+  const { data, isLoading, isFetched, progress, elapsedMs, cancel } = useRouteSearch(activeCompanyId ?? "", searchParams);
   const routes = useMemo(() => data?.routes ?? [], [data?.routes]);
 
   const orderUrlTemplate = data?.order_url_template;
@@ -285,34 +286,12 @@ export function DesktopRoutesView() {
         {hasActiveSearch && (
           <div className="w-[35%] min-w-[280px] max-w-[450px] shrink-0 min-h-0">
             {isLoading && (
-              <div className="px-4 pt-3 pb-1 space-y-1.5">
-                <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
-                  {progress && progress.pairs_total > 0 ? (
-                    <div
-                      className="h-full bg-primary rounded-full transition-all duration-300"
-                      style={{ width: `${Math.min(100, (progress.pairs_checked / progress.pairs_total) * 100)}%` }}
-                    />
-                  ) : (
-                    <div className="h-full w-1/3 bg-primary rounded-full animate-[shimmer_1.5s_ease-in-out_infinite]" />
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground text-center">
-                  {progress && progress.pairs_total > 0 ? (
-                    <>
-                      Analyzing {progress.pairs_checked.toLocaleString()} / {progress.pairs_total.toLocaleString()} routes
-                    </>
-                  ) : (
-                    "Warming up the search engine..."
-                  )}
-                </p>
-                <button
-                  onClick={() => { cancel(); setSearchParams(null); setSelectedChain(null); }}
-                  className="mt-2 mx-auto flex h-9 items-center gap-1.5 rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground hover:brightness-110 transition-all"
-                >
-                  <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-                  Cancel Search
-                </button>
-              </div>
+              <SearchProgressBar
+                progress={progress}
+                elapsedMs={elapsedMs}
+                onCancel={() => { cancel(); setSearchParams(null); setSelectedChain(null); }}
+                variant="desktop"
+              />
             )}
             <RouteList
               chains={displayLocation.routeChains}
