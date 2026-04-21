@@ -354,7 +354,7 @@ function RouteDetailContent({
                 },
                 {
                   label1: "$/mi all-in",
-                  value1: `$${chain.gross_rpm_total.toFixed(2)}`,
+                  value1: <span className={profitChipClass}>${chain.gross_rpm_total.toFixed(2)}</span>,
                   tooltip1: "Gross pay ÷ all miles driven (loaded + deadhead). Pre-estimation — no fuel/cost assumptions.",
                   label2: "Total mi.",
                   value2: (chain.total_miles + chain.total_deadhead_miles).toLocaleString(),
