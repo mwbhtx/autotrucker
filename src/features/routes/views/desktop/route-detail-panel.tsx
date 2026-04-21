@@ -94,7 +94,7 @@ function estDriveTime(miles: number, speed: number): string {
   return `${h}h ${m}m`;
 }
 
-import { formatCurrency, formatDateTime, formatRpm } from "@/core/utils/route-helpers";
+import { formatCurrency, formatDateTime } from "@/core/utils/route-helpers";
 import { routeProfitColor } from "@/core/utils/rate-color";
 import type { RouteChain, RouteLeg } from "@/core/types";
 import type { Stopoff, TripPhase } from "@mwbhtx/haulvisor-core";
@@ -354,7 +354,7 @@ function RouteDetailContent({
                 },
                 {
                   label1: "$/mi dh",
-                  value1: formatRpm(chain.gross_rpm_total),
+                  value1: `$${chain.gross_rpm_total.toFixed(2)}`,
                   tooltip1: "Gross pay ÷ all miles driven (loaded + deadhead). Pre-estimation — no fuel/cost assumptions.",
                   label2: "Total mi.",
                   value2: (chain.total_miles + chain.total_deadhead_miles).toLocaleString(),

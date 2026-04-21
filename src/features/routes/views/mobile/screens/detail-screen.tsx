@@ -10,7 +10,7 @@ import { routeProfitColor } from "@/core/utils/rate-color";
 import { LEG_COLORS } from "@/core/utils/route-colors";
 import {
   getOriginCity, getDestCity, getDailyProfit, getNetProfit, getDeadheadPerMile,
-  getDeadheadPct, formatCurrency, formatDateTime, formatRpm,
+  getDeadheadPct, formatCurrency, formatDateTime,
 } from "@/core/utils/route-helpers";
 import type { RouteChain, RouteLeg } from "@/core/types";
 
@@ -92,7 +92,7 @@ export function DetailScreen({ chain, originCity, onBack, originCoords: originCo
             />
             <MetricCard
               label="$/mi dh"
-              value={formatRpm(deadheadPerMile)}
+              value={`$${deadheadPerMile.toFixed(2)}`}
               valueClassName={color}
             />
             <MetricCard

@@ -13,7 +13,7 @@ import { DEFAULT_COST_PER_MILE, calcAvgLoadedRpm, ROUTE_SORT_OPTIONS, DEFAULT_SO
 import type { RouteSortKey } from "@mwbhtx/haulvisor-core";
 import { LEG_COLORS } from "@/core/utils/route-colors";
 import { rateColor, netRateColor, routeProfitColor } from "@/core/utils/rate-color";
-import { formatCurrency, formatDateTime, formatDateRange, formatDate, formatRpm } from "@/core/utils/route-helpers";
+import { formatCurrency, formatDateTime, formatDateRange, formatDate } from "@/core/utils/route-helpers";
 import { sortRouteChains } from "@/features/routes/utils/sort-options";
 
 function formatPickupDates(early?: string, late?: string): string {
@@ -330,7 +330,7 @@ function RouteChainCard({
           <div>
             <p className="text-sm uppercase tracking-wide text-muted-foreground">$/mi dh</p>
             <p className={`text-xl font-bold tabular-nums ${routeProfitColor(chain.daily_net_profit)}`}>
-              {formatRpm(chain.gross_rpm_total)}
+              ${chain.gross_rpm_total.toFixed(2)}
             </p>
             {avgLoadedRpm !== null && (
               <p className="text-xs tabular-nums mt-0.5 text-muted-foreground">${avgLoadedRpm.toFixed(2)}/mi loaded</p>

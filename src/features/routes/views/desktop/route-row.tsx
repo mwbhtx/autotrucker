@@ -4,7 +4,7 @@ import { BookmarkIcon } from "lucide-react";
 import type { RouteChain } from "@/core/types";
 import { calcAvgLoadedRpm } from "@mwbhtx/haulvisor-core";
 import { routeProfitColor } from "@/core/utils/rate-color";
-import { formatCurrency, formatRpm } from "@/core/utils/route-helpers";
+import { formatCurrency } from "@/core/utils/route-helpers";
 
 interface RouteRowProps {
   chain: RouteChain;
@@ -52,7 +52,7 @@ export function RouteRow({
         <div>
           <p className="text-sm uppercase tracking-wide text-muted-foreground">$/mi dh</p>
           <p className="text-lg font-bold tabular-nums text-white bg-black px-2 py-0.5 inline-block">
-            {formatRpm(chain.gross_rpm_total)}
+            ${chain.gross_rpm_total.toFixed(2)}
           </p>
           {avgLoadedRpm !== null && (
             <p className="text-xs tabular-nums mt-0.5 text-muted-foreground">${avgLoadedRpm.toFixed(2)}/mi loaded</p>
