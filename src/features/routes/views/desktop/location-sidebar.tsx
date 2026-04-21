@@ -328,7 +328,7 @@ function RouteChainCard({
             <p className="text-xs tabular-nums text-muted-foreground">{formatCurrency(chain.cost_breakdown.total)} costs</p>
           </div>
           <div>
-            <p className="text-sm uppercase tracking-wide text-muted-foreground">$/mi dh</p>
+            <p className="text-sm uppercase tracking-wide text-muted-foreground">$/mi all-in</p>
             <p className={`text-xl font-bold tabular-nums ${routeProfitColor(chain.daily_net_profit)}`}>
               ${chain.gross_rpm_total.toFixed(2)}
             </p>

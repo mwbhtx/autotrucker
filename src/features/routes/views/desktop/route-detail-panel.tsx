@@ -353,7 +353,7 @@ function RouteDetailContent({
                   value2: chain.total_miles.toLocaleString(),
                 },
                 {
-                  label1: "$/mi dh",
+                  label1: "$/mi all-in",
                   value1: `$${chain.gross_rpm_total.toFixed(2)}`,
                   tooltip1: "Gross pay ÷ all miles driven (loaded + deadhead). Pre-estimation — no fuel/cost assumptions.",
                   label2: "Total mi.",

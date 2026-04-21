@@ -50,7 +50,7 @@ export function RouteRow({
           <p className="text-xs tabular-nums mt-0.5 text-muted-foreground">{formatCurrency(chain.total_pay)} gross</p>
         </div>
         <div>
-          <p className="text-sm uppercase tracking-wide text-muted-foreground">$/mi dh</p>
+          <p className="text-sm uppercase tracking-wide text-muted-foreground">$/mi all-in</p>
           <p className="text-lg font-bold tabular-nums text-white bg-black px-2 py-0.5 inline-block">
             ${chain.gross_rpm_total.toFixed(2)}
           </p>
