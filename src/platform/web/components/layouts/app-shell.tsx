@@ -7,6 +7,7 @@ import { useTheme } from "next-themes";
 import { cn } from "@/core/utils";
 import { useAuth } from "@/core/services/auth-provider";
 import { brand } from "@mwbhtx/haulvisor-core";
+import { BellIcon } from "@/features/alerts/components/BellIcon";
 
 const navItems = [
   { href: "/routes", label: "Routes", icon: RouteIcon },
@@ -70,6 +71,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <span className="hidden xl:inline text-sm text-muted-foreground mr-2">
             {user?.email || user?.username || "Guest"}
           </span>
+          <BellIcon />
           <button
             type="button"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
