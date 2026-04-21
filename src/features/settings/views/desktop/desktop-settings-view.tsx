@@ -37,6 +37,8 @@ import { CheckIcon, LogOut, PlusIcon, XIcon } from "lucide-react";
 import Link from "next/link";
 import { ThemeSelector } from "@/features/settings/components/theme-selector";
 import { CompanyIntegrationView } from "@/features/settings/company-integration/views/CompanyIntegrationView";
+import { AlertsSection } from "@/features/alerts/components/AlertsSection";
+import { PhoneVerificationSection } from "@/features/alerts/components/PhoneVerificationSection";
 import { DriverFeesView } from "@/features/settings/driver-fees/views/DriverFeesView";
 import { useIsMobile } from "@/platform/web/hooks/use-is-mobile";
 import { useAuth } from "@/core/services/auth-provider";
@@ -97,6 +99,8 @@ const NAV_SECTIONS = [
   { id: "schedule", label: "Work Schedule" },
   { id: "driver-fees", label: "Driver Fees" },
   { id: "company-integration", label: "Company Integration" },
+  { id: "alerts", label: "Alerts" },
+  { id: "phone", label: "SMS Phone" },
   { id: "appearance", label: "Theme" },
 ] as const;
 
@@ -986,6 +990,12 @@ export function DesktopSettingsView() {
           <CompanyIntegrationView />
         </section>
         )}
+
+        {/* Alerts */}
+        {activeSection === "alerts" && <AlertsSection />}
+
+        {/* SMS Phone */}
+        {activeSection === "phone" && <PhoneVerificationSection />}
 
         {/* Theme */}
         {activeSection === "appearance" && (
