@@ -480,6 +480,7 @@ export function SearchFilters({
   const [minDailyProfit, setMinDailyProfit] = useState<number | undefined>(undefined);
   const [minRpm, setMinRpm] = useState<number | undefined>(undefined);
   const [maxInterlegDh, setMaxInterlegDh] = useState<number | undefined>(undefined);
+  const [engineVersion, setEngineVersion] = useState<'v1' | 'v2'>('v1');
   const [defaultsLoaded, setDefaultsLoaded] = useState(!!r.origin);
 
   const hasHomeLocation =
@@ -550,7 +551,7 @@ export function SearchFilters({
   const profileKey = JSON.stringify(driverProfile);
 
   // Track current vs last-searched params to show/hide Search button
-  const currentParamsKey = JSON.stringify([origin?.lat, origin?.lng, destination?.lat, destination?.lng, departureDate, daysOut, numOrders, originRadius, destRadius, maxDeadheadPct, minDailyProfit, minRpm, maxInterlegDh, profileKey]);
+  const currentParamsKey = JSON.stringify([origin?.lat, origin?.lng, destination?.lat, destination?.lng, departureDate, daysOut, numOrders, originRadius, destRadius, maxDeadheadPct, minDailyProfit, minRpm, maxInterlegDh, engineVersion, profileKey]);
   const lastSearchedParamsKey = useRef<string>("");
   const hasSearched = lastSearchedParamsKey.current !== "";
 
@@ -586,10 +587,11 @@ export function SearchFilters({
       ...(minDailyProfit != null ? { min_daily_profit: minDailyProfit } : {}),
       ...(minRpm != null ? { min_rpm: minRpm } : {}),
       ...(maxInterlegDh != null ? { max_interleg_deadhead_miles: maxInterlegDh } : {}),
+      ...(engineVersion === 'v2' ? { engine_version: 'v2' as const } : {}),
       ...driverProfile,
       _t: Date.now(),
     });
-  }, [origin, destination, departureDate, daysOut, numOrders, originRadius, destRadius, maxDeadheadPct, minDailyProfit, minRpm, maxInterlegDh, profileKey, onClearSearch, currentParamsKey]);
+  }, [origin, destination, departureDate, daysOut, numOrders, originRadius, destRadius, maxDeadheadPct, minDailyProfit, minRpm, maxInterlegDh, engineVersion, profileKey, onClearSearch, currentParamsKey]);
 
   // Update map markers when origin/destination change (no auto-search, no clearing results)
   useEffect(() => {
@@ -801,6 +803,7 @@ export function SearchFilters({
           minDailyProfit={minDailyProfit} setMinDailyProfit={setMinDailyProfit}
           minRpm={minRpm} setMinRpm={setMinRpm}
           maxInterlegDh={maxInterlegDh} setMaxInterlegDh={setMaxInterlegDh}
+          engineVersion={engineVersion} setEngineVersion={setEngineVersion}
           strictSchedule={strictSchedule} setStrictSchedule={setStrictSchedule}
         /></div>
         {!isSearching && (
@@ -831,6 +834,7 @@ function AllFiltersPopover({
   minDailyProfit, setMinDailyProfit,
   minRpm, setMinRpm,
   maxInterlegDh, setMaxInterlegDh,
+  engineVersion, setEngineVersion,
   strictSchedule, setStrictSchedule,
 }: {
   maxDeadheadPct: number | undefined;
@@ -841,6 +845,8 @@ function AllFiltersPopover({
   setMinRpm: (v: number | undefined) => void;
   maxInterlegDh: number | undefined;
   setMaxInterlegDh: (v: number | undefined) => void;
+  engineVersion: 'v1' | 'v2';
+  setEngineVersion: (v: 'v1' | 'v2') => void;
   strictSchedule: boolean;
   setStrictSchedule: (v: boolean) => void;
 }) {
@@ -1096,6 +1102,17 @@ function AllFiltersPopover({
                   {MAX_INTERLEG_DEADHEAD_OPTIONS.map((o) => (
                     <option key={o.value} value={o.value}>{o.label}</option>
                   ))}
+                </select>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Engine</span>
+                <select
+                  value={engineVersion}
+                  onChange={(e) => setEngineVersion(e.target.value as 'v1' | 'v2')}
+                  className="h-8 rounded-md border bg-background px-2 text-sm"
+                >
+                  <option value="v1">V1</option>
+                  <option value="v2">V2</option>
                 </select>
               </div>
             </div>

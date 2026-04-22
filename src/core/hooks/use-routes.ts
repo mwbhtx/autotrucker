@@ -35,6 +35,8 @@ export interface RouteSearchParams {
   min_daily_profit?: number;
   min_rpm?: number;
   max_interleg_deadhead_miles?: number;
+  /** Route engine variant. 'v1' = per-leg (default); 'v2' = matrix batch (experimental). */
+  engine_version?: 'v1' | 'v2';
   /** Cache-bust token — forces a new search even with identical params */
   _t?: number;
 }
