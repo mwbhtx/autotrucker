@@ -17,13 +17,15 @@ interface Props {
 }
 
 export function SearchProgressBar({ progress, elapsedMs, onCancel, variant }: Props) {
-  const phase: "starting" | "filtering" | "analyzing" = !progress
+  const phase: "starting" | "filtering" | "resolving" | "analyzing" = !progress
     ? "starting"
-    : progress.survivors_total > 0
-      ? "analyzing"
-      : progress.pairs_total > 0
-        ? "filtering"
-        : "starting";
+    : progress.phase === "resolving_distances"
+      ? "resolving"
+      : progress.survivors_total > 0
+        ? "analyzing"
+        : progress.pairs_total > 0
+          ? "filtering"
+          : "starting";
 
   const percent =
     phase === "analyzing" && progress
@@ -33,6 +35,9 @@ export function SearchProgressBar({ progress, elapsedMs, onCancel, variant }: Pr
   const label = (() => {
     if (phase === "starting") return "Starting search…";
     if (phase === "filtering") return "Filtering candidates…";
+    if (phase === "resolving" && progress) {
+      return `Resolving distances for ${progress.survivors_total.toLocaleString()} routes…`;
+    }
     if (progress) {
       return `Analyzing ${progress.pairs_simulated.toLocaleString()} / ${progress.survivors_total.toLocaleString()} routes`;
     }
@@ -50,6 +55,8 @@ export function SearchProgressBar({ progress, elapsedMs, onCancel, variant }: Pr
           style={{ width: `${percent}%` }}
         />
       ) : (
+        // Indeterminate shimmer for starting / filtering / resolving — no
+        // per-unit progress is available during those phases.
         <div className="h-full w-1/3 bg-primary rounded-full animate-[shimmer_1.5s_ease-in-out_infinite]" />
       )}
     </div>

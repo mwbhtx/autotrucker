@@ -52,6 +52,10 @@ export interface SearchProgress {
   pairs_simulated: number;
   routes_found: number;
   elapsed_ms: number;
+  // Optional Phase B sub-stage emitted by the worker. When present and set to
+  // 'resolving_distances', Phase B is blocked on distance resolution (V1
+  // per-leg batch or V2 matrix call), during which pairs_simulated stays at 0.
+  phase?: 'resolving_distances';
 }
 
 interface SearchPollResponse {
