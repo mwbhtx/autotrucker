@@ -444,6 +444,8 @@ interface SearchFiltersProps {
   onCancel?: () => void;
   /** Whether route results are currently available */
   hasResults?: boolean;
+  /** Called whenever the selected engine changes */
+  onEngineChange?: (engine: "v1" | "v2" | "v3") => void;
 }
 
 export function SearchFilters({
@@ -462,6 +464,7 @@ export function SearchFilters({
   isSearching,
   onCancel,
   hasResults,
+  onEngineChange,
 }: SearchFiltersProps) {
   const { data: settings } = useSettings();
   const updateSettings = useUpdateSettings();
@@ -520,6 +523,7 @@ export function SearchFilters({
   const [minRpm, setMinRpm] = useState<number | undefined>(undefined);
   const [maxInterlegDh, setMaxInterlegDh] = useState<number | undefined>(undefined);
   const [engineVersion, setEngineVersion] = useState<'v1' | 'v2' | 'v3'>('v1');
+  useEffect(() => { onEngineChange?.(engineVersion); }, [engineVersion, onEngineChange]);
   const [defaultsLoaded, setDefaultsLoaded] = useState(!!r.origin);
 
   const hasHomeLocation =

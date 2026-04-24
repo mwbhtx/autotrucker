@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { BookmarkIcon } from "lucide-react";
+import { BookmarkIcon, DownloadIcon } from "lucide-react";
 import type { RouteChain } from "@/core/types";
 import { ROUTE_SORT_OPTIONS, DEFAULT_SORT_KEY } from "@mwbhtx/haulvisor-core";
 import type { RouteSortKey } from "@mwbhtx/haulvisor-core";
 import { sortRouteChains } from "@/features/routes/utils/sort-options";
+import { downloadRoutesCsv, type RouteEngine } from "@/features/routes/utils/export-csv";
 import { RouteRow } from "./route-row";
 
 /** Unique key for a route chain based on its leg order IDs */
@@ -20,6 +21,7 @@ interface RouteListProps {
   isLoading?: boolean;
   onClearFilters?: () => void;
   onWatchlistChange?: (watchlist: Set<string>, toggle: (key: string) => void) => void;
+  engine?: RouteEngine;
 }
 
 export function RouteList({
@@ -29,9 +31,11 @@ export function RouteList({
   isLoading,
   onClearFilters,
   onWatchlistChange,
+  engine = "v1",
 }: RouteListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [sortBy, setSortBy] = useState<RouteSortKey>(DEFAULT_SORT_KEY);
+  const [isExporting, setIsExporting] = useState(false);
 
   const [watchlist, setWatchlist] = useState<Set<string>>(() => {
     if (typeof window === "undefined") return new Set();
@@ -129,6 +133,18 @@ export function RouteList({
               {watchlist.size}
             </button>
           )}
+          <button
+            type="button"
+            disabled={isExporting}
+            onClick={() => {
+              setIsExporting(true);
+              try { downloadRoutesCsv(allSorted, engine); } finally { setIsExporting(false); }
+            }}
+            className="rounded-full px-3 py-1 text-sm transition-colors flex items-center gap-1 border border-input hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:pointer-events-none"
+          >
+            <DownloadIcon className="h-3 w-3" />
+            Export
+          </button>
         </div>
       )}
 
