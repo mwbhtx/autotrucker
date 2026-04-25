@@ -440,7 +440,6 @@ export function DesktopSimulationView() {
 
   const aLeg = orderA ? legFromChain(orderA) : null;
   const bLeg = orderB ? legFromChain(orderB) : null;
-  const costPerMile = (settings?.cost_per_mile as number | undefined) ?? DEFAULT_COST_PER_MILE;
 
   return (
     <div className="flex flex-col overflow-hidden -m-6 w-[calc(100%+3rem)] h-[calc(100%+3rem)]">
@@ -577,7 +576,7 @@ export function DesktopSimulationView() {
               </div>
             )}
             {orderIds.length === 2 && !sim.isLoading && !sim.error && sim.data && !isSimulateRejection(sim.data) && (
-              <SimulationSummary chain={sim.data} costPerMile={costPerMile} />
+              <SimulationSummary chain={sim.data} />
             )}
           </div>
         </div>
@@ -586,7 +585,7 @@ export function DesktopSimulationView() {
   );
 }
 
-function SimulationSummary({ chain, costPerMile }: { chain: RouteChain; costPerMile: number }) {
+function SimulationSummary({ chain }: { chain: RouteChain }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 p-3">
@@ -621,7 +620,7 @@ function SimulationSummary({ chain, costPerMile }: { chain: RouteChain; costPerM
       </div>
 
       <p className="text-[11px] text-muted-foreground">
-        Cost model uses ${costPerMile.toFixed(2)}/mi.
+        Cost model uses ${chain.effective_cost_per_mile.toFixed(2)}/mi.
       </p>
     </div>
   );
