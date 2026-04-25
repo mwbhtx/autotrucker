@@ -65,10 +65,11 @@ export function DesktopOrdersView() {
   const simulateButton = (
     <Button
       variant={simulateOpen ? "default" : "outline"}
+      size="icon"
       onClick={() => setSimulateOpen((v) => !v)}
+      title="Simulate route"
     >
       <ZapIcon />
-      Simulate
     </Button>
   );
 
@@ -110,7 +111,7 @@ export function DesktopOrdersView() {
 
       {/* Simulate panel column */}
       {simulateOpen && (
-        <div className="shrink-0 w-[520px] border-l flex flex-col overflow-hidden">
+        <div className="shrink-0 w-[520px] border-l flex flex-col min-h-0">
           <SimulatePanel
             companyId={activeCompanyId}
             onClose={() => setSimulateOpen(false)}
