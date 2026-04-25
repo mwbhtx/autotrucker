@@ -41,11 +41,15 @@ export function FilterBar({ onSearch }: Props) {
     }
   };
 
+  // Each control is a label-on-top + 32px input pattern. All children of the
+  // outer flex row are the same height; items-end keeps the input baselines
+  // aligned even if a future label wraps to two lines.
   return (
     <div className="flex flex-wrap items-end gap-3">
-      <div className="flex-1 min-w-[260px]">
-        <label htmlFor="rd-location" className="block text-sm font-medium mb-1.5">
-          Location
+      <div className="w-72">
+        <label htmlFor="rd-location" className="flex items-baseline justify-between mb-1.5">
+          <span className="text-sm font-medium">Location</span>
+          <span className="text-xs text-muted-foreground">City, ST</span>
         </label>
         <Input
           id="rd-location"
@@ -54,7 +58,6 @@ export function FilterBar({ onSearch }: Props) {
           onChange={(e) => setLocation(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Houston, TX"
-          aria-describedby="rd-location-hint"
           autoComplete="off"
         />
         <datalist id="rd-location-list">
@@ -62,15 +65,9 @@ export function FilterBar({ onSearch }: Props) {
             <option key={c} value={c} />
           ))}
         </datalist>
-        <span
-          id="rd-location-hint"
-          className="block text-xs text-muted-foreground mt-1"
-        >
-          City, ST
-        </span>
       </div>
 
-      <div>
+      <div className="w-28">
         <label htmlFor="rd-radius" className="block text-sm font-medium mb-1.5">
           Radius (mi)
         </label>
@@ -82,7 +79,6 @@ export function FilterBar({ onSearch }: Props) {
           value={radius}
           onChange={(e) => setRadius(Number(e.target.value))}
           onKeyDown={handleKeyDown}
-          className="w-24"
         />
       </div>
 
@@ -96,6 +92,7 @@ export function FilterBar({ onSearch }: Props) {
               variant={orders === n ? "default" : "outline"}
               size="sm"
               onClick={() => setOrders(n)}
+              className="w-10"
             >
               {n}
             </Button>
