@@ -115,7 +115,7 @@ export function DesktopRouteDiscoveryView() {
 
       {!query && (
         <p className="text-sm text-muted-foreground py-12 text-center">
-          Enter a city, state, radius, and order count above, then click Search.
+          Enter a location, radius, and order count above, then click Search.
         </p>
       )}
     </div>
