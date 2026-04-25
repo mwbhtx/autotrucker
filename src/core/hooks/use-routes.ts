@@ -99,6 +99,7 @@ export function useRouteSearch(companyId: string, params: RouteSearchParams | nu
 
     stopPolling();
     cancelledRef.current = false;
+    setData(undefined);
     setIsLoading(true);
     setIsFetched(false);
     setError(null);
