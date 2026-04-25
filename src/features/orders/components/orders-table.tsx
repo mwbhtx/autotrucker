@@ -74,6 +74,9 @@ interface OrdersTableProps {
    *  "dispatch-pickup" shows Dispatch date + Pickup date — appropriate for
    *  the driver's past-loads view where ranges aren't meaningful. */
   dateColumns?: "windows" | "dispatch-pickup";
+  /** When provided, enables multi-select checkboxes (max 2). */
+  selectedOrders?: Order[];
+  onToggleSelected?: (order: Order) => void;
 }
 
 export function OrdersTable({
@@ -88,8 +91,12 @@ export function OrdersTable({
   orderUrlTemplate,
   dimClosed = true,
   dateColumns = "windows",
+  selectedOrders,
+  onToggleSelected,
 }: OrdersTableProps) {
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+  const selectedIds = new Set(selectedOrders?.map((o) => o.order_id) ?? []);
+  const colCount = onToggleSelected ? 12 : 11;
 
   if (error) {
     return (
@@ -104,6 +111,7 @@ export function OrdersTable({
       <Table>
         <TableHeader>
           <TableRow>
+            {onToggleSelected && <TableHead className="w-8" />}
             <TableHead className="w-8" />
             <TableHead>Order #</TableHead>
             <TableHead>Origin</TableHead>
@@ -130,7 +138,7 @@ export function OrdersTable({
           {isLoading &&
             Array.from({ length: 10 }).map((_, i) => (
               <TableRow key={`skeleton-${i}`}>
-                {Array.from({ length: 11 }).map((_, j) => (
+                {Array.from({ length: colCount }).map((_, j) => (
                   <TableCell key={j}>
                     <Skeleton className="h-4 w-full" />
                   </TableCell>
@@ -140,7 +148,7 @@ export function OrdersTable({
 
           {!isLoading && orders.length === 0 && (
             <TableRow>
-              <TableCell colSpan={11} className="h-24 text-center">
+              <TableCell colSpan={colCount} className="h-24 text-center">
                 <div className="space-y-2">
                   <p className="text-muted-foreground">No orders found.</p>
                   {onClearFilters && (
@@ -164,6 +172,19 @@ export function OrdersTable({
                     setExpandedOrderId(isExpanded ? null : order.order_id)
                   }
                 >
+                  {onToggleSelected && (
+                    <TableCell className="w-8 px-2" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(order.order_id)}
+                        onChange={() => onToggleSelected(order)}
+                        disabled={
+                          !selectedIds.has(order.order_id) && selectedIds.size >= 2
+                        }
+                        className="h-4 w-4 cursor-pointer rounded border border-border accent-primary disabled:cursor-not-allowed disabled:opacity-40"
+                      />
+                    </TableCell>
+                  )}
                   <TableCell className="w-8 px-2">
                     {isExpanded ? (
                       <ChevronDownIcon className="h-4 w-4 text-muted-foreground" />
@@ -234,7 +255,7 @@ export function OrdersTable({
 
                 {isExpanded && (
                   <TableRow key={`${order.order_id}-detail`}>
-                    <TableCell colSpan={11} className="bg-muted/30 p-0">
+                    <TableCell colSpan={colCount} className="bg-muted/30 p-0">
                       <InlineDetail companyId={companyId} order={order} />
                     </TableCell>
                   </TableRow>
