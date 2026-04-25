@@ -30,9 +30,9 @@ export default function InsightsLayout({ children }: { children: React.ReactNode
   return (
     <div className="flex h-full flex-col">
       {/* Sub-nav band — flush with the top nav, visually attached */}
-      <div className="-mx-6 -mt-6 border-b border-border/50 bg-sidebar px-6">
+      <div className="-mx-6 -mt-6 border-b border-border/50 bg-sidebar px-6 py-2">
         <Tabs value={activeTab} className="w-fit">
-          <TabsList variant="line" className="bg-transparent gap-2" asChild>
+          <TabsList variant="line" className="bg-transparent gap-6" asChild>
             <nav>
               {tabs.map((tab) => (
                 <TabsTrigger key={tab.value} value={tab.value} asChild className="gap-1.5">
@@ -46,7 +46,7 @@ export default function InsightsLayout({ children }: { children: React.ReactNode
           </TabsList>
         </Tabs>
       </div>
-      <div className="flex-1 pt-6">{children}</div>
+      <div className="flex-1 pt-8">{children}</div>
     </div>
   );
 }
