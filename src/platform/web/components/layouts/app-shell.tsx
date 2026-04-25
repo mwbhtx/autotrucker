@@ -13,7 +13,7 @@ const navItems = [
   { href: "/routes", label: "Routes", icon: RouteIcon },
   { href: "/simulation", label: "Simulation", icon: FlaskConical },
   { href: "/driver", label: "Driver", icon: User },
-  { href: "/dashboard", label: "Company", icon: BarChart3 },
+  { href: "/company", label: "Company", icon: BarChart3 },
   { href: "/orders", label: "Board", icon: ClipboardList },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
