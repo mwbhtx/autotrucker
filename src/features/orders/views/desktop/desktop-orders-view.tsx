@@ -1,13 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { SearchIcon, ZapIcon } from "lucide-react";
+import { SearchIcon } from "lucide-react";
 import { Input } from "@/platform/web/components/ui/input";
-import { Button } from "@/platform/web/components/ui/button";
 import { OrdersFilters } from "@/features/orders/components/orders-filters";
 import { OrdersTable } from "@/features/orders/components/orders-table";
-import { SimulatePanel } from "@/features/orders/components/simulate-panel";
-import { useOrders, useOrderSearch, useAllActiveOrders } from "@/core/hooks/use-orders";
+import { useOrders, useOrderSearch } from "@/core/hooks/use-orders";
 import { useAuth } from "@/core/services/auth-provider";
 import { useSettings } from "@/core/hooks/use-settings";
 import { Skeleton } from "@/platform/web/components/ui/skeleton";
@@ -18,7 +16,6 @@ export function DesktopOrdersView() {
   const { data: settings } = useSettings();
   const [filters, setFilters] = useState<Omit<OrderFilters, "offset" | "limit">>({});
   const [search, setSearch] = useState("");
-  const [simulateOpen, setSimulateOpen] = useState(false);
 
   const {
     data,
@@ -33,9 +30,6 @@ export function DesktopOrdersView() {
     activeCompanyId ?? "",
     search,
   );
-
-  const { data: allActive } = useAllActiveOrders(activeCompanyId ?? "");
-  const totalCount = allActive?.length ?? 0;
 
   const isSearching = search.trim().length > 0;
   const orders = isSearching
@@ -62,23 +56,11 @@ export function DesktopOrdersView() {
     );
   }
 
-  const simulateButton = !simulateOpen ? (
-    <Button
-      variant="outline"
-      size="icon"
-      onClick={() => setSimulateOpen(true)}
-      title="Simulate route"
-    >
-      <ZapIcon />
-    </Button>
-  ) : null;
-
   return (
     <div className="flex h-full gap-0 overflow-hidden">
-      {/* Board column */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <div className="shrink-0 space-y-6 pb-4">
-          <OrdersFilters onSearch={setFilters} simulateButton={simulateButton}>
+          <OrdersFilters onSearch={setFilters}>
             <div className="relative flex-1 sm:max-w-sm">
               <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -108,16 +90,6 @@ export function DesktopOrdersView() {
           />
         </div>
       </div>
-
-      {/* Simulate panel column */}
-      {simulateOpen && (
-        <div className="shrink-0 w-[520px] border-l ml-4 flex flex-col min-h-0">
-          <SimulatePanel
-            companyId={activeCompanyId}
-            onClose={() => setSimulateOpen(false)}
-          />
-        </div>
-      )}
     </div>
   );
 }

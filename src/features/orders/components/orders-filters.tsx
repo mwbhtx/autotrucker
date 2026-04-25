@@ -25,10 +25,9 @@ const NONE = "__none__";
 interface OrdersFiltersProps {
   onSearch: (filters: Omit<OrderFilters, "offset" | "limit">) => void;
   children?: React.ReactNode;
-  simulateButton?: React.ReactNode;
 }
 
-export function OrdersFilters({ onSearch, children, simulateButton }: OrdersFiltersProps) {
+export function OrdersFilters({ onSearch, children }: OrdersFiltersProps) {
   const [originState, setOriginState] = useState<string>("");
   const [destinationState, setDestinationState] = useState<string>("");
   const [open, setOpen] = useState(false);
@@ -76,7 +75,6 @@ export function OrdersFilters({ onSearch, children, simulateButton }: OrdersFilt
             setDestinationState={setDestinationState}
             onSearch={handleSearch}
             onReset={handleReset}
-            simulateButton={simulateButton}
           />
         </div>
       </div>
@@ -90,7 +88,6 @@ export function OrdersFilters({ onSearch, children, simulateButton }: OrdersFilt
           setDestinationState={setDestinationState}
           onSearch={handleSearch}
           onReset={handleReset}
-          simulateButton={simulateButton}
         />
       </div>
     </div>
@@ -104,7 +101,6 @@ function FilterControls({
   setDestinationState,
   onSearch,
   onReset,
-  simulateButton,
 }: {
   originState: string;
   setOriginState: (v: string) => void;
@@ -112,7 +108,6 @@ function FilterControls({
   setDestinationState: (v: string) => void;
   onSearch: () => void;
   onReset: () => void;
-  simulateButton?: React.ReactNode;
 }) {
   return (
     <>
@@ -164,7 +159,6 @@ function FilterControls({
       <Button variant="outline" onClick={onReset}>
         Reset
       </Button>
-      {simulateButton}
     </>
   );
 }
