@@ -204,7 +204,7 @@ function CandidateRow({ chain, selected, onClick, deadheadAnchor }: CandidateRow
           })()}
         </div>
         <div className="flex flex-col justify-between text-right shrink-0">
-          <div className="space-y-1">
+          <div className="flex items-start gap-3">
             <div>
               <p className="text-sm font-medium tabular-nums">{formatCurrency(chain.gross_pay)}</p>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wide">gross</p>
