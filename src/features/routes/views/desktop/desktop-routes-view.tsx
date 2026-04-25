@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { useRoutesStore } from "@/core/stores/routes-store";
+import { useRouteSearchContext } from "@/core/providers/route-search-provider";
 import { driver } from "driver.js";
 import "driver.js/dist/driver.css";
 import { tourSteps } from "@/platform/web/components/tour-steps";
@@ -10,7 +11,7 @@ import { SearchFilters } from "@/features/routes/components/search-form";
 import { RouteList } from "./route-list";
 import { RouteDetailPanel } from "./route-detail-panel";
 import { SearchProgressBar } from "@/features/routes/components/search-progress";
-import { useRouteSearch, type RouteSearchParams } from "@/core/hooks/use-routes";
+import { type RouteSearchParams } from "@/core/hooks/use-routes";
 import { useAuth } from "@/core/services/auth-provider";
 import { useSettings, useUpdateSettings } from "@/core/hooks/use-settings";
 import { isDemoUser } from "@/core/services/auth";
@@ -60,7 +61,7 @@ export function DesktopRoutesView() {
     return selectedChain.legs.map((l) => l.order_id ?? "spec").join("|");
   }, [selectedChain]);
 
-  const { data, isLoading, isFetched, progress, elapsedMs, cancel } = useRouteSearch(activeCompanyId ?? "", searchParams);
+  const { data, isLoading, isFetched, progress, elapsedMs, cancel } = useRouteSearchContext();
   const routes = useMemo(() => data?.routes ?? [], [data?.routes]);
 
   const orderUrlTemplate = data?.order_url_template;

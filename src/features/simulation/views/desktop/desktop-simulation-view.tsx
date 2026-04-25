@@ -14,16 +14,15 @@ import {
 import { PlaceAutocomplete, type PlaceResult } from "@/features/routes/components/search-form";
 import { useAuth } from "@/core/services/auth-provider";
 import { useSettings } from "@/core/hooks/use-settings";
-import { useRouteSearch, type RouteSearchParams } from "@/core/hooks/use-routes";
 import { useSimulate, isSimulateRejection, type SimulateRejection } from "@/core/hooks/use-simulate";
 import { formatCurrency } from "@/core/utils/route-helpers";
 import { routeProfitColor } from "@/core/utils/rate-color";
 import type { RouteChain, RouteLeg } from "@/core/types";
 import { DEFAULT_COST_PER_MILE, haversine, ROAD_DISTANCE_FALLBACK_MULTIPLIER } from "@mwbhtx/haulvisor-core";
 import { useSimulationStore, type SortKey, type SortDir } from "@/core/stores/simulation-store";
+import { useSimulationSearchContext } from "@/core/providers/simulation-search-provider";
 
 const MS_PER_HOUR = 3_600_000;
-const DEFAULT_EARLY_TOLERANCE_HOURS = 168;
 const DEFAULT_LATE_TOLERANCE_HOURS = 24;
 // Conservative loaded-truck speed for the ETA prefilter. Intentionally
 // low so we only drop candidates that *obviously* can't be made — keep
@@ -367,61 +366,13 @@ export function DesktopSimulationView() {
   const toggleCol1Dir = () => setStore({ col1Sort: { ...col1Sort, dir: col1Sort.dir === "asc" ? "desc" : "asc" } });
   const toggleCol2Dir = () => setStore({ col2Sort: { ...col2Sort, dir: col2Sort.dir === "asc" ? "desc" : "asc" } });
 
-  const earlyToleranceHours = settings?.early_tolerance_hours ?? DEFAULT_EARLY_TOLERANCE_HOURS;
+  const { col1, col2 } = useSimulationSearchContext();
 
-  // Column 1: candidates near origin
-  const col1Params = useMemo<RouteSearchParams | null>(() => {
-    if (!effectiveOrigin) return null;
-    return {
-      origin_lat: effectiveOrigin.lat,
-      origin_lng: effectiveOrigin.lng,
-      departure_date: departureDate,
-      search_radius_miles: radius,
-      origin_radius_miles: radius,
-      num_orders: 1,
-      candidates_only: true,
-    };
-  }, [effectiveOrigin, departureDate, radius]);
-
-  const col1 = useRouteSearch(activeCompanyId ?? "", col1Params);
   const col1Chains = useMemo<RouteChain[]>(
     () => sortChains(col1.data?.routes ?? [], col1Sort.key, col1Sort.dir),
     [col1.data?.routes, col1Sort.key, col1Sort.dir],
   );
 
-  // Column 2: candidates anchored at order A's last delivery, with min_pickup_late_utc filter.
-  const col2Params = useMemo<RouteSearchParams | null>(() => {
-    const aLeg = orderA ? legFromChain(orderA) : null;
-    if (!aLeg) return null;
-    const aDeliveryEarlyMs = aLeg.delivery_date_early_utc
-      ? new Date(aLeg.delivery_date_early_utc).getTime()
-      : null;
-    const minPickupLateUtc = aDeliveryEarlyMs != null
-      ? aDeliveryEarlyMs - earlyToleranceHours * MS_PER_HOUR
-      : undefined;
-    return {
-      origin_lat: aLeg.destination_lat,
-      origin_lng: aLeg.destination_lng,
-      departure_date: departureDate,
-      search_radius_miles: radius,
-      origin_radius_miles: radius,
-      num_orders: 1,
-      min_pickup_late_utc: minPickupLateUtc,
-      candidates_only: true,
-      ...(destination ? {
-        destination_lat: destination.lat,
-        destination_lng: destination.lng,
-        dest_radius_miles: radius,
-      } : {}),
-    };
-  }, [orderA, radius, departureDate, earlyToleranceHours, destination]);
-
-  const col2 = useRouteSearch(activeCompanyId ?? "", col2Params);
-
-  // Lenient client-side prune: drop column-2 candidates the driver
-  // obviously can't make even with their full late tolerance applied.
-  // Server-side `min_pickup_late_utc` only checks calendar overlap;
-  // this also accounts for drive time from A's drop to B's pickup.
   const lateToleranceHours = settings?.late_tolerance_hours ?? DEFAULT_LATE_TOLERANCE_HOURS;
   const col2Chains = useMemo<RouteChain[]>(() => {
     const all = col2.data?.routes ?? [];
