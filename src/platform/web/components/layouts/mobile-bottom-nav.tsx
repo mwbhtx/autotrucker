@@ -8,7 +8,7 @@ import { cn } from "@/core/utils";
 const tabs = [
   { href: "/routes", label: "Routes", icon: Search },
   { href: "/driver", label: "Driver", icon: User },
-  { href: "/dashboard", label: "Dashboard", icon: BarChart3 },
+  { href: "/insights/dashboard", label: "Dashboard", icon: BarChart3 },
   { href: "/orders", label: "Orders", icon: ClipboardList },
   { href: "/settings", label: "Settings", icon: Settings },
 ];

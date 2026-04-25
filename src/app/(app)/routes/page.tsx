@@ -38,21 +38,24 @@ export default function RoutesPage() {
   }
 
   return (
-    <Tabs value={activeTab} onValueChange={setTab} className="h-full">
-      <TabsList variant="line" className="mb-2">
-        <TabsTrigger value="generate" className="gap-1.5">
-          <Search className="h-4 w-4" />
-          Generate
-        </TabsTrigger>
-        <TabsTrigger value="build" className="gap-1.5">
-          <FlaskConical className="h-4 w-4" />
-          Build
-        </TabsTrigger>
-      </TabsList>
-      <TabsContent value="generate" className="flex-1">
+    <Tabs value={activeTab} onValueChange={setTab} className="flex h-full flex-col">
+      {/* Sub-nav band — flush with the top nav, visually attached */}
+      <div className="-mx-6 -mt-6 border-b border-border/50 bg-sidebar px-6">
+        <TabsList variant="line" className="bg-transparent gap-2">
+          <TabsTrigger value="generate" className="gap-1.5">
+            <Search className="h-4 w-4" />
+            Generate
+          </TabsTrigger>
+          <TabsTrigger value="build" className="gap-1.5">
+            <FlaskConical className="h-4 w-4" />
+            Build
+          </TabsTrigger>
+        </TabsList>
+      </div>
+      <TabsContent value="generate" className="flex-1 pt-6">
         <DesktopRoutesView />
       </TabsContent>
-      <TabsContent value="build" className="flex-1">
+      <TabsContent value="build" className="flex-1 pt-6">
         <DesktopSimulationView />
       </TabsContent>
     </Tabs>

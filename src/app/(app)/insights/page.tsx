@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
-export default function DashboardPage() {
+export default function InsightsIndexPage() {
   redirect("/insights/dashboard");
 }
