@@ -19,7 +19,7 @@ import { useSimulate, isSimulateRejection, type SimulateRejection } from "@/core
 import { formatCurrency } from "@/core/utils/route-helpers";
 import { routeProfitColor } from "@/core/utils/rate-color";
 import type { RouteChain, RouteLeg } from "@/core/types";
-import { DEFAULT_COST_PER_MILE, haversine } from "@mwbhtx/haulvisor-core";
+import { DEFAULT_COST_PER_MILE, haversine, ROAD_DISTANCE_FALLBACK_MULTIPLIER } from "@mwbhtx/haulvisor-core";
 
 const MS_PER_HOUR = 3_600_000;
 const DEFAULT_RADIUS = 250;
@@ -161,11 +161,21 @@ interface CandidateRowProps {
   chain: RouteChain;
   selected: boolean;
   onClick: () => void;
+  /** When provided, shows an estimated deadhead from this anchor to the
+   *  candidate's pickup origin (haversine × 1.18). Used on Pickup #2 to
+   *  show how far the driver has to drive from order A's drop. */
+  deadheadAnchor?: { lat: number; lng: number };
 }
 
-function CandidateRow({ chain, selected, onClick }: CandidateRowProps) {
+function CandidateRow({ chain, selected, onClick, deadheadAnchor }: CandidateRowProps) {
   const leg = legFromChain(chain);
   if (!leg) return null;
+  const estDeadhead = deadheadAnchor
+    ? Math.round(
+        haversine(deadheadAnchor.lat, deadheadAnchor.lng, leg.origin_lat, leg.origin_lng) *
+          ROAD_DISTANCE_FALLBACK_MULTIPLIER,
+      )
+    : null;
   return (
     <button
       type="button"
@@ -182,6 +192,11 @@ function CandidateRow({ chain, selected, onClick }: CandidateRowProps) {
           <p className="text-xs text-muted-foreground tabular-nums mt-0.5">
             {Math.round(leg.miles)} mi · {formatCurrency(leg.pay)} · {leg.trailer_type ?? "—"}
           </p>
+          {estDeadhead != null && (
+            <p className="text-xs text-muted-foreground tabular-nums mt-0.5">
+              Est. DH: {estDeadhead} mi
+            </p>
+          )}
           {(() => {
             const pickup = formatWindow(leg.pickup_date_early_local, leg.pickup_date_late_local);
             const delivery = formatWindow(leg.delivery_date_early_local, leg.delivery_date_late_local);
@@ -216,6 +231,7 @@ interface CandidateListProps {
   sortDir: SortDir;
   onSortKeyChange: (k: SortKey) => void;
   onSortDirToggle: () => void;
+  deadheadAnchor?: { lat: number; lng: number };
 }
 
 function CandidateList({
@@ -230,6 +246,7 @@ function CandidateList({
   sortDir,
   onSortKeyChange,
   onSortDirToggle,
+  deadheadAnchor,
 }: CandidateListProps) {
   return (
     <div className="flex flex-col h-full border-r min-w-0">
@@ -263,6 +280,7 @@ function CandidateList({
                 chain={chain}
                 selected={selectedKey === key}
                 onClick={() => onSelect(selectedKey === key ? null : chain)}
+                deadheadAnchor={deadheadAnchor}
               />
             );
           })
@@ -537,6 +555,7 @@ export function DesktopSimulationView() {
             sortDir={col2Sort.dir}
             onSortKeyChange={handleCol2SortKey}
             onSortDirToggle={toggleCol2Dir}
+            deadheadAnchor={aLeg ? { lat: aLeg.destination_lat, lng: aLeg.destination_lng } : undefined}
           />
         </div>
 
