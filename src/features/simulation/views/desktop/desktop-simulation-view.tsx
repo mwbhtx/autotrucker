@@ -462,7 +462,7 @@ export function DesktopSimulationView() {
       <div className="bg-sidebar p-4 shrink-0 border-b">
         <div className="flex items-center gap-2 mb-3">
           <FlaskConical className="h-5 w-5 text-primary" />
-          <h1 className="text-base font-semibold">Route Simulation</h1>
+          <h1 className="text-base font-semibold">Route Builder</h1>
           <span className="text-xs text-muted-foreground ml-2">Build a 2-order route by picking each leg manually.</span>
         </div>
         <div className="grid grid-cols-12 gap-3 items-end">
