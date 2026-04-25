@@ -1,9 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { FlaskConical, MapPin, Loader2Icon, AlertCircleIcon, PlayIcon, CheckCircle2Icon } from "lucide-react";
+import { FlaskConical, MapPin, Loader2Icon, AlertCircleIcon, PlayIcon, CheckCircle2Icon, ArrowUpIcon, ArrowDownIcon } from "lucide-react";
 import { Button } from "@/platform/web/components/ui/button";
 import { Slider } from "@/platform/web/components/ui/slider";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/platform/web/components/ui/select";
 import { PlaceAutocomplete, type PlaceResult } from "@/features/routes/components/search-form";
 import { useAuth } from "@/core/services/auth-provider";
 import { useSettings } from "@/core/hooks/use-settings";
@@ -54,6 +61,70 @@ function todayIso(): string {
 
 function legFromChain(chain: RouteChain): RouteLeg | null {
   return chain.legs[0] ?? null;
+}
+
+type SortKey = "profit" | "pay" | "distance" | "pickup";
+type SortDir = "asc" | "desc";
+
+const SORT_OPTIONS: { value: SortKey; label: string; defaultDir: SortDir }[] = [
+  { value: "profit", label: "Profit", defaultDir: "desc" },
+  { value: "pay", label: "Pay", defaultDir: "desc" },
+  { value: "distance", label: "Distance", defaultDir: "asc" },
+  { value: "pickup", label: "Pickup", defaultDir: "asc" },
+];
+
+function sortValue(chain: RouteChain, key: SortKey): number {
+  const leg = chain.legs[0];
+  switch (key) {
+    case "profit": return chain.profit ?? 0;
+    case "pay": return chain.gross_pay ?? 0;
+    case "distance": return leg?.miles ?? 0;
+    case "pickup": {
+      const iso = leg?.pickup_date_early_utc ?? leg?.pickup_date_early_local ?? null;
+      if (!iso) return Number.MAX_SAFE_INTEGER;
+      const ms = new Date(iso).getTime();
+      return Number.isFinite(ms) ? ms : Number.MAX_SAFE_INTEGER;
+    }
+  }
+}
+
+function sortChains(chains: RouteChain[], key: SortKey, dir: SortDir): RouteChain[] {
+  const sign = dir === "asc" ? 1 : -1;
+  return [...chains].sort((a, b) => sign * (sortValue(a, key) - sortValue(b, key)));
+}
+
+interface SortControlsProps {
+  sortKey: SortKey;
+  sortDir: SortDir;
+  onSortKeyChange: (k: SortKey) => void;
+  onSortDirToggle: () => void;
+}
+
+function SortControls({ sortKey, sortDir, onSortKeyChange, onSortDirToggle }: SortControlsProps) {
+  return (
+    <div className="flex items-center gap-1">
+      <Select value={sortKey} onValueChange={(v) => onSortKeyChange(v as SortKey)}>
+        <SelectTrigger className="h-7 w-[120px] text-xs">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {SORT_OPTIONS.map((opt) => (
+            <SelectItem key={opt.value} value={opt.value} className="text-xs">{opt.label}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Button
+        type="button"
+        variant="outline"
+        size="icon-sm"
+        onClick={onSortDirToggle}
+        title={sortDir === "asc" ? "Ascending — click to flip" : "Descending — click to flip"}
+        className="h-7 w-7"
+      >
+        {sortDir === "asc" ? <ArrowUpIcon className="h-3.5 w-3.5" /> : <ArrowDownIcon className="h-3.5 w-3.5" />}
+      </Button>
+    </div>
+  );
 }
 
 function formatWindow(early?: string | null, late?: string | null): string | null {
@@ -141,13 +212,37 @@ interface CandidateListProps {
   selectedKey: string | null;
   onSelect: (chain: RouteChain | null) => void;
   emptyMessage: string;
+  sortKey: SortKey;
+  sortDir: SortDir;
+  onSortKeyChange: (k: SortKey) => void;
+  onSortDirToggle: () => void;
 }
 
-function CandidateList({ title, subtitle, isLoading, chains, selectedKey, onSelect, emptyMessage }: CandidateListProps) {
+function CandidateList({
+  title,
+  subtitle,
+  isLoading,
+  chains,
+  selectedKey,
+  onSelect,
+  emptyMessage,
+  sortKey,
+  sortDir,
+  onSortKeyChange,
+  onSortDirToggle,
+}: CandidateListProps) {
   return (
     <div className="flex flex-col h-full border-r min-w-0">
       <div className="px-4 py-3 border-b shrink-0 bg-sidebar/40">
-        <p className="text-xs font-semibold uppercase tracking-widest">{title}</p>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs font-semibold uppercase tracking-widest">{title}</p>
+          <SortControls
+            sortKey={sortKey}
+            sortDir={sortDir}
+            onSortKeyChange={onSortKeyChange}
+            onSortDirToggle={onSortDirToggle}
+          />
+        </div>
         {subtitle && <p className="text-xs text-muted-foreground mt-0.5 truncate">{subtitle}</p>}
       </div>
       <div className="flex-1 overflow-y-auto">
@@ -201,6 +296,20 @@ export function DesktopSimulationView() {
   const [orderB, setOrderB] = useState<RouteChain | null>(null);
   const [hasRun, setHasRun] = useState(false);
 
+  const [col1Sort, setCol1Sort] = useState<{ key: SortKey; dir: SortDir }>({ key: "pay", dir: "desc" });
+  const [col2Sort, setCol2Sort] = useState<{ key: SortKey; dir: SortDir }>({ key: "pay", dir: "desc" });
+
+  const handleCol1SortKey = (k: SortKey) => {
+    const opt = SORT_OPTIONS.find(o => o.value === k);
+    setCol1Sort({ key: k, dir: opt?.defaultDir ?? "desc" });
+  };
+  const handleCol2SortKey = (k: SortKey) => {
+    const opt = SORT_OPTIONS.find(o => o.value === k);
+    setCol2Sort({ key: k, dir: opt?.defaultDir ?? "desc" });
+  };
+  const toggleCol1Dir = () => setCol1Sort(s => ({ ...s, dir: s.dir === "asc" ? "desc" : "asc" }));
+  const toggleCol2Dir = () => setCol2Sort(s => ({ ...s, dir: s.dir === "asc" ? "desc" : "asc" }));
+
   const earlyToleranceHours = settings?.early_tolerance_hours ?? DEFAULT_EARLY_TOLERANCE_HOURS;
 
   // Column 1: candidates near origin
@@ -217,6 +326,10 @@ export function DesktopSimulationView() {
   }, [effectiveOrigin, departureDate, radius]);
 
   const col1 = useRouteSearch(activeCompanyId ?? "", col1Params);
+  const col1Chains = useMemo<RouteChain[]>(
+    () => sortChains(col1.data?.routes ?? [], col1Sort.key, col1Sort.dir),
+    [col1.data?.routes, col1Sort.key, col1Sort.dir],
+  );
 
   // Column 2: candidates anchored at order A's last delivery, with min_pickup_late_utc filter.
   const col2Params = useMemo<RouteSearchParams | null>(() => {
@@ -249,13 +362,15 @@ export function DesktopSimulationView() {
   const col2Chains = useMemo<RouteChain[]>(() => {
     const all = col2.data?.routes ?? [];
     const aLeg = orderA ? legFromChain(orderA) : null;
-    if (!aLeg) return all;
-    return all.filter((chain) => {
-      const bLeg = legFromChain(chain);
-      if (!bLeg) return false;
-      return !isObviouslyMissedConnection(aLeg, bLeg, lateToleranceHours);
-    });
-  }, [col2.data?.routes, orderA, lateToleranceHours]);
+    const filtered = aLeg
+      ? all.filter((chain) => {
+          const bLeg = legFromChain(chain);
+          if (!bLeg) return false;
+          return !isObviouslyMissedConnection(aLeg, bLeg, lateToleranceHours);
+        })
+      : all;
+    return sortChains(filtered, col2Sort.key, col2Sort.dir);
+  }, [col2.data?.routes, orderA, lateToleranceHours, col2Sort.key, col2Sort.dir]);
 
   // Reset selection chain when inputs change.
   const handleOriginChange = (p: PlaceResult | null) => {
@@ -393,10 +508,14 @@ export function DesktopSimulationView() {
               ? `Within ${radius} mi of ${effectiveOrigin.name}`
               : "Set an origin to begin"}
             isLoading={col1.isLoading}
-            chains={col1.data?.routes ?? []}
+            chains={col1Chains}
             selectedKey={aLeg?.order_id ?? null}
             onSelect={handleSelectA}
             emptyMessage={effectiveOrigin ? "No orders found near this origin." : "Pick an origin in the bar above."}
+            sortKey={col1Sort.key}
+            sortDir={col1Sort.dir}
+            onSortKeyChange={handleCol1SortKey}
+            onSortDirToggle={toggleCol1Dir}
           />
         </div>
 
@@ -414,6 +533,10 @@ export function DesktopSimulationView() {
             emptyMessage={aLeg
               ? "No follow-on orders fit (radius or pickup window)."
               : "Pick a first order to see candidates."}
+            sortKey={col2Sort.key}
+            sortDir={col2Sort.dir}
+            onSortKeyChange={handleCol2SortKey}
+            onSortDirToggle={toggleCol2Dir}
           />
         </div>
 
