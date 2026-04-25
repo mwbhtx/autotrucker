@@ -43,7 +43,7 @@ export function RouteRow({
           <p className="text-xs tabular-nums mt-0.5 text-muted-foreground">{chain.estimated_days.toFixed(1)} days est.</p>
         </div>
         <div>
-          <p className="text-sm uppercase tracking-wide text-muted-foreground">Profit</p>
+          <p className="text-sm uppercase tracking-wide text-muted-foreground">Net</p>
           <p className={`text-lg font-bold tabular-nums ${routeProfitColor(chain.daily_net_profit)} bg-black px-2 py-0.5 inline-block`}>
             {formatCurrency(profit)}
           </p>

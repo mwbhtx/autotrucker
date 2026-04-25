@@ -594,7 +594,7 @@ function SimulationSummary({ chain }: { chain: RouteChain }) {
       </div>
 
       <div className="grid grid-cols-3 gap-3">
-        <Stat label="Profit" value={formatCurrency(chain.profit)} colorClass={routeProfitColor(chain.daily_net_profit)} />
+        <Stat label="Net" value={formatCurrency(chain.profit)} colorClass={routeProfitColor(chain.daily_net_profit)} />
         <Stat label="$/Day" value={formatCurrency(chain.daily_net_profit)} colorClass={routeProfitColor(chain.daily_net_profit)} />
         <Stat label="Days" value={chain.estimated_days.toFixed(1)} />
         <Stat label="Gross Pay" value={formatCurrency(chain.gross_pay)} />

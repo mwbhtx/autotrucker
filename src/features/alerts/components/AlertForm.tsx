@@ -120,7 +120,7 @@ export function AlertForm({ initial, onSubmit, onCancel, submitLabel }: AlertFor
         />
       </Field>
 
-      <Field label="Min daily profit ($)">
+      <Field label="Min daily net ($/day)">
         <Input
           value={minDailyProfit}
           onChange={(e) => setMinDailyProfit(e.target.value)}

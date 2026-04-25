@@ -371,7 +371,7 @@ function RouteDetailContent({
                   value2: chain.deadhead_miles.toLocaleString(),
                 },
                 {
-                  label1: "Total Profit",
+                  label1: "Net",
                   value1: <span className={profitChipClass}>{formatCurrency(profit)}</span>,
                   label2: "Expenses",
                   value2: formatCurrency(chain.cost_breakdown.total),

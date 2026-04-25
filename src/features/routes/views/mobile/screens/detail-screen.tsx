@@ -86,7 +86,7 @@ export function DetailScreen({ chain, originCity, onBack, originCoords: originCo
               valueClassName={color}
             />
             <MetricCard
-              label="Profit"
+              label="Net"
               value={formatCurrency(netProfit)}
               valueClassName={color}
             />
