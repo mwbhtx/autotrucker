@@ -338,16 +338,11 @@ export function DesktopSimulationView() {
             />
           </div>
           <div className="col-span-3 space-y-1">
-            <div className="flex justify-between items-center">
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Search Radius</label>
-              <span className="text-xs tabular-nums">{radius} mi</span>
-            </div>
-            <Slider
-              value={[radius]}
-              onValueChange={([v]) => handleRadiusChange(v)}
-              min={50}
-              max={500}
-              step={25}
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Destination</label>
+            <PlaceAutocomplete
+              placeholder="e.g. return to home base..."
+              value={destination}
+              onSelect={(p) => { setDestination(p); setHasRun(false); }}
             />
           </div>
           <div className="col-span-2 space-y-1">
@@ -363,11 +358,16 @@ export function DesktopSimulationView() {
             />
           </div>
           <div className="col-span-3 space-y-1">
-            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Final Destination (optional)</label>
-            <PlaceAutocomplete
-              placeholder="e.g. return to home base..."
-              value={destination}
-              onSelect={(p) => { setDestination(p); setHasRun(false); }}
+            <div className="flex justify-between items-center">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Search Radius</label>
+              <span className="text-xs tabular-nums">{radius} mi</span>
+            </div>
+            <Slider
+              value={[radius]}
+              onValueChange={([v]) => handleRadiusChange(v)}
+              min={50}
+              max={500}
+              step={25}
             />
           </div>
           <div className="col-span-1">
