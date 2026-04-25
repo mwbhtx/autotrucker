@@ -14,6 +14,8 @@ interface SimulationStore {
   orderB: RouteChain | null;
   col1Sort: { key: SortKey; dir: SortDir };
   col2Sort: { key: SortKey; dir: SortDir };
+  col1Filter: string;
+  col2Filter: string;
   set: (patch: Partial<Omit<SimulationStore, 'set'>>) => void;
 }
 
@@ -26,5 +28,7 @@ export const useSimulationStore = create<SimulationStore>((setState) => ({
   orderB: null,
   col1Sort: { key: 'pay', dir: 'desc' },
   col2Sort: { key: 'pay', dir: 'desc' },
+  col1Filter: '',
+  col2Filter: '',
   set: (patch) => setState(patch),
 }));

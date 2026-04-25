@@ -196,16 +196,14 @@ function CandidateRow({ chain, selected, onClick, deadheadAnchor }: CandidateRow
             );
           })()}
         </div>
-        <div className="flex flex-col justify-between text-right shrink-0">
-          <div className="flex items-start gap-3">
+        <div className="flex flex-col justify-between shrink-0 min-w-[130px]">
+          <div className="grid grid-cols-2 gap-x-3 text-right">
             <div>
               <p className="text-sm font-medium tabular-nums">{formatCurrency(chain.gross_pay)}</p>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wide">gross</p>
             </div>
             <div>
-              <p className={`text-sm font-bold tabular-nums ${routeProfitColor(chain.daily_net_profit)}`}>
-                {formatCurrency(chain.profit)}
-              </p>
+              <p className="text-sm font-bold tabular-nums">{formatCurrency(chain.profit)}</p>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wide">net</p>
             </div>
           </div>
@@ -240,6 +238,8 @@ interface CandidateListProps {
   onSortKeyChange: (k: SortKey) => void;
   onSortDirToggle: () => void;
   deadheadAnchor?: { lat: number; lng: number };
+  filterValue: string;
+  onFilterChange: (v: string) => void;
 }
 
 function CandidateList({
@@ -255,8 +255,10 @@ function CandidateList({
   onSortKeyChange,
   onSortDirToggle,
   deadheadAnchor,
+  filterValue,
+  onFilterChange,
 }: CandidateListProps) {
-  const [filter, setFilter] = useState("");
+  const filter = filterValue;
 
   const visibleChains = useMemo(() => {
     const q = filter.trim().toLowerCase();
@@ -300,7 +302,7 @@ function CandidateList({
             type="text"
             placeholder="Search by city or order ID..."
             value={filter}
-            onChange={(e) => setFilter(e.target.value)}
+            onChange={(e) => onFilterChange(e.target.value)}
             className="h-7 w-full rounded-md border border-input bg-transparent pl-6 pr-2 text-xs placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-ring"
           />
         </div>
@@ -350,6 +352,7 @@ export function DesktopSimulationView() {
 
   const {
     origin, destination, radius, departureDate, orderA, orderB, col1Sort, col2Sort,
+    col1Filter, col2Filter,
     set: setStore,
   } = useSimulationStore();
 
@@ -509,6 +512,8 @@ export function DesktopSimulationView() {
             onSortKeyChange={handleCol1SortKey}
             onSortDirToggle={toggleCol1Dir}
             deadheadAnchor={effectiveOrigin ? { lat: effectiveOrigin.lat, lng: effectiveOrigin.lng } : undefined}
+            filterValue={col1Filter}
+            onFilterChange={(v) => setStore({ col1Filter: v })}
           />
         </div>
 
@@ -531,6 +536,8 @@ export function DesktopSimulationView() {
             onSortKeyChange={handleCol2SortKey}
             onSortDirToggle={toggleCol2Dir}
             deadheadAnchor={aLeg ? { lat: aLeg.destination_lat, lng: aLeg.destination_lng } : undefined}
+            filterValue={col2Filter}
+            onFilterChange={(v) => setStore({ col2Filter: v })}
           />
         </div>
 
