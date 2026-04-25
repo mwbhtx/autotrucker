@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { SlidersHorizontal } from "lucide-react";
 import { Button } from "@/platform/web/components/ui/button";
-import { Input } from "@/platform/web/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -21,20 +20,6 @@ const US_STATES = [
   "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY",
 ];
 
-const TRAILER_TYPES = [
-  { value: "V", label: "Van" },
-  { value: "R", label: "Reefer" },
-  { value: "F", label: "Flatbed" },
-  { value: "SD", label: "Step Deck" },
-  { value: "DD", label: "Double Drop" },
-  { value: "RGN", label: "RGN" },
-  { value: "HB", label: "Hotshot" },
-  { value: "C", label: "Container" },
-  { value: "T", label: "Tanker" },
-];
-
-// Sentinel used to represent "no selection" in radix Select which does not
-// support empty-string values.
 const NONE = "__none__";
 
 interface OrdersFiltersProps {
@@ -46,18 +31,14 @@ interface OrdersFiltersProps {
 export function OrdersFilters({ onSearch, children, simulateButton }: OrdersFiltersProps) {
   const [originState, setOriginState] = useState<string>("");
   const [destinationState, setDestinationState] = useState<string>("");
-  const [trailerType, setTrailerType] = useState<string>("");
-  const [minPay, setMinPay] = useState<string>("");
   const [open, setOpen] = useState(false);
 
-  const hasActiveFilters = !!(originState || destinationState || trailerType || minPay);
+  const hasActiveFilters = !!(originState || destinationState);
 
   function handleSearch() {
     onSearch({
       origin_state: originState || undefined,
       destination_state: destinationState || undefined,
-      trailer_type: trailerType || undefined,
-      min_pay: minPay ? Number(minPay) : undefined,
     });
     setOpen(false);
   }
@@ -65,8 +46,6 @@ export function OrdersFilters({ onSearch, children, simulateButton }: OrdersFilt
   function handleReset() {
     setOriginState("");
     setDestinationState("");
-    setTrailerType("");
-    setMinPay("");
     onSearch({});
   }
 
@@ -95,10 +74,6 @@ export function OrdersFilters({ onSearch, children, simulateButton }: OrdersFilt
             setOriginState={setOriginState}
             destinationState={destinationState}
             setDestinationState={setDestinationState}
-            trailerType={trailerType}
-            setTrailerType={setTrailerType}
-            minPay={minPay}
-            setMinPay={setMinPay}
             onSearch={handleSearch}
             onReset={handleReset}
             simulateButton={simulateButton}
@@ -108,20 +83,16 @@ export function OrdersFilters({ onSearch, children, simulateButton }: OrdersFilt
 
       {/* Mobile expanded filters */}
       <div className={`flex-wrap items-end gap-3 sm:hidden ${open ? "flex" : "hidden"}`}>
-          <FilterControls
-            originState={originState}
-            setOriginState={setOriginState}
-            destinationState={destinationState}
-            setDestinationState={setDestinationState}
-            trailerType={trailerType}
-            setTrailerType={setTrailerType}
-            minPay={minPay}
-            setMinPay={setMinPay}
-            onSearch={handleSearch}
-            onReset={handleReset}
-            simulateButton={simulateButton}
-          />
-        </div>
+        <FilterControls
+          originState={originState}
+          setOriginState={setOriginState}
+          destinationState={destinationState}
+          setDestinationState={setDestinationState}
+          onSearch={handleSearch}
+          onReset={handleReset}
+          simulateButton={simulateButton}
+        />
+      </div>
     </div>
   );
 }
@@ -131,10 +102,6 @@ function FilterControls({
   setOriginState,
   destinationState,
   setDestinationState,
-  trailerType,
-  setTrailerType,
-  minPay,
-  setMinPay,
   onSearch,
   onReset,
   simulateButton,
@@ -143,10 +110,6 @@ function FilterControls({
   setOriginState: (v: string) => void;
   destinationState: string;
   setDestinationState: (v: string) => void;
-  trailerType: string;
-  setTrailerType: (v: string) => void;
-  minPay: string;
-  setMinPay: (v: string) => void;
   onSearch: () => void;
   onReset: () => void;
   simulateButton?: React.ReactNode;
@@ -195,41 +158,6 @@ function FilterControls({
             ))}
           </SelectContent>
         </Select>
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-muted-foreground">
-          Trailer Type
-        </label>
-        <Select
-          value={trailerType || NONE}
-          onValueChange={(v) => setTrailerType(v === NONE ? "" : v)}
-        >
-          <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Any" />
-          </SelectTrigger>
-          <SelectContent position="popper" sideOffset={4}>
-            <SelectItem value={NONE}>Any</SelectItem>
-            {TRAILER_TYPES.map((tt) => (
-              <SelectItem key={tt.value} value={tt.value}>
-                {tt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-muted-foreground">
-          Min Pay ($)
-        </label>
-        <Input
-          type="number"
-          placeholder="0"
-          value={minPay}
-          onChange={(e) => setMinPay(e.target.value)}
-          className="w-[120px]"
-        />
       </div>
 
       <Button onClick={onSearch}>Search</Button>
