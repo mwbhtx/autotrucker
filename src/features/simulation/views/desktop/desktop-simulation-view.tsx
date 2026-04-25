@@ -26,6 +26,23 @@ function legFromChain(chain: RouteChain): RouteLeg | null {
   return chain.legs[0] ?? null;
 }
 
+function formatWindow(early?: string | null, late?: string | null): string | null {
+  if (!early) return null;
+  const fmt = (iso: string) => {
+    const [date, time] = iso.split("T");
+    if (!date) return iso;
+    const [, m, d] = date.split("-");
+    return `${m}/${d} ${(time ?? "00:00").slice(0, 5)}`;
+  };
+  if (!late || late === early) return fmt(early);
+  const [eDate] = early.split("T");
+  const [lDate, lTime] = late.split("T");
+  if (eDate === lDate) {
+    return `${fmt(early)}–${(lTime ?? "00:00").slice(0, 5)}`;
+  }
+  return `${fmt(early)} – ${fmt(late)}`;
+}
+
 function rejectionMessage(rej: SimulateRejection): string {
   switch (rej.reason) {
     case "WINDOW_VIOLATION":
@@ -64,11 +81,16 @@ function CandidateRow({ chain, selected, onClick }: CandidateRowProps) {
           <p className="text-xs text-muted-foreground tabular-nums mt-0.5">
             {Math.round(leg.miles)} mi · {formatCurrency(leg.pay)} · {leg.trailer_type ?? "—"}
           </p>
-          {leg.pickup_date_early_local && (
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Pickup: {leg.pickup_date_early_local.slice(0, 16).replace("T", " ")}
-            </p>
-          )}
+          {(() => {
+            const pickup = formatWindow(leg.pickup_date_early_local, leg.pickup_date_late_local);
+            const delivery = formatWindow(leg.delivery_date_early_local, leg.delivery_date_late_local);
+            return (
+              <>
+                {pickup && <p className="text-xs text-muted-foreground tabular-nums mt-0.5">Pickup: {pickup}</p>}
+                {delivery && <p className="text-xs text-muted-foreground tabular-nums">Delivery: {delivery}</p>}
+              </>
+            );
+          })()}
         </div>
         <div className="text-right shrink-0">
           <p className={`text-sm font-bold tabular-nums ${routeProfitColor(chain.daily_net_profit)}`}>
