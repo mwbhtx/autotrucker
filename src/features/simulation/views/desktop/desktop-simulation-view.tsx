@@ -402,7 +402,11 @@ export function DesktopSimulationView() {
 
   // Reset selection chain when inputs change.
   const handleOriginChange = (p: PlaceResult | null) => {
-    setStore({ origin: p, orderA: null, orderB: null });
+    if (p) {
+      setStore({ origin: p, orderA: null, orderB: null });
+    } else {
+      setStore({ origin: null });
+    }
   };
   const handleRadiusChange = (v: number) => {
     setStore({ radius: v, orderA: null, orderB: null });
@@ -427,6 +431,7 @@ export function DesktopSimulationView() {
     destination
       ? { lat: destination.lat, lng: destination.lng, city: destination.name.split(",")[0] }
       : undefined,
+    departureDate || undefined,
   );
 
   if (authLoading) {

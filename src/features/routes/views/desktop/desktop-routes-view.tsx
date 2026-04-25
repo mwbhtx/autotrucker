@@ -289,7 +289,7 @@ export function DesktopRoutesView() {
           hasHome={hasHomeBase}
           resetKey={filterResetKey}
           isSearching={isLoading}
-          onCancel={() => { cancel(); setSearchParams(null); setSelectedChain(null); }}
+          onCancel={() => { cancel(); handleSearchCleared(); }}
           hasResults={routes.length > 0}
         />
       </div>
@@ -303,7 +303,7 @@ export function DesktopRoutesView() {
               <SearchProgressBar
                 progress={progress}
                 elapsedMs={elapsedMs}
-                onCancel={() => { cancel(); setSearchParams(null); setSelectedChain(null); }}
+                onCancel={() => { cancel(); handleSearchCleared(); }}
                 variant="desktop"
               />
             )}

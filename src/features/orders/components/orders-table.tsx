@@ -70,8 +70,11 @@ function sortOrders(orders: Order[], col: SortCol | null, dir: "asc" | "desc"): 
     let aVal: number;
     let bVal: number;
     if (col === "pickup_date_early_local" || col === "delivery_date_early_local") {
-      aVal = a[col] ? new Date(a[col]!).getTime() : nullFallback;
-      bVal = b[col] ? new Date(b[col]!).getTime() : nullFallback;
+      // ISO local strings sort correctly as strings — avoid new Date() which
+      // parses them in browser-local timezone, making sort order vary by user.
+      const aStr = a[col] ?? (dir === "asc" ? "￿" : "");
+      const bStr = b[col] ?? (dir === "asc" ? "￿" : "");
+      return dir === "asc" ? aStr.localeCompare(bStr) : bStr.localeCompare(aStr);
     } else {
       aVal = (a[col] as number | undefined) ?? nullFallback;
       bVal = (b[col] as number | undefined) ?? nullFallback;

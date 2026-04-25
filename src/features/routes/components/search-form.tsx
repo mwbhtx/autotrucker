@@ -501,7 +501,7 @@ export function SearchFilters({
         origin, destination, departureDate, daysOut, numOrders,
       }));
     } catch {}
-  }, [origin, destination, departureDate, daysOut, compactBar]);
+  }, [origin, destination, departureDate, daysOut, numOrders, compactBar]);
 
   // Reset filters when clear is triggered
   useEffect(() => {

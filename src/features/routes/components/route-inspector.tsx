@@ -342,7 +342,7 @@ function PhaseRow({ phase, timestamp, showTimeOnly, originCity, returnCity, tz }
   const isRestWait =
     phase.kind === 'waiting' && phase.duration_hours >= HOS_MANDATORY_REST_HOURS;
 
-  const Icon = {
+  const Icon = ({
     deadhead: TruckIcon,
     driving: TruckIcon,
     loading: Package,
@@ -353,7 +353,7 @@ function PhaseRow({ phase, timestamp, showTimeOnly, originCity, returnCity, tz }
     fuel: Fuel,
     flex: Pause,
     waiting: isRestWait ? Bed : ClockIcon,
-  }[phase.kind];
+  } as Record<string, typeof ClockIcon>)[phase.kind] ?? ClockIcon;
 
   const label = (() => {
     switch (phase.kind) {

@@ -51,7 +51,17 @@ export function useTimeline(
   const orderIds = chain?.legs.map(l => l.order_id).filter(Boolean).join(",") ?? "";
 
   return useQuery<TimelineResponse>({
-    queryKey: ["timeline", companyId, orderIds],
+    queryKey: [
+      "timeline",
+      companyId,
+      orderIds,
+      searchContext?.origin_lat,
+      searchContext?.origin_lng,
+      searchContext?.departure_date,
+      searchContext?.destination_lat ?? null,
+      searchContext?.destination_lng ?? null,
+      searchContext?.cost_per_mile ?? null,
+    ],
     queryFn: () => {
       if (!searchContext || !orderIds) throw new Error("Missing context");
       const qs = new URLSearchParams();

@@ -152,11 +152,12 @@ export function useRouteSearch(companyId: string, params: RouteSearchParams | nu
       }
     }
 
+    const capturedParamsKey = paramsKey;
     fetchApi<{ search_id: string }>(`routes/${companyId}/search?${qs.toString()}`, {
       method: "POST",
     })
       .then(({ search_id }) => {
-        if (!cancelledRef.current) pollLoop(search_id);
+        if (!cancelledRef.current && paramsKeyRef.current === capturedParamsKey) pollLoop(search_id);
       })
       .catch((err) => {
         if (cancelledRef.current) return;
