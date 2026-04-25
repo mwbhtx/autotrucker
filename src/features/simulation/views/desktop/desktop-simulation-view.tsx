@@ -291,7 +291,16 @@ function CandidateList({
             onSortDirToggle={onSortDirToggle}
           />
         </div>
-        {subtitle && <p className="text-xs text-muted-foreground mt-0.5 truncate">{subtitle}</p>}
+        <div className="flex items-center justify-between mt-0.5 min-w-0">
+          {subtitle && <p className="text-xs text-muted-foreground truncate">{subtitle}</p>}
+          {!isLoading && (
+            <p className="text-[10px] text-muted-foreground tabular-nums shrink-0 ml-2">
+              {filter.trim()
+                ? `${visibleChains.length} of ${chains.length} results`
+                : `${chains.length} ${chains.length === 1 ? "result" : "results"}`}
+            </p>
+          )}
+        </div>
         <div className="relative mt-1.5">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground pointer-events-none" />
           <input
@@ -302,13 +311,6 @@ function CandidateList({
             className="h-7 w-full rounded-md border border-input bg-transparent pl-6 pr-2 text-xs placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-ring"
           />
         </div>
-        {!isLoading && (
-          <p className="text-[10px] text-muted-foreground tabular-nums mt-0.5">
-            {filter.trim()
-              ? `${visibleChains.length} of ${chains.length} results`
-              : `${chains.length} ${chains.length === 1 ? "result" : "results"}`}
-          </p>
-        )}
       </div>
       <div className="flex-1 overflow-y-auto">
         {isLoading ? (
