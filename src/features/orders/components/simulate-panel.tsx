@@ -121,10 +121,8 @@ export function SimulatePanel({ selectedOrders, onClose }: SimulatePanelProps) {
           {hasHomeBase && !isInfeasible && !isLoading && error && (
             <div className="flex flex-col items-center justify-center h-full gap-3 px-6 text-center">
               <AlertCircleIcon className="h-8 w-8 text-destructive" />
-              <p className="text-sm font-medium text-destructive">Simulation failed</p>
               <p className="text-sm text-muted-foreground">
-                These orders could not be simulated together. They may have
-                schedule conflicts or be too far apart.
+                These orders could not be simulated due to scheduling conflicts.
               </p>
             </div>
           )}
