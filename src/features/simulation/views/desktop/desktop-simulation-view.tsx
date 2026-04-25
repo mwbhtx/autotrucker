@@ -28,18 +28,14 @@ function legFromChain(chain: RouteChain): RouteLeg | null {
 
 function rejectionMessage(rej: SimulateRejection): string {
   switch (rej.reason) {
-    case "WINDOW_VIOLATION": {
-      if (rej.violations.length === 0) return "Pickup or delivery window violated.";
-      return rej.violations
-        .map(v => `${v.window} window @ leg ${v.leg_index} (${v.city}): ${v.hours_late.toFixed(1)}h late`)
-        .join("; ");
-    }
+    case "WINDOW_VIOLATION":
+      return "Pickup and delivery windows don't line up. Try orders with more time between them.";
     case "ENVELOPE_VIOLATION_END":
-      return "Trip extends past your latest on-duty hour. Adjust work hours in Settings or pick orders that fit your day.";
+      return "Trip runs past your end-of-shift hour. Adjust work hours in Settings.";
     case "ON_DUTY_CAP_EXCEEDED":
-      return "Trip exceeds your max on-duty hours per day. Pick orders with more time between them.";
+      return "Trip needs more on-duty time than your daily cap allows.";
     default:
-      return "This chain is infeasible.";
+      return "These orders can't be combined into a feasible route.";
   }
 }
 
@@ -385,23 +381,9 @@ export function DesktopSimulationView() {
               </div>
             )}
             {hasRun && !sim.isLoading && !sim.error && sim.data && isSimulateRejection(sim.data) && (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3">
-                  <AlertCircleIcon className="h-5 w-5 text-destructive shrink-0" />
-                  <div>
-                    <p className="text-sm font-semibold text-destructive">Chain is infeasible</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{rejectionMessage(sim.data)}</p>
-                  </div>
-                </div>
-                {sim.data.violations.length > 0 && (
-                  <ul className="text-xs space-y-1 text-muted-foreground">
-                    {sim.data.violations.map((v, i) => (
-                      <li key={i} className="rounded bg-surface-elevated/50 px-2 py-1">
-                        {v.window} window @ leg {v.leg_index} ({v.city}) — {v.hours_late.toFixed(1)}h late
-                      </li>
-                    ))}
-                  </ul>
-                )}
+              <div className="flex items-center gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3">
+                <AlertCircleIcon className="h-5 w-5 text-destructive shrink-0" />
+                <p className="text-sm">{rejectionMessage(sim.data)}</p>
               </div>
             )}
             {hasRun && !sim.isLoading && !sim.error && sim.data && !isSimulateRejection(sim.data) && (
