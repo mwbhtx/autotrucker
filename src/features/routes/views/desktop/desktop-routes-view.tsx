@@ -45,6 +45,14 @@ export function DesktopRoutesView() {
   const setDestFilter = (v: { lat: number; lng: number; city: string } | null) => setStore({ destFilter: v });
   const [filterResetKey, setFilterResetKey] = useState(0);
 
+  // Clear any in-memory search state carried over from a previous session or
+  // navigation. Without this, navigating away and back re-fires the last search
+  // and shows the stale selected-route summary.
+  useEffect(() => {
+    setStore({ searchParams: null, selectedChain: null, selectedItemIndex: 0, originFilter: null, destFilter: null });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional mount-only reset
+  }, []);
+
   const [filterPending, setFilterPending] = useState(false);
   const hoverLegRef = useRef<((legIndex: number | null) => void) | null>(null);
 

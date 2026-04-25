@@ -5,9 +5,9 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/core/utils";
 
 const TABS = [
-  { href: "/driver/orders", label: "Orders" },
+  { href: "/driver/orders", label: "Past Orders" },
+  { href: "/driver/routes", label: "Past Routes" },
   { href: "/driver/earnings", label: "Earnings" },
-  { href: "/driver/routes", label: "History" },
   { href: "/driver/alerts", label: "Alerts" },
 ];
 
