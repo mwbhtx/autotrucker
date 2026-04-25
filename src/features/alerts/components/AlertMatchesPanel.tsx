@@ -25,10 +25,7 @@ export function AlertMatchesPanel({ defaultExpanded = false }: AlertMatchesPanel
   return (
     <section
       id="alert-matches"
-      className={cn(
-        "rounded-md border border-border bg-card",
-        defaultExpanded && "ring-2 ring-primary/40",
-      )}
+      className="rounded-md border border-border bg-card"
     >
       <header className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
         <button
@@ -37,7 +34,7 @@ export function AlertMatchesPanel({ defaultExpanded = false }: AlertMatchesPanel
           className="flex items-center gap-2 text-sm font-semibold hover:text-primary transition-colors"
         >
           <span>Alert Matches</span>
-          <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+          <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground tabular-nums">
             {matches.length}
           </span>
         </button>
@@ -68,11 +65,11 @@ export function AlertMatchesPanel({ defaultExpanded = false }: AlertMatchesPanel
       {expanded && (
         <div className="p-3">
           {loading && matches.length === 0 && (
-            <div className="py-4 text-center text-sm text-muted-foreground">Loading matches…</div>
+            <div className="py-8 text-center text-sm text-muted-foreground">Loading matches…</div>
           )}
           {error && <div className="py-4 text-sm text-destructive">Couldn't load: {error}</div>}
           {!loading && !error && matches.length === 0 && (
-            <div className="py-4 text-center text-sm text-muted-foreground">
+            <div className="py-8 text-center text-sm text-muted-foreground">
               {status === "active"
                 ? "No matches yet. "
                 : status === "dismissed"
