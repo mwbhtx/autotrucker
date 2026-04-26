@@ -41,12 +41,9 @@ export default function RoutesPage() {
     <Tabs
       value={activeTab}
       onValueChange={setTab}
-      className="-mx-6 -mt-6 flex h-[calc(100%+3rem)] flex-col"
+      className="-m-6 flex h-[calc(100%+3rem)] flex-col overflow-hidden"
     >
-      {/* Sub-nav band — flush with the top nav, fixed as page scrolls.
-          Outer Tabs container absorbs main's p-6 via negative margins so the
-          sticky child has the full content area to stick within. */}
-      <div className="sticky top-0 z-10 shrink-0 border-b border-border/50 bg-sidebar px-6 py-2">
+      <div className="shrink-0 border-b border-border/50 bg-sidebar px-6 py-2">
         <TabsList variant="line" className="bg-transparent gap-6">
           <TabsTrigger value="generate" className="gap-1.5">
             <Zap className="h-4 w-4" />
@@ -58,10 +55,10 @@ export default function RoutesPage() {
           </TabsTrigger>
         </TabsList>
       </div>
-      <TabsContent value="generate" className="flex-1 px-6 pt-8 pb-6">
+      <TabsContent value="generate" className="flex-1 overflow-y-auto px-6 pt-8 pb-6">
         <DesktopRoutesView />
       </TabsContent>
-      <TabsContent value="build" className="flex-1 px-6 pt-8 pb-6">
+      <TabsContent value="build" className="flex-1 overflow-y-auto px-6 pt-8 pb-6">
         <DesktopSimulationView />
       </TabsContent>
     </Tabs>
