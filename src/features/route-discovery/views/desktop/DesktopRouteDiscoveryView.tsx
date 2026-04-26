@@ -7,6 +7,7 @@ import { RoutesList } from "../../components/RoutesList";
 import { DrilldownPanel } from "../../components/DrilldownPanel";
 import { EngineInspectors } from "../../components/EngineInspectors";
 import { EmptyState } from "../../components/EmptyState";
+import { HowItWorks } from "../../components/HowItWorks";
 import { useDiscoveredRoutes } from "../../hooks/use-routes";
 import { useRouteDiscoveryStore } from "../../store";
 import type { RoutesQuery } from "../../api";
@@ -74,6 +75,8 @@ export function DesktopRouteDiscoveryView() {
           Recurring route patterns flowing through any city in your operating area, drawn from your historical orders.
         </p>
       </header>
+
+      <HowItWorks />
 
       <FilterBar onSearch={handleSearch} />
 

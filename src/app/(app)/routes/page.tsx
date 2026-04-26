@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { Zap, FlaskConical } from "lucide-react";
+import { Zap, Wrench } from "lucide-react";
 import { useIsMobile } from "@/platform/web/hooks/use-is-mobile";
 import { DesktopRoutesView } from "@/features/routes/views/desktop/desktop-routes-view";
 import { MobileRoutesView } from "@/features/routes/views/mobile/mobile-routes-view";
@@ -51,7 +51,7 @@ export default function RoutesPage() {
             Generate
           </TabsTrigger>
           <TabsTrigger value="build" className="gap-1.5">
-            <FlaskConical className="h-4 w-4" />
+            <Wrench className="h-4 w-4" />
             Build
           </TabsTrigger>
         </TabsList>
