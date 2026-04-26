@@ -308,16 +308,6 @@ export function RouteMap({
       }
       const mobile = window.innerWidth < 768;
 
-      if (!mobile) {
-        // Desktop: expand bounds slightly so the route doesn't hug the edges
-        const ne = bounds.getNorthEast();
-        const sw = bounds.getSouthWest();
-        const latPad = (ne.lat - sw.lat) * 0.25;
-        const lngPad = (ne.lng - sw.lng) * 0.25;
-        bounds.extend([sw.lng - lngPad, sw.lat - latPad]);
-        bounds.extend([ne.lng + lngPad, ne.lat + latPad]);
-      }
-
       // Fit route into visible map area with appropriate padding
       const vh = mobile ? window.innerHeight : 0;
       const mobileBotPad = fullScreen ? 60 : Math.round(vh * 0.60);
