@@ -80,6 +80,12 @@ export function DesktopRouteDiscoveryView() {
 
       <FilterBar onSearch={handleSearch} />
 
+      {!query && (
+        <p className="text-sm text-muted-foreground">
+          Enter a location, radius, and order count, then click Search.
+        </p>
+      )}
+
       {error && (
         <div className="text-sm text-destructive">
           Failed to load routes. {(error as Error).message}
@@ -114,12 +120,6 @@ export function DesktopRouteDiscoveryView() {
 
       {query && (
         <EngineInspectors regionQuery={regionQuery} laneQuery={laneQuery} legQuery={legQuery} />
-      )}
-
-      {!query && (
-        <p className="text-sm text-muted-foreground py-12 text-center">
-          Enter a location, radius, and order count above, then click Search.
-        </p>
       )}
     </div>
   );
