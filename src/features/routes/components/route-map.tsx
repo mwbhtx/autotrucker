@@ -74,7 +74,19 @@ export function RouteMap({
 
     mapRef.current = map;
 
+    // Keep the canvas in sync with the container's actual size. Without
+    // this, navigating away and back (or any layout reflow that changes
+    // the container width — sidebar collapse, devtools panel toggle,
+    // window resize) leaves MapLibre rendering at the dimensions it had
+    // at mount time, producing a half-empty black panel on the right.
+    const ro = new ResizeObserver(() => {
+      // resize() is a no-op when dimensions match, so it's cheap to spam.
+      mapRef.current?.resize();
+    });
+    ro.observe(containerRef.current);
+
     return () => {
+      ro.disconnect();
       map.remove();
       mapRef.current = null;
     };

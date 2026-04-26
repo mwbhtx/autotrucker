@@ -98,7 +98,15 @@ export function DiscoveredRouteMap({
 
     mapRef.current = map;
 
+    // Keep the canvas in sync with container size on layout reflows
+    // (sidebar collapse, parent grid changes, client-side route swap).
+    const ro = new ResizeObserver(() => {
+      mapRef.current?.resize();
+    });
+    ro.observe(containerRef.current);
+
     return () => {
+      ro.disconnect();
       map.remove();
       mapRef.current = null;
     };
