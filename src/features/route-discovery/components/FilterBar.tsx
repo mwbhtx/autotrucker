@@ -54,7 +54,7 @@ export function FilterBar({ onSearch }: Props) {
           value={location}
           onChange={setLocation}
           onEnter={() => isValid && handleSubmit()}
-          placeholder="Houston, TX"
+          placeholder="City, State"
         />
       </div>
 
