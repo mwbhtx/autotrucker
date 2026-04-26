@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { DiscoveredRoute } from "@/core/types";
 import { Skeleton } from "@/platform/web/components/ui/skeleton";
 import { FilterBar, type FilterBarValues } from "../../components/FilterBar";
 import { RoutesList } from "../../components/RoutesList";
@@ -16,6 +17,7 @@ import type { RoutesQuery } from "../../api";
 
 export function DesktopRouteDiscoveryView() {
   const [query, setQuery] = useState<RoutesQuery | null>(null);
+  const [selectedTopRoute, setSelectedTopRoute] = useState<DiscoveredRoute | null>(null);
   const { data, isLoading, error } = useDiscoveredRoutes(query);
   const { data: topData, isLoading: topLoading } = useTopRoutes();
   const selectedRowIndex = useRouteDiscoveryStore((s) => s.selectedRowIndex);
@@ -23,6 +25,7 @@ export function DesktopRouteDiscoveryView() {
 
   useEffect(() => {
     resetSelection();
+    setSelectedTopRoute(null);
   }, [query, resetSelection]);
 
   const handleSearch = (values: FilterBarValues) => {
@@ -34,7 +37,8 @@ export function DesktopRouteDiscoveryView() {
   };
 
   const rows = data?.rows ?? [];
-  const selectedRoute = selectedRowIndex !== null ? rows[selectedRowIndex] ?? null : null;
+  // Search result selection takes precedence; fall back to top-routes selection.
+  const selectedRoute = selectedRowIndex !== null ? rows[selectedRowIndex] ?? null : selectedTopRoute;
 
   const regionQuery = query
     ? { city: query.city, state: query.state, radius_miles: query.radius_miles }
@@ -74,7 +78,11 @@ export function DesktopRouteDiscoveryView() {
       <HowItWorks />
 
       {/* Company-wide top routes — loaded on mount, always visible above the search bar */}
-      <TopRoutes routes={topData?.rows ?? []} isLoading={topLoading} />
+      <TopRoutes
+        routes={topData?.rows ?? []}
+        isLoading={topLoading}
+        onRouteSelect={setSelectedTopRoute}
+      />
 
       <p className="text-sm text-muted-foreground">
         Enter a location and radius, then click Search to find routes in a specific area.
@@ -101,6 +109,11 @@ export function DesktopRouteDiscoveryView() {
 
       {!isLoading && data && rows.length === 0 && query && (
         <EmptyState city={query.city} state={query.state} radiusMiles={query.radius_miles} />
+      )}
+
+      {/* Drilldown from a top-route row click (no search results yet) */}
+      {!query && selectedTopRoute && (
+        <DrilldownPanel route={selectedTopRoute} radiusMiles={100} />
       )}
 
       {!isLoading && data && rows.length > 0 && (

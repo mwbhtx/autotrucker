@@ -1,13 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import type { DiscoveredRoute } from "@/core/types";
 import { Skeleton } from "@/platform/web/components/ui/skeleton";
-import { useRouteDiscoveryStore } from "../store";
 import { cn } from "@/core/utils";
 
 interface Props {
   routes: DiscoveredRoute[];
   isLoading: boolean;
+  /** Called when the user clicks a route row. */
+  onRouteSelect?: (route: DiscoveredRoute) => void;
 }
 
 function reliabilityColor(r: number): string {
@@ -27,9 +29,8 @@ function routeLabel(route: DiscoveredRoute): string {
     .join(" → ");
 }
 
-export function TopRoutes({ routes, isLoading }: Props) {
-  const setSelectedRow = useRouteDiscoveryStore((s) => s.setSelectedRow);
-  const selectedRowIndex = useRouteDiscoveryStore((s) => s.selectedRowIndex);
+export function TopRoutes({ routes, isLoading, onRouteSelect }: Props) {
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   if (isLoading) {
     return (
@@ -42,6 +43,11 @@ export function TopRoutes({ routes, isLoading }: Props) {
   }
 
   if (routes.length === 0) return null;
+
+  const handleRowClick = (i: number) => {
+    setSelectedIndex(i);
+    onRouteSelect?.(routes[i]);
+  };
 
   return (
     <div>
@@ -63,10 +69,10 @@ export function TopRoutes({ routes, isLoading }: Props) {
             <tr
               key={route.route_id}
               role="row"
-              onClick={() => setSelectedRow(i)}
+              onClick={() => handleRowClick(i)}
               className={cn(
                 "cursor-pointer hover:bg-muted/50 border-b border-border/50",
-                selectedRowIndex === i && "bg-muted",
+                selectedIndex === i && "bg-muted",
               )}
             >
               <td className="py-1.5 text-muted-foreground pr-2">{i + 1}</td>
