@@ -29,11 +29,8 @@ export default function DriverLayout({ children }: { children: React.ReactNode }
   const activeTab = tabs.find((t) => pathname.startsWith(t.value))?.value ?? tabs[0].value;
 
   return (
-    <div className="-mx-6 -mt-6 flex h-[calc(100%+3rem)] flex-col">
-      {/* Sub-nav band — flush with the top nav, fixed as page scrolls.
-          Outer flex container absorbs main's p-6 via negative margins so the
-          sticky child has the full content area to stick within. */}
-      <div className="sticky top-0 z-10 shrink-0 border-b border-border/50 bg-sidebar px-6 py-2">
+    <div className="-mx-6 -mt-6 flex h-[calc(100%+3rem)] flex-col overflow-hidden">
+      <div className="shrink-0 border-b border-border/50 bg-sidebar px-6 py-2">
         <Tabs value={activeTab} className="w-fit">
           <TabsList variant="line" className="bg-transparent gap-6" asChild>
             <nav>
@@ -49,7 +46,7 @@ export default function DriverLayout({ children }: { children: React.ReactNode }
           </TabsList>
         </Tabs>
       </div>
-      <div className="flex-1 px-6 pt-8 pb-6">{children}</div>
+      <div className="flex-1 overflow-y-auto px-6 pt-8 pb-6">{children}</div>
     </div>
   );
 }
