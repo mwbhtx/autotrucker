@@ -83,7 +83,7 @@ export function drawDiscoveredRoute(
     markers.push(marker);
   }
 
-  // Build all leg segments: one per order + closing segment
+  // Build loaded leg segments: one per order
   interface Leg {
     from: { lat: number; lng: number };
     to: { lat: number; lng: number };
@@ -119,7 +119,64 @@ export function drawDiscoveredRoute(
     colorIdx: orders.length,
   });
 
-  // Add sources and layers for each leg
+  // Inter-order deadhead connectors (dashed): destination[i] → origin[i+1].
+  // These "stitch" the loaded legs into a visible closed circuit. Without them,
+  // the loaded legs float disconnected and appear to cross each other.
+  interface Deadhead {
+    from: { lat: number; lng: number };
+    to: { lat: number; lng: number };
+  }
+  const deadheads: Deadhead[] = [];
+  for (let i = 0; i < orders.length - 1; i++) {
+    const from = orders[i].destination_anchor;
+    const to = orders[i + 1].origin_anchor;
+    // Skip if both anchors are at the same grid cell (zero-deadhead leg).
+    if (Math.abs(from.lat - to.lat) < 0.01 && Math.abs(from.lng - to.lng) < 0.01) continue;
+    deadheads.push({
+      from: { lat: from.lat, lng: from.lng },
+      to: { lat: to.lat, lng: to.lng },
+    });
+  }
+
+  // Draw dashed deadhead connectors first (under loaded legs)
+  for (let i = 0; i < deadheads.length; i++) {
+    const dh = deadheads[i];
+    const sourceId = `${SOURCE_PREFIX}-dh-source-${i}`;
+    const layerId = `${SOURCE_PREFIX}-dh-layer-${i}`;
+
+    map.addSource(sourceId, {
+      type: "geojson",
+      data: {
+        type: "Feature",
+        properties: {},
+        geometry: {
+          type: "LineString",
+          coordinates: [
+            [dh.from.lng, dh.from.lat],
+            [dh.to.lng, dh.to.lat],
+          ],
+        },
+      },
+    });
+
+    map.addLayer({
+      id: layerId,
+      type: "line",
+      source: sourceId,
+      layout: { "line-join": "round", "line-cap": "round" },
+      paint: {
+        "line-color": "#94a3b8",
+        "line-width": 2,
+        "line-opacity": 0.5,
+        "line-dasharray": [3, 3],
+      },
+    });
+
+    sourceIds.push(sourceId);
+    layerIds.push(layerId);
+  }
+
+  // Add sources and layers for each loaded leg (drawn on top of deadheads)
   for (let i = 0; i < legs.length; i++) {
     const leg = legs[i];
     const sourceId = `${SOURCE_PREFIX}-source-${i}`;
