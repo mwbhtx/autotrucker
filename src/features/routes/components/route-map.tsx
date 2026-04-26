@@ -309,13 +309,15 @@ export function RouteMap({
       const mobile = window.innerWidth < 768;
 
       // Fit route into visible map area with appropriate padding
+      // Ensure the map knows its current container size before computing zoom
+      map.resize();
       const vh = mobile ? window.innerHeight : 0;
       const mobileBotPad = fullScreen ? 60 : Math.round(vh * 0.60);
       map.fitBounds(bounds, {
         padding: mobile
           ? { top: 60, bottom: mobileBotPad, left: 40, right: 40 }
-          : { top: 80, bottom: 80, left: 80, right: 80 },
-        maxZoom: 10,
+          : { top: 120, bottom: 120, left: 120, right: 120 },
+        maxZoom: 7,
         duration: 500,
       });
 
