@@ -34,6 +34,16 @@ describe("TopLanesTable", () => {
     expect(screen.getByText("Top Lanes (States)")).toBeInTheDocument();
   });
 
+  it("renders 'Top Lanes (Regions)' for granularity=region", () => {
+    (useAnalyticsTopLanes as unknown as { mockReturnValue: Function }).mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+    });
+    render(<TopLanesTable companyId="c-1" granularity="region" />);
+    expect(screen.getByText("Top Lanes (Regions)")).toBeInTheDocument();
+  });
+
   it("renders rows with arrow-joined OD label and integer Median Pay; null pay -> em dash", () => {
     (useAnalyticsTopLanes as unknown as { mockReturnValue: Function }).mockReturnValue({
       data: [

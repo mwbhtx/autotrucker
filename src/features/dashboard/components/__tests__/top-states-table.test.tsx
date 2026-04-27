@@ -25,6 +25,17 @@ describe("TopStatesTable", () => {
     expect(screen.getByText("Outbound Diversity")).toBeInTheDocument();
   });
 
+  it("renders 'Top Import States' for side=destination", () => {
+    (useAnalyticsTopStates as unknown as { mockReturnValue: Function }).mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+    });
+    render(<TopStatesTable companyId="c-1" side="destination" />);
+    expect(screen.getByText("Top Import States")).toBeInTheDocument();
+    expect(screen.getByText("Inbound Diversity")).toBeInTheDocument();
+  });
+
   it("renders rows with state-level fields", () => {
     (useAnalyticsTopStates as unknown as { mockReturnValue: Function }).mockReturnValue({
       data: [
