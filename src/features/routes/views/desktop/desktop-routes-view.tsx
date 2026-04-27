@@ -6,10 +6,12 @@ import { useRouteSearchContext } from "@/core/providers/route-search-provider";
 import { driver } from "driver.js";
 import "driver.js/dist/driver.css";
 import { tourSteps } from "@/platform/web/components/tour-steps";
+import { LayoutListIcon, TableIcon } from "lucide-react";
 import { RouteMap } from "@/features/routes/components/route-map";
 import { SearchFilters } from "@/features/routes/components/search-form";
 import { RouteList } from "./route-list";
 import { RouteDetailPanel } from "./route-detail-panel";
+import { RouteTableView } from "./route-table-view";
 import { SearchProgressBar } from "@/features/routes/components/search-progress";
 import { type RouteSearchParams } from "@/core/hooks/use-routes";
 import { useAuth } from "@/core/services/auth-provider";
@@ -55,6 +57,12 @@ export function DesktopRoutesView() {
 
   const [filterPending, setFilterPending] = useState(false);
   const hoverLegRef = useRef<((legIndex: number | null) => void) | null>(null);
+
+  const [viewMode, setViewMode] = useState<"card" | "table">(() => {
+    if (typeof window === "undefined") return "card";
+    return (localStorage.getItem("hv-routes-view-mode") as "card" | "table") ?? "card";
+  });
+
 
   const [watchlistSet, setWatchlistSet] = useState<Set<string>>(new Set());
   const toggleWatchlistRef = useRef<((key: string) => void) | null>(null);
@@ -302,65 +310,115 @@ export function DesktopRoutesView() {
         />
       </div>
 
-      {/* 3-column area */}
-      <div className="flex flex-1 min-h-0">
-        {/* Column 1: Route list */}
-        {hasActiveSearch && (
-          <div className="w-[35%] min-w-[280px] max-w-[450px] shrink-0 min-h-0">
-            {isLoading && (
-              <SearchProgressBar
-                progress={progress}
-                elapsedMs={elapsedMs}
-                onCancel={() => { cancel(); handleSearchCleared(); }}
-                variant="desktop"
-              />
-            )}
-            <RouteList
-              chains={displayLocation.routeChains}
-              selectedIndex={selectedItemIndex}
-              onSelectIndex={handleRouteSelect}
-              onClearFilters={hasActiveSearch ? handleClearSearch : undefined}
-              isLoading={!ready || isLoading || filterPending || (hasPersistedFilters && !hasActiveSearch && !hasSearchedOnce.current)}
-              onWatchlistChange={handleWatchlistChange}
-              searchOrigin={data?.origin}
-              searchDest={destFilter ?? undefined}
-            />
+      {/* View mode toggle — only when results exist */}
+      {hasActiveSearch && routes.length > 0 && !isLoading && (
+        <div className="flex justify-end px-3 py-1.5 shrink-0 border-b border-border/30 bg-sidebar">
+          <div className="flex items-center gap-0.5 rounded-md border border-input p-0.5">
+            <button
+              type="button"
+              onClick={() => { setViewMode("card"); try { localStorage.setItem("hv-routes-view-mode", "card"); } catch {} }}
+              title="Card view"
+              className={`flex items-center justify-center h-6 w-6 rounded transition-colors ${
+                viewMode === "card" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <LayoutListIcon className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => { setViewMode("table"); try { localStorage.setItem("hv-routes-view-mode", "table"); } catch {} }}
+              title="Table view"
+              className={`flex items-center justify-center h-6 w-6 rounded transition-colors ${
+                viewMode === "table" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <TableIcon className="h-3.5 w-3.5" />
+            </button>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Column 2: Route details */}
-        {hasActiveSearch && (
-          <RouteDetailPanel
-            chain={selectedChain}
-            originCity={originFilter?.city}
-            destCity={destFilter?.city}
+      {/* Content area — card (3-col) or table */}
+      {viewMode === "table" && hasActiveSearch ? (
+        <div className="flex-1 min-h-0 overflow-hidden">
+          {isLoading && (
+            <SearchProgressBar
+              progress={progress}
+              elapsedMs={elapsedMs}
+              onCancel={() => { cancel(); handleSearchCleared(); }}
+              variant="desktop"
+            />
+          )}
+          <RouteTableView
+            chains={displayLocation.routeChains}
+            isLoading={!ready || isLoading || filterPending || (hasPersistedFilters && !hasActiveSearch && !hasSearchedOnce.current)}
             costPerMile={(settings?.cost_per_mile as number | undefined) ?? DEFAULT_COST_PER_MILE}
             orderUrlTemplate={orderUrlTemplate}
-            onHoverLeg={(idx) => hoverLegRef.current?.(idx)}
-            onShowComments={handleShowComments}
-            isWatchlisted={watchlistSet.has(selectedRouteKey)}
-            onToggleWatchlist={selectedRouteKey ? () => toggleWatchlistRef.current?.(selectedRouteKey) : undefined}
-            departureTime={(() => {
-              // Fall back to chain's suggested departure (pickup minus deadhead)
-              if (selectedChain?.suggested_departure) {
-                return new Date(selectedChain.suggested_departure);
-              }
-              return undefined;
-            })()}
+            originCity={originFilter?.city}
+            destCity={destFilter?.city}
             searchParams={searchParams}
-          />
-        )}
-
-        {/* Column 3: Map */}
-        <div className="flex-1 min-h-0 relative">
-          <RouteMap
-            selectedRoute={ready ? selectedRoute : undefined}
-            originCoords={originFilter}
-            destCoords={destFilter}
-            onHoverLegRef={hoverLegRef}
+            onShowComments={handleShowComments}
           />
         </div>
-      </div>
+      ) : (
+        <div className="flex flex-1 min-h-0">
+          {/* Column 1: Route list */}
+          {hasActiveSearch && (
+            <div className="w-[35%] min-w-[280px] max-w-[450px] shrink-0 min-h-0">
+              {isLoading && (
+                <SearchProgressBar
+                  progress={progress}
+                  elapsedMs={elapsedMs}
+                  onCancel={() => { cancel(); handleSearchCleared(); }}
+                  variant="desktop"
+                />
+              )}
+              <RouteList
+                chains={displayLocation.routeChains}
+                selectedIndex={selectedItemIndex}
+                onSelectIndex={handleRouteSelect}
+                onClearFilters={hasActiveSearch ? handleClearSearch : undefined}
+                isLoading={!ready || isLoading || filterPending || (hasPersistedFilters && !hasActiveSearch && !hasSearchedOnce.current)}
+                onWatchlistChange={handleWatchlistChange}
+                searchOrigin={data?.origin}
+                searchDest={destFilter ?? undefined}
+              />
+            </div>
+          )}
+
+          {/* Column 2: Route details */}
+          {hasActiveSearch && (
+            <RouteDetailPanel
+              chain={selectedChain}
+              originCity={originFilter?.city}
+              destCity={destFilter?.city}
+              costPerMile={(settings?.cost_per_mile as number | undefined) ?? DEFAULT_COST_PER_MILE}
+              orderUrlTemplate={orderUrlTemplate}
+              onHoverLeg={(idx) => hoverLegRef.current?.(idx)}
+              onShowComments={handleShowComments}
+              isWatchlisted={watchlistSet.has(selectedRouteKey)}
+              onToggleWatchlist={selectedRouteKey ? () => toggleWatchlistRef.current?.(selectedRouteKey) : undefined}
+              departureTime={(() => {
+                if (selectedChain?.suggested_departure) {
+                  return new Date(selectedChain.suggested_departure);
+                }
+                return undefined;
+              })()}
+              searchParams={searchParams}
+            />
+          )}
+
+          {/* Column 3: Map */}
+          <div className="flex-1 min-h-0 relative">
+            <RouteMap
+              selectedRoute={ready ? selectedRoute : undefined}
+              originCoords={originFilter}
+              destCoords={destFilter}
+              onHoverLegRef={hoverLegRef}
+            />
+          </div>
+        </div>
+      )}
 
       <Dialog open={commentsDialog !== null} onOpenChange={() => setCommentsDialog(null)}>
         <DialogContent className="max-w-lg max-h-[70vh] overflow-y-auto">
