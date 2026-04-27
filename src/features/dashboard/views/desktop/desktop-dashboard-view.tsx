@@ -72,7 +72,7 @@ function formatLastUpdated(date: Date): string {
 export function DesktopDashboardView() {
   const { activeCompanyId } = useAuth();
   const companyId = activeCompanyId ?? "";
-  const [timeRange, setTimeRange] = useState<TimeRange>("24h");
+  const [timeRange, setTimeRange] = useState<TimeRange>("90d");
   const { from, to, bucket } = useMemo(() => computeTimeRange(timeRange), [timeRange]);
 
   const lastUpdated = useMemo(() => formatLastUpdated(new Date()), []);
