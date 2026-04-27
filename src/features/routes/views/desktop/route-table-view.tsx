@@ -101,7 +101,7 @@ export function RouteTableView({
   onShowComments,
 }: RouteTableViewProps) {
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
-  const [sortCol, setSortCol] = useState<TableSortCol | null>(null);
+  const [sortCol, setSortCol] = useState<TableSortCol | null>("all_in_gross_rpm");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   function handleSort(col: TableSortCol) {
