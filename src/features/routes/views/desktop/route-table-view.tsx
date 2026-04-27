@@ -192,24 +192,14 @@ export function RouteTableView({
                       : <ChevronRightIcon className="h-4 w-4" />}
                   </TableCell>
                   <TableCell className="font-medium">
-                    <div className="flex flex-col gap-0.5">
-                      <span className="flex items-center gap-1.5">
-                        {routeLabel(chain)}
-                        {hasProjectedWindow(chain) && (
-                          <span title="Pickup dates estimated — verify before booking">
-                            <CalendarClockIcon className="h-3.5 w-3.5 text-warning shrink-0" />
-                          </span>
-                        )}
-                      </span>
-                      {chain.legs.length > 1 && (
-                        <span className="text-xs text-muted-foreground">{chain.legs.length} orders</span>
-                      )}
-                      {chain.legs.some(l => (l.similar_count ?? 0) > 1) && (
-                        <span className="text-xs text-muted-foreground">
-                          {chain.legs.reduce((sum, l) => sum + (l.similar_count ?? 1), 0) - chain.legs.length} similar available
+                    <span className="flex items-center gap-1.5">
+                      {routeLabel(chain)}
+                      {hasProjectedWindow(chain) && (
+                        <span title="Pickup dates estimated — verify before booking">
+                          <CalendarClockIcon className="h-3.5 w-3.5 text-warning shrink-0" />
                         </span>
                       )}
-                    </div>
+                    </span>
                   </TableCell>
                   <TableCell className="text-right tabular-nums font-bold">
                     {formatCurrency(chain.daily_net_profit)}
