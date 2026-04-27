@@ -26,12 +26,6 @@ export interface AnalyticsHistoryEntry {
   avg_pay: number;
 }
 
-export interface AnalyticsLaneEntry {
-  lane: string;
-  period: string;
-  count: number;
-}
-
 export interface AnalyticsChurnEntry {
   period: string;
   closed_count: number;
@@ -51,10 +45,37 @@ export interface AnalyticsAvailabilityEntry {
   closed_count: number;
 }
 
-export interface AnalyticsTopCitiesEntry {
+export type AnalyticsSide = 'origin' | 'destination';
+export type AnalyticsLaneGranularity = 'city' | 'state';
+
+export interface AnalyticsTopCityEntry {
   city: string;
   state: string;
-  avg_count: number;
+  load_count: number;
+  loads_per_day: number;
+  median_rate_per_mile: number | null;
+  entropy_h: number;
+}
+
+export interface AnalyticsTopStateEntry {
+  state: string;
+  load_count: number;
+  loads_per_day: number;
+  median_rate_per_mile: number | null;
+  entropy_h: number;
+}
+
+export interface AnalyticsTopLaneEntry {
+  origin_city: string | null;
+  origin_state: string;
+  destination_city: string | null;
+  destination_state: string;
+  origin_label: string;
+  destination_label: string;
+  load_count: number;
+  loads_per_day: number;
+  median_rate_per_mile: number | null;
+  median_pay: number | null;
 }
 
 export type {

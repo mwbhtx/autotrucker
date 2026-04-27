@@ -5,11 +5,14 @@ import { fetchApi } from "@/core/services/api";
 import type {
   AnalyticsStats,
   AnalyticsHistoryEntry,
-  AnalyticsLaneEntry,
   AnalyticsChurnEntry,
   AnalyticsBreakdownEntry,
   AnalyticsAvailabilityEntry,
-  AnalyticsTopCitiesEntry,
+  AnalyticsTopCityEntry,
+  AnalyticsTopStateEntry,
+  AnalyticsTopLaneEntry,
+  AnalyticsSide,
+  AnalyticsLaneGranularity,
 } from "@/core/types";
 
 function buildQuery(params: Record<string, string | undefined>): string {
@@ -53,15 +56,15 @@ export function useAnalyticsHistory(
 
 export function useAnalyticsTopLanes(
   companyId: string,
+  granularity: AnalyticsLaneGranularity,
   from?: string,
   to?: string,
-  bucket?: string,
 ) {
-  const qs = buildQuery({ from, to, bucket });
-  return useQuery<AnalyticsLaneEntry[]>({
-    queryKey: ["analytics", companyId, "top-lanes", from, to, bucket],
+  const qs = buildQuery({ granularity, from, to });
+  return useQuery<AnalyticsTopLaneEntry[]>({
+    queryKey: ["analytics", companyId, "top-lanes", granularity, from, to],
     queryFn: () =>
-      fetchApi<AnalyticsLaneEntry[]>(`analytics/${companyId}/top-lanes${qs}`),
+      fetchApi<AnalyticsTopLaneEntry[]>(`analytics/${companyId}/top-lanes${qs}`),
     refetchInterval: 60_000,
     enabled: !!companyId,
   });
@@ -78,23 +81,6 @@ export function useAnalyticsChurn(
     queryKey: ["analytics", companyId, "churn", from, to, bucket],
     queryFn: () =>
       fetchApi<AnalyticsChurnEntry[]>(`analytics/${companyId}/churn${qs}`),
-    refetchInterval: 60_000,
-    enabled: !!companyId,
-  });
-}
-
-export function useAnalyticsStateBreakdown(
-  companyId: string,
-  from?: string,
-  to?: string,
-) {
-  const qs = buildQuery({ from, to });
-  return useQuery<AnalyticsBreakdownEntry[]>({
-    queryKey: ["analytics", companyId, "state-breakdown", from, to],
-    queryFn: () =>
-      fetchApi<AnalyticsBreakdownEntry[]>(
-        `analytics/${companyId}/state-breakdown${qs}`,
-      ),
     refetchInterval: 60_000,
     enabled: !!companyId,
   });
@@ -137,16 +123,31 @@ export function useAnalyticsAvailability(
 
 export function useAnalyticsTopCities(
   companyId: string,
+  side: AnalyticsSide,
   from?: string,
   to?: string,
 ) {
-  const qs = buildQuery({ from, to });
-  return useQuery<AnalyticsTopCitiesEntry[]>({
-    queryKey: ["analytics", companyId, "top-cities", from, to],
+  const qs = buildQuery({ side, from, to });
+  return useQuery<AnalyticsTopCityEntry[]>({
+    queryKey: ["analytics", companyId, "top-cities", side, from, to],
     queryFn: () =>
-      fetchApi<AnalyticsTopCitiesEntry[]>(
-        `analytics/${companyId}/top-cities${qs}`,
-      ),
+      fetchApi<AnalyticsTopCityEntry[]>(`analytics/${companyId}/top-cities${qs}`),
+    refetchInterval: 60_000,
+    enabled: !!companyId,
+  });
+}
+
+export function useAnalyticsTopStates(
+  companyId: string,
+  side: AnalyticsSide,
+  from?: string,
+  to?: string,
+) {
+  const qs = buildQuery({ side, from, to });
+  return useQuery<AnalyticsTopStateEntry[]>({
+    queryKey: ["analytics", companyId, "top-states", side, from, to],
+    queryFn: () =>
+      fetchApi<AnalyticsTopStateEntry[]>(`analytics/${companyId}/top-states${qs}`),
     refetchInterval: 60_000,
     enabled: !!companyId,
   });
