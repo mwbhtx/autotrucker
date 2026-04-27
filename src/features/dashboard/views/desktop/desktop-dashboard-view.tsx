@@ -6,10 +6,10 @@ import { ActiveOrdersChart, OrderFlowChart } from "@/features/dashboard/componen
 import { ActivityBreakdown } from "@/features/dashboard/components/activity-breakdown";
 import { RatePayChart } from "@/features/dashboard/components/rate-pay-chart";
 import { ChurnChart } from "@/features/dashboard/components/churn-chart";
-import { StateBreakdown } from "@/features/dashboard/components/state-breakdown";
-import { TopLanesChart } from "@/features/dashboard/components/top-lanes-chart";
+import { TopCitiesTable } from "@/features/dashboard/components/top-cities-table";
+import { TopStatesTable } from "@/features/dashboard/components/top-states-table";
+import { TopLanesTable } from "@/features/dashboard/components/top-lanes-table";
 import { AvailabilityChart } from "@/features/dashboard/components/availability-chart";
-import { TopCitiesChart } from "@/features/dashboard/components/top-cities-chart";
 import { useAuth } from "@/core/services/auth-provider";
 
 type TimeRange = "1h" | "24h" | "7d" | "30d" | "90d";
@@ -125,11 +125,15 @@ export function DesktopDashboardView() {
         </div>
       </div>
 
-      {/* Top Cities + States + Lanes */}
+      {/* Top Cities + States + Lanes — origin/destination 2x3 grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <TopCitiesChart companyId={companyId} from={from} to={to} />
-        <StateBreakdown companyId={companyId} from={from} to={to} />
-        <TopLanesChart companyId={companyId} from={from} to={to} bucket={bucket} />
+        <TopCitiesTable companyId={companyId} side="origin"      from={from} to={to} />
+        <TopCitiesTable companyId={companyId} side="destination" from={from} to={to} />
+        <TopLanesTable  companyId={companyId} granularity="city" from={from} to={to} />
+
+        <TopStatesTable companyId={companyId} side="origin"      from={from} to={to} />
+        <TopStatesTable companyId={companyId} side="destination" from={from} to={to} />
+        <TopLanesTable  companyId={companyId} granularity="state" from={from} to={to} />
       </div>
 
       {/* Rate & Pay + Churn + Availability */}
