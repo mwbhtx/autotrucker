@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, Fragment } from "react";
-import { ChevronDownIcon, ChevronRightIcon, ArrowDownIcon, ArrowUpDownIcon, ArrowUpIcon } from "lucide-react";
+import { ChevronDownIcon, ChevronRightIcon, ArrowDownIcon, ArrowUpDownIcon, ArrowUpIcon, CalendarClockIcon } from "lucide-react";
 import type { RouteChain } from "@/core/types";
 import { calcAvgLoadedRpm } from "@mwbhtx/haulvisor-core";
 import { formatCurrency } from "@/core/utils/route-helpers";
@@ -59,6 +59,10 @@ function routeLabel(chain: RouteChain): string {
 
 function hasTarp(chain: RouteChain): boolean {
   return chain.legs.some((l) => l.tarp_height != null && parseInt(l.tarp_height, 10) > 0);
+}
+
+function hasProjectedWindow(chain: RouteChain): boolean {
+  return chain.legs.some((l) => l.window_projected === true);
 }
 
 interface RouteTableViewProps {
@@ -189,7 +193,14 @@ export function RouteTableView({
                   </TableCell>
                   <TableCell className="font-medium">
                     <div className="flex flex-col gap-0.5">
-                      <span>{routeLabel(chain)}</span>
+                      <span className="flex items-center gap-1.5">
+                        {routeLabel(chain)}
+                        {hasProjectedWindow(chain) && (
+                          <span title="Pickup dates estimated — verify before booking">
+                            <CalendarClockIcon className="h-3.5 w-3.5 text-warning shrink-0" />
+                          </span>
+                        )}
+                      </span>
                       {chain.legs.length > 1 && (
                         <span className="text-xs text-muted-foreground">{chain.legs.length} orders</span>
                       )}
