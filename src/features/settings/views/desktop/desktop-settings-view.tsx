@@ -492,7 +492,16 @@ export function DesktopSettingsView() {
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div className="rounded-md border border-border bg-muted/30 px-3 py-2">
                   <div className="text-xs uppercase tracking-wide text-muted-foreground">Diesel</div>
-                  <div className="font-medium">EIA (national avg)</div>
+                  <div className="font-medium">
+                    {settings?.national_diesel_price != null
+                      ? `$${settings.national_diesel_price.toFixed(3)}/gal`
+                      : "EIA (national avg)"}
+                  </div>
+                  {settings?.national_diesel_as_of && (
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      EIA national avg, as of {settings.national_diesel_as_of}
+                    </div>
+                  )}
                 </div>
                 <div className="rounded-md border border-border bg-muted/30 px-3 py-2">
                   <div className="text-xs uppercase tracking-wide text-muted-foreground">Maintenance</div>

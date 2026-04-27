@@ -45,6 +45,8 @@ export interface Settings {
   disabled_settings?: string[];
   last_login: string;
   order_url_template?: string;
+  national_diesel_price: number | null;
+  national_diesel_as_of: string | null;
 }
 
 export function useSettings() {
