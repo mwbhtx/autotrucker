@@ -71,21 +71,6 @@ const VOLUME_COLOR: Record<'high' | 'medium' | 'low', [number, number, number]> 
   low:    [200,  45,  45],  // red
 };
 
-// Stroke width on zone nodes encodes destination variety (entropy bucket).
-// Thicker ring = more distinct outbound destinations relative to volume.
-const VARIETY_STROKE: Record<FreightZoneSummary['optionality_bucket'], number> = {
-  high: 3,
-  medium: 2,
-  low: 1,
-  low_data: 1,
-};
-
-interface ArcTooltipData {
-  lane: FreightLaneEntry;
-  x: number;
-  y: number;
-}
-
 interface TripDatum {
   path: [number, number][];
   timestamps: [number, number];
@@ -108,7 +93,6 @@ export function FreightNetworkMap({ data, period }: Props) {
 
   const [selectedZoneKey, setSelectedZoneKey] = useState<string | null>(null);
   const [hoveredZone, setHoveredZone] = useState<FreightZoneSummary | null>(null);
-  const [arcTooltip, setArcTooltip] = useState<ArcTooltipData | null>(null);
   const [activeFlowTypes, setActiveFlowTypes] = useState<Set<FlowType>>(new Set(['source', 'sink']));
   const [activeOptBuckets, setActiveOptBuckets] = useState<Set<string>>(new Set(['high']));
   const [strictMode, setStrictMode] = useState(false);
@@ -122,7 +106,7 @@ export function FreightNetworkMap({ data, period }: Props) {
   const aboveLanesRef = useRef<any[]>([]);
   // Stable handler — setters are always the same reference
   const overlayClickRef = useRef((info: { picked: boolean }) => {
-    if (!info.picked) { setSelectedZoneKey(null); setArcTooltip(null); }
+    if (!info.picked) { setSelectedZoneKey(null); }
   });
 
   useEffect(() => { themeRef.current = resolvedTheme; }, [resolvedTheme]);
@@ -219,7 +203,6 @@ export function FreightNetworkMap({ data, period }: Props) {
 
   useEffect(() => {
     setHoveredZone(null);
-    setArcTooltip(null);
   }, [data]);
 
   useEffect(() => {
@@ -403,7 +386,6 @@ export function FreightNetworkMap({ data, period }: Props) {
       if (!strictLaneZoneKeys.has(z.zone_key)) return false;
       return zonePassesFilters(z);
     });
-    const maxVolume = Math.max(1, ...activeZones.map((z) => z.outbound_load_count + z.inbound_load_count));
 
     const directConnectedKeys = selectedZoneKey
       ? new Set(directShownLanes.flatMap((l) => [l.origin_zone_key, l.destination_zone_key]))
@@ -446,20 +428,20 @@ export function FreightNetworkMap({ data, period }: Props) {
       ...componentLanes.map((l) => makeTripDatum(l, false, true)),
     ];
 
-    const nodeRadius = (z: FreightZoneSummary) =>
-      Math.max(6, Math.min(18, ((z.outbound_load_count + z.inbound_load_count) / maxVolume) * 18));
+    const NODE_RADIUS_PX = 10;
+    const NODE_STROKE_PX = 1;
 
-    // Zone dots — color = flow type, stroke width = data_support (confidence).
+    // Zone dots — color = volume bucket. Radius and stroke are uniform.
     const nodeLayer = new ScatterplotLayer<FreightZoneSummary>({
       id: 'zone-nodes',
       data: activeZones,
       getPosition: (z) => [z.centroid_lng, z.centroid_lat],
       radiusUnits: 'pixels',
-      getRadius: nodeRadius,
+      getRadius: NODE_RADIUS_PX,
       filled: true,
       stroked: true,
       lineWidthUnits: 'pixels',
-      getLineWidth: (z) => VARIETY_STROKE[z.optionality_bucket],
+      getLineWidth: NODE_STROKE_PX,
       getFillColor: (z) => {
         const [r, g, b] = VOLUME_COLOR[zoneVolumeBucket(z, volThresholds)];
         return [r, g, b, Math.round(zoneAlpha(z) * 230)];
@@ -474,7 +456,6 @@ export function FreightNetworkMap({ data, period }: Props) {
           const next = object.zone_key === selectedZoneKey ? null : object.zone_key;
           setSelectedZoneKey(next);
           setHoveredZone(null);
-          setArcTooltip(null);
           if (next && mapRef.current) {
             mapRef.current.easeTo({
               center: [object.centroid_lng, object.centroid_lat],
@@ -517,7 +498,7 @@ export function FreightNetworkMap({ data, period }: Props) {
           data: [selectedZoneOnMap],
           getPosition: (z) => [z.centroid_lng, z.centroid_lat],
           radiusUnits: 'pixels',
-          getRadius: (z) => nodeRadius(z) + 6,
+          getRadius: () => NODE_RADIUS_PX + 6,
           filled: false,
           stroked: true,
           getLineColor: [255, 255, 255, 220],
@@ -538,10 +519,7 @@ export function FreightNetworkMap({ data, period }: Props) {
       widthUnits: 'pixels',
       widthMinPixels: 6,
       getColor: () => (isDark ? [0, 180, 240, 130] : [0, 100, 180, 130]) as [number, number, number, number],
-      pickable: true,
-      onHover: ({ object, x, y }: { object?: FreightLaneEntry; x: number; y: number }) => {
-        setArcTooltip(object ? { lane: object, x, y } : null);
-      },
+      pickable: false,
     });
     const componentTrackLayer = new PathLayer<FreightLaneEntry>({
       id: 'component-tracks',
@@ -599,39 +577,6 @@ export function FreightNetworkMap({ data, period }: Props) {
             period={period}
             periodNote={data.metadata.period_note}
           />
-        </div>
-      )}
-
-      {arcTooltip && !selectedZone && !hoveredZone && (
-        <div
-          className="absolute z-10 bg-background/95 border rounded-md shadow-md px-3 py-2 text-xs pointer-events-none min-w-[200px]"
-          style={{ left: arcTooltip.x + 12, top: arcTooltip.y - 40 }}
-        >
-          <p className="font-semibold mb-1">
-            {arcTooltip.lane.origin_display_city}, {arcTooltip.lane.origin_display_state}
-            {' → '}
-            {arcTooltip.lane.destination_display_city}, {arcTooltip.lane.destination_display_state}
-          </p>
-          <dl className="grid grid-cols-2 gap-x-3 gap-y-0.5">
-            <dt className="text-muted-foreground">Loads</dt>
-            <dd className="font-medium">{arcTooltip.lane.load_count.toLocaleString()}</dd>
-            <dt className="text-muted-foreground">Loads/day</dt>
-            <dd className="font-medium">{arcTooltip.lane.loads_per_day.toFixed(2)}</dd>
-            {arcTooltip.lane.median_gross_rate_per_loaded_mile !== null && (
-              <>
-                <dt className="text-muted-foreground">Median $/mi</dt>
-                <dd className="font-medium">${arcTooltip.lane.median_gross_rate_per_loaded_mile.toFixed(2)}</dd>
-              </>
-            )}
-          </dl>
-          {arcTooltip.lane.reverse_strength === 'none' && (
-            <p className="text-muted-foreground mt-1 italic">No reverse traffic observed</p>
-          )}
-          {arcTooltip.lane.reverse_strength === 'weak' && (
-            <p className="text-muted-foreground mt-1 italic">
-              Weak reverse — {arcTooltip.lane.reverse_load_count} loads
-            </p>
-          )}
         </div>
       )}
 
@@ -704,31 +649,6 @@ export function FreightNetworkMap({ data, period }: Props) {
           All lanes connected to selected hub
         </p>
 
-        {/* Node size key */}
-        <div className="space-y-1.5 text-base text-muted-foreground/80 pt-2 border-t border-border/50">
-          <p className="font-semibold text-base text-foreground">Node Size</p>
-          <div className="flex items-center gap-2.5">
-            <span className="inline-block rounded-full bg-muted-foreground/40" style={{ width: 8, height: 8 }} />
-            <span className="inline-block rounded-full bg-muted-foreground/40" style={{ width: 16, height: 16 }} />
-            <span>= more total loads</span>
-          </div>
-        </div>
-
-        {/* Data confidence ring */}
-        <div className="space-y-1.5 text-base text-muted-foreground/80 pt-2 border-t border-border/50">
-          <p className="font-semibold text-base text-foreground">Ring Thickness</p>
-          <div className="flex items-center gap-2.5">
-            <span className="inline-block rounded-full bg-muted-foreground/30" style={{ width: 16, height: 16, border: '1px solid currentColor' }} />
-            <span className="inline-block rounded-full bg-muted-foreground/30" style={{ width: 16, height: 16, border: '3px solid currentColor' }} />
-            <span>= destination variety</span>
-          </div>
-        </div>
-
-        {/* Lane direction */}
-        <div className="space-y-1 text-base text-muted-foreground/80 pt-2 border-t border-border/50">
-          <p className="font-semibold text-base text-foreground">Lane Flow</p>
-          <p className="text-muted-foreground/70 text-sm">Animated particles show traffic direction</p>
-        </div>
       </div>
     </div>
   );
