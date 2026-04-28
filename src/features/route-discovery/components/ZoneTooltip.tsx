@@ -30,7 +30,15 @@ const PERIOD_LABEL: Record<string, string> = {
   '90d': 'last 90 days',
 };
 
+const PERIOD_DAYS: Record<string, number> = {
+  '30d': 30,
+  '60d': 60,
+  '90d': 90,
+};
+
 export function ZoneTooltip({ zone, period, periodNote, showClose = false, onClose }: ZoneTooltipProps) {
+  const loadsPerDay = (zone.outbound_load_count / PERIOD_DAYS[period]).toFixed(1);
+
   return (
     <div className="bg-background/95 border rounded-lg shadow-lg p-5 min-w-[300px] max-w-[360px] text-base">
       <div className="flex items-start justify-between gap-2 mb-4">
@@ -54,6 +62,8 @@ export function ZoneTooltip({ zone, period, periodNote, showClose = false, onClo
       <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-base">
         <dt className="text-muted-foreground">Outbound loads</dt>
         <dd className="font-medium">{zone.outbound_load_count.toLocaleString()}</dd>
+        <dt className="text-muted-foreground">Outbound loads/day</dt>
+        <dd className="font-medium">{loadsPerDay}</dd>
         <dt className="text-muted-foreground">Inbound loads</dt>
         <dd className="font-medium">{zone.inbound_load_count.toLocaleString()}</dd>
         <dt className="text-muted-foreground">Outbound lanes</dt>
