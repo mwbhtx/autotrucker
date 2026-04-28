@@ -206,14 +206,15 @@ export function FreightNetworkMap({ data, period }: Props) {
       ? new Set([...outboundLanes, ...inboundLanes].flatMap((l) => [l.origin_zone_key, l.destination_zone_key]))
       : null;
 
-    // Zones: filter by bucket in idle; when selected always reveal connected endpoints
+    // Zones: connected endpoints always shown (bypass filter so lines have visible targets);
+    // idle view filtered by optionality bucket, low_data excluded.
     const laneZoneKeys = new Set(lanes.flatMap((l) => [l.origin_zone_key, l.destination_zone_key]));
-    const activeZones = zones.filter(
-      (z) => laneZoneKeys.has(z.zone_key) &&
-             z.optionality_bucket !== 'low_data' &&
-             (activeBuckets.has(z.optionality_bucket as OptionalityBucket) ||
-              (connectedZoneKeys !== null && connectedZoneKeys.has(z.zone_key))),
-    );
+    const activeZones = zones.filter((z) => {
+      if (!laneZoneKeys.has(z.zone_key)) return false;
+      if (connectedZoneKeys?.has(z.zone_key)) return true;
+      return z.optionality_bucket !== 'low_data' &&
+             activeBuckets.has(z.optionality_bucket as OptionalityBucket);
+    });
     const maxOutbound = Math.max(1, ...activeZones.map((z) => z.outbound_load_count));
 
     const zoneAlpha = (z: FreightZoneSummary) => {
