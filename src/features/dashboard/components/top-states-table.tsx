@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { Loader2 } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -89,7 +90,10 @@ export function TopStatesTable({
   return (
     <Card className="h-full flex flex-col">
       <CardHeader>
-        <CardTitle>{title}</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          {title}
+          {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+        </CardTitle>
       </CardHeader>
       <CardContent className="flex-1">
         <TooltipProvider>

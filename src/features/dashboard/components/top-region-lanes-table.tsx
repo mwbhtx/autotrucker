@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { Loader2 } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -77,7 +78,10 @@ export function TopRegionLanesTable({
   return (
     <Card className="h-full flex flex-col">
       <CardHeader>
-        <CardTitle>Top Lanes (Regions)</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          Top Lanes (Regions)
+          {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+        </CardTitle>
       </CardHeader>
       <CardContent className="flex-1">
         <TooltipProvider>
