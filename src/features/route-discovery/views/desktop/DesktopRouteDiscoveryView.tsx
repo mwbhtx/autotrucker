@@ -9,25 +9,27 @@ import { DrilldownPanel } from "../../components/DrilldownPanel";
 import { EngineInspectors } from "../../components/EngineInspectors";
 import { EmptyState } from "../../components/EmptyState";
 import { HowItWorks } from "../../components/HowItWorks";
+import { FreightNetworkMap } from "../../components/FreightNetworkMap";
 import { useDiscoveredRoutes } from "../../hooks/use-routes";
-import { useTopRoutes } from "../../hooks/use-top-routes";
+import { useFreightNetwork } from "../../hooks/use-freight-network";
 import { useRouteDiscoveryStore } from "../../store";
 import type { RoutesQuery } from "../../api";
 
-type TabId = "search" | "leaderboard";
+type TabId = "map" | "search";
+type PeriodId = "30d" | "90d" | "all";
 
 export function DesktopRouteDiscoveryView() {
-  const [tab, setTab] = useState<TabId>("search");
+  const [tab, setTab] = useState<TabId>("map");
+  const [period, setPeriod] = useState<PeriodId>("90d");
   const [query, setQuery] = useState<RoutesQuery | null>(null);
+
+  const { data: networkData, isLoading: networkLoading } = useFreightNetwork(period);
   const { data, isLoading, error } = useDiscoveredRoutes(query);
-  const { data: topData, isLoading: topLoading } = useTopRoutes();
   const selectedRowIndex = useRouteDiscoveryStore((s) => s.selectedRowIndex);
   const resetSelection = useRouteDiscoveryStore((s) => s.resetSelection);
 
   const searchRows = data?.rows ?? [];
-  const topRows = topData?.rows ?? [];
-  const activeRows = tab === "search" ? searchRows : topRows;
-  const selectedRoute = selectedRowIndex !== null ? activeRows[selectedRowIndex] ?? null : null;
+  const selectedRoute = selectedRowIndex !== null ? searchRows[selectedRowIndex] ?? null : null;
 
   const handleTabChange = (value: string) => {
     resetSelection();
@@ -78,10 +80,48 @@ export function DesktopRouteDiscoveryView() {
       </header>
 
       <Tabs value={tab} onValueChange={handleTabChange}>
-        <TabsList variant="line">
-          <TabsTrigger value="search">Search</TabsTrigger>
-          <TabsTrigger value="leaderboard">Top Routes</TabsTrigger>
-        </TabsList>
+        {/* Tab triggers + period toggle share the same row */}
+        <div className="flex items-center justify-between">
+          <TabsList variant="line">
+            <TabsTrigger value="map">Map</TabsTrigger>
+            <TabsTrigger value="search">Search</TabsTrigger>
+          </TabsList>
+
+          {tab === "map" && (
+            <div className="flex gap-1">
+              {(["30d", "90d", "all"] as const).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setPeriod(p)}
+                  className={`px-3 py-1 text-xs rounded-md border transition-colors ${
+                    period === p
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background text-muted-foreground border-border hover:border-foreground/40"
+                  }`}
+                >
+                  {p === "all" ? "All time" : p}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ── Map tab ── */}
+        <TabsContent value="map" className="mt-4">
+          {period === "all" && (
+            <p className="text-xs text-muted-foreground mb-3 italic">
+              Historical overview — not current lane availability.
+            </p>
+          )}
+
+          {networkLoading && (
+            <Skeleton className="h-[500px] w-full rounded-lg" />
+          )}
+
+          {!networkLoading && networkData && (
+            <FreightNetworkMap data={networkData} period={period} />
+          )}
+        </TabsContent>
 
         {/* ── Search tab ── */}
         <TabsContent value="search" className="mt-6 space-y-6">
@@ -129,33 +169,6 @@ export function DesktopRouteDiscoveryView() {
 
           {query && (
             <EngineInspectors regionQuery={regionQuery} laneQuery={laneQuery} legQuery={legQuery} />
-          )}
-        </TabsContent>
-
-        {/* ── Top Routes (leaderboard) tab ── */}
-        <TabsContent value="leaderboard" className="mt-6">
-          {topLoading && (
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-              <div className="lg:col-span-3 space-y-2">
-                {[0, 1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-24 w-full" />)}
-              </div>
-              <div className="lg:col-span-2">
-                <Skeleton className="h-96 w-full" />
-              </div>
-            </div>
-          )}
-
-          {!topLoading && (
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-              <div className="lg:col-span-3">
-                <RoutesList routes={topRows} />
-              </div>
-              <div className="lg:col-span-2">
-                <div key={selectedRoute?.route_id ?? "empty"} className="animate-in slide-in-from-right-4 duration-200">
-                  <DrilldownPanel route={selectedRoute} radiusMiles={100} />
-                </div>
-              </div>
-            </div>
           )}
         </TabsContent>
       </Tabs>
