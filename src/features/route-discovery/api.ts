@@ -4,6 +4,7 @@ import type {
   RegionInspectorResult,
   LaneDensityResult,
   LegDeadheadResult,
+  FreightNetworkMapResponse,
 } from "@/core/types";
 
 export interface RoutesQuery {
@@ -89,5 +90,14 @@ export async function fetchLegDeadhead(
   });
   return fetchApi<LegDeadheadResult>(
     `/analytics/route-discovery/${encodeURIComponent(companyId)}/leg-deadhead?${params.toString()}`,
+  );
+}
+
+export async function fetchFreightNetwork(
+  companyId: string,
+  period: '30d' | '90d' | 'all',
+): Promise<FreightNetworkMapResponse> {
+  return fetchApi<FreightNetworkMapResponse>(
+    `/analytics/${encodeURIComponent(companyId)}/freight-network-map?period=${period}`,
   );
 }
