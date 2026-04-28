@@ -294,6 +294,10 @@ export function FreightNetworkMap({ data, period }: Props) {
     //   reverse edge dest→origin when 'sink' active
     let componentLanes: FreightLaneEntry[] = [];
     let componentZoneKeys: Set<string> = new Set();
+    // Per-zone BFS depth from selected; lets us draw bidir component-lane comets
+    // along the shortest-path direction instead of the canonical origin→dest order.
+    let forwardDepth: Map<string, number> = new Map();
+    let reverseDepth: Map<string, number> = new Map();
     if (expandNetwork && selectedZoneKey) {
       const forwardAdj = new Map<string, Set<string>>();
       const reverseAdj = new Map<string, Set<string>>();
@@ -318,31 +322,32 @@ export function FreightNetworkMap({ data, period }: Props) {
         }
       }
 
-      const bfs = (adj: Map<string, Set<string>>, start: string) => {
-        const visited = new Set<string>([start]);
+      const bfsWithDepth = (adj: Map<string, Set<string>>, start: string) => {
+        const depth = new Map<string, number>([[start, 0]]);
         const queue = [start];
         while (queue.length) {
           const cur = queue.shift()!;
+          const d = depth.get(cur)!;
           for (const nb of adj.get(cur) ?? []) {
-            if (!visited.has(nb)) { visited.add(nb); queue.push(nb); }
+            if (!depth.has(nb)) { depth.set(nb, d + 1); queue.push(nb); }
           }
         }
-        return visited;
+        return depth;
       };
 
-      const forwardReachable = sourceOn ? bfs(forwardAdj, selectedZoneKey) : new Set<string>([selectedZoneKey]);
-      const reverseReachable = sinkOn ? bfs(reverseAdj, selectedZoneKey) : new Set<string>([selectedZoneKey]);
+      forwardDepth = sourceOn ? bfsWithDepth(forwardAdj, selectedZoneKey) : new Map([[selectedZoneKey, 0]]);
+      reverseDepth = sinkOn ? bfsWithDepth(reverseAdj, selectedZoneKey) : new Map([[selectedZoneKey, 0]]);
 
-      componentZoneKeys = new Set<string>([...forwardReachable, ...reverseReachable]);
+      componentZoneKeys = new Set<string>([...forwardDepth.keys(), ...reverseDepth.keys()]);
 
       componentLanes = qualityLanes.filter((l) => {
         if (l.origin_zone_key === selectedZoneKey || l.destination_zone_key === selectedZoneKey) return false;
         if (sourceOn
-          && forwardReachable.has(l.origin_zone_key)
-          && forwardReachable.has(l.destination_zone_key)) return true;
+          && forwardDepth.has(l.origin_zone_key)
+          && forwardDepth.has(l.destination_zone_key)) return true;
         if (sinkOn
-          && reverseReachable.has(l.origin_zone_key)
-          && reverseReachable.has(l.destination_zone_key)) return true;
+          && reverseDepth.has(l.origin_zone_key)
+          && reverseDepth.has(l.destination_zone_key)) return true;
         return false;
       });
     }
@@ -421,20 +426,43 @@ export function FreightNetworkMap({ data, period }: Props) {
     const cometOtherToSelected = (l: FreightLaneEntry) =>
       makeTripDatum(l, l.origin_zone_key === selectedZoneKey);
 
-    // Component bidirectional lanes carry flow in both directions; render both comets
-    // so a lane between two upstream/downstream nodes can't be misread as a one-way
-    // dead end (a single canonical-direction comet hid the reverse flow).
+    // Component lane comet direction follows shortest-path BFS depth from selected:
+    //   inbound (sink) on  → comet flows from far endpoint to closer endpoint (toward selected)
+    //   outbound (source) on → comet flows from closer endpoint to far endpoint (away from selected)
+    //   both on             → both comets render
+    // For non-bidirectional lanes the canonical origin→dest direction already matches
+    // BFS depth (reverseAdj puts dest closer, forwardAdj puts origin closer), so a
+    // single comet at origin→dest is always correct.
     const componentBidirLanes = componentLanes.filter(isBidirectionalLane);
     const componentNonBidirLanes = componentLanes.filter((l) => !isBidirectionalLane(l));
+
+    const bidirComponentTrips: TripDatum[] = [];
+    for (const l of componentBidirLanes) {
+      const origin = l.origin_zone_key;
+      const dest = l.destination_zone_key;
+      if (sinkOn) {
+        const dOrigin = reverseDepth.get(origin);
+        const dDest = reverseDepth.get(dest);
+        if (dOrigin !== undefined && dDest !== undefined) {
+          // far → near: if origin is closer (smaller depth), reverse the path so comet runs dest→origin.
+          bidirComponentTrips.push(makeTripDatum(l, dOrigin <= dDest, true));
+        }
+      }
+      if (sourceOn) {
+        const dOrigin = forwardDepth.get(origin);
+        const dDest = forwardDepth.get(dest);
+        if (dOrigin !== undefined && dDest !== undefined) {
+          // near → far: if origin is closer (smaller depth), keep canonical origin→dest.
+          bidirComponentTrips.push(makeTripDatum(l, dOrigin > dDest, true));
+        }
+      }
+    }
 
     tripsDataRef.current = [
       ...bidirBothLanes.flatMap((l) => [cometSelectedToOther(l), cometOtherToSelected(l)]),
       ...outboundDirectLanes.map((l) => cometSelectedToOther(l)),
       ...inboundDirectLanes.map((l) => cometOtherToSelected(l)),
-      ...componentBidirLanes.flatMap((l) => [
-        makeTripDatum(l, false, true),
-        makeTripDatum(l, true, true),
-      ]),
+      ...bidirComponentTrips,
       ...componentNonBidirLanes.map((l) => makeTripDatum(l, false, true)),
     ];
 
