@@ -426,8 +426,8 @@ export function FreightNetworkMap({ data, period }: Props) {
 
       <div className="absolute bottom-4 right-4 bg-background/90 border rounded-lg px-5 py-4 text-base space-y-3 min-w-[300px]">
 
-        {/* Flow type */}
-        <p className="font-semibold text-base">Flow type</p>
+        {/* Hub type */}
+        <p className="font-semibold text-base">Hub type</p>
         {([
           { type: 'source',  dot: 'bg-blue-500',  label: 'Mostly outbound' },
           { type: 'transit', dot: 'bg-amber-500', label: 'Balanced' },
