@@ -16,7 +16,7 @@ import { useRouteDiscoveryStore } from "../../store";
 import type { RoutesQuery } from "../../api";
 
 type TabId = "map" | "search";
-type PeriodId = "30d" | "90d" | "all";
+type PeriodId = "30d" | "60d" | "90d";
 
 export function DesktopRouteDiscoveryView() {
   const [tab, setTab] = useState<TabId>("map");
@@ -89,7 +89,7 @@ export function DesktopRouteDiscoveryView() {
 
           {tab === "map" && (
             <div className="flex gap-1">
-              {(["30d", "90d", "all"] as const).map((p) => (
+              {(["30d", "60d", "90d"] as const).map((p) => (
                 <button
                   key={p}
                   onClick={() => setPeriod(p)}
@@ -99,7 +99,7 @@ export function DesktopRouteDiscoveryView() {
                       : "bg-background text-muted-foreground border-border hover:border-foreground/40"
                   }`}
                 >
-                  {p === "all" ? "All time" : p}
+                  {p}
                 </button>
               ))}
             </div>
@@ -108,12 +108,6 @@ export function DesktopRouteDiscoveryView() {
 
         {/* ── Map tab ── */}
         <TabsContent value="map" className="mt-4">
-          {period === "all" && (
-            <p className="text-xs text-muted-foreground mb-3 italic">
-              Historical overview — not current lane availability.
-            </p>
-          )}
-
           {networkLoading && (
             <Skeleton className="h-[500px] w-full rounded-lg" />
           )}

@@ -95,7 +95,7 @@ export async function fetchLegDeadhead(
 
 export async function fetchFreightNetwork(
   companyId: string,
-  period: '30d' | '90d' | 'all',
+  period: '30d' | '60d' | '90d',
 ): Promise<FreightNetworkMapResponse> {
   return fetchApi<FreightNetworkMapResponse>(
     `/analytics/${encodeURIComponent(companyId)}/freight-network-map?period=${period}`,

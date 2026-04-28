@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/core/services/auth-provider';
 import { fetchFreightNetwork } from '../api';
 
-export function useFreightNetwork(period: '30d' | '90d' | 'all') {
+export function useFreightNetwork(period: '30d' | '60d' | '90d') {
   const { activeCompanyId } = useAuth();
   return useQuery({
     queryKey: ['route-discovery', 'freight-network', activeCompanyId, period],
