@@ -1,10 +1,8 @@
 "use client";
 
 import type { FreightZoneSummary } from '@mwbhtx/haulvisor-core';
-
-type MapMode = 'volume' | 'optionality' | 'homeNetwork';
-type VolumeMetric = 'total' | 'outbound' | 'inbound';
-type VisualBucket = 'high' | 'medium' | 'low';
+import type { MapMode, VolumeMetric, VisualBucket } from '../utils/map-mode-types';
+import { zoneVolumeValue } from '../utils/freight-network';
 type FreightZoneWithCadence = FreightZoneSummary & {
   outbound_active_days?: number;
   outbound_days_since_last_load?: number | null;
@@ -33,12 +31,6 @@ const BUCKET_LABEL: Record<VisualBucket, string> = {
   medium: 'Medium (middle 33%)',
   low: 'Low (bottom 33%)',
 };
-
-function volumeValue(zone: FreightZoneSummary, metric: VolumeMetric): number {
-  if (metric === 'outbound') return zone.outbound_load_count;
-  if (metric === 'inbound') return zone.inbound_load_count;
-  return zone.outbound_load_count + zone.inbound_load_count;
-}
 
 function marketRead(outboundPct: number, inboundPct: number): string {
   if (inboundPct >= 65) return 'Mostly receives freight; outbound activity is limited.';
@@ -89,7 +81,7 @@ export function ZoneTooltip({
   onClose,
 }: ZoneTooltipProps) {
   const totalLoads = zone.outbound_load_count + zone.inbound_load_count;
-  const selectedVolume = volumeValue(zone, volumeMetric);
+  const selectedVolume = zoneVolumeValue(zone, volumeMetric);
   const effectiveDestinations = Math.pow(2, zone.outbound_entropy);
   const outboundPct = totalLoads > 0 ? Math.round((zone.outbound_load_count / totalLoads) * 100) : 0;
   const inboundPct = totalLoads > 0 ? 100 - outboundPct : 0;

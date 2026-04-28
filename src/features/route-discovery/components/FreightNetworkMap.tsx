@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTheme } from "next-themes";
 import maplibregl from "maplibre-gl";
 import { layersWithCustomTheme } from "protomaps-themes-base";
@@ -18,6 +18,18 @@ import {
   SelectValue,
 } from "@/platform/web/components/ui/select";
 import { ZoneTooltip } from "./ZoneTooltip";
+import type {
+  FlowType, MapMode, VolumeMetric, VisualBucket, EntryStrictness,
+  HomeNetworkMaxLegs, TemporaryHome, HomeNetworkNode, HomeBaseQuality,
+} from "../utils/map-mode-types";
+import { VOLUME_COLOR, OPTIONALITY_COLOR, HOME_NETWORK_COLOR } from "../utils/map-mode-types";
+import {
+  addEdge, bfsDepth,
+  buildHomeNetwork, buildHomeNetworkFromAnchors, buildHomeBaseQuality,
+  homeBaseHeatColor, isSupportedReverseLane,
+  findEntryAnchors, temporaryHomeSummary, percentileOf,
+} from "../utils/home-network-graph";
+import { zoneVolumeValue, zoneVolumeBucket } from "../utils/freight-network";
 
 const PROTOMAPS_API_KEY = process.env.NEXT_PUBLIC_PROTOMAPS_API_KEY ?? "";
 
@@ -37,354 +49,13 @@ function protomapsStyle(theme: "light" | "dark"): maplibregl.StyleSpecification 
   };
 }
 
-type FlowType = 'source' | 'sink';
-type MapMode = 'volume' | 'optionality' | 'homeNetwork';
-type VolumeMetric = 'total' | 'outbound' | 'inbound';
-type VisualBucket = 'high' | 'medium' | 'low';
-type EntryStrictness = 'strict' | 'balanced' | 'flexible';
-type HomeNetworkMaxLegs = 2 | 3 | 4;
-type TemporaryHome = { lat: number; lng: number };
-type HomeNetworkNode = {
-  bucket: VisualBucket;
-  score: number;
-  outboundLegs: number;
-  returnLegs: number;
-};
-type HomeBaseQuality = {
-  bucket: VisualBucket;
-  score: number;
-  normalizedScore: number;
-  networkZoneCount: number;
-};
-type EntryAnchor = {
-  zoneKey: string;
-  distanceMiles: number;
-  outsideRadius: boolean;
-};
-
-type TemporaryHomeSummary = {
-  entryAnchors: Array<EntryAnchor & { zone: FreightZoneSummary }>;
-  networkZoneCount: number;
-};
-
-function zoneVolumeValue(z: FreightZoneSummary, metric: VolumeMetric): number {
-  if (metric === 'outbound') return z.outbound_load_count;
-  if (metric === 'inbound') return z.inbound_load_count;
-  return z.outbound_load_count + z.inbound_load_count;
-}
-
-function zoneVolumeBucket(
-  z: FreightZoneSummary,
-  thresholds: { medium_min: number; high_min: number },
-  metric: VolumeMetric,
-): VisualBucket {
-  const value = zoneVolumeValue(z, metric);
-  if (value >= thresholds.high_min) return 'high';
-  if (value >= thresholds.medium_min) return 'medium';
-  return 'low';
-}
-
-const VOLUME_COLOR: Record<VisualBucket, [number, number, number]> = {
-  high:   [255, 200,  50],  // gold
-  medium: [255, 110,  20],  // orange
-  low:    [200,  45,  45],  // red
-};
-
-const OPTIONALITY_COLOR: Record<VisualBucket, [number, number, number]> = {
-  high:   [ 16, 185, 129],  // emerald
-  medium: [245, 158,  11],  // amber
-  low:    [239,  68,  68],  // red
-};
-
-const HOME_NETWORK_COLOR: Record<VisualBucket, [number, number, number]> = {
-  high:   [ 34, 197,  94],  // green
-  medium: [ 56, 189, 248],  // sky
-  low:    [148, 163, 184],  // slate
-};
-
-const ENTRY_STRICTNESS: Record<EntryStrictness, {
-  maxWaitDays: number;
-  minDataSupport: FreightZoneSummary['data_support'];
-  allowOutsideRadiusFallback: boolean;
-}> = {
-  strict: { maxWaitDays: 1, minDataSupport: 'high', allowOutsideRadiusFallback: false },
-  balanced: { maxWaitDays: 3, minDataSupport: 'medium', allowOutsideRadiusFallback: false },
-  flexible: { maxWaitDays: 7, minDataSupport: 'low', allowOutsideRadiusFallback: true },
-};
-
-const DATA_SUPPORT_RANK: Record<FreightZoneSummary['data_support'], number> = {
-  low: 0,
-  medium: 1,
-  high: 2,
-};
-
-function distanceMiles(a: TemporaryHome, b: { centroid_lat: number; centroid_lng: number }): number {
-  const toRad = (value: number) => (value * Math.PI) / 180;
-  const earthMiles = 3958.8;
-  const dLat = toRad(b.centroid_lat - a.lat);
-  const dLng = toRad(b.centroid_lng - a.lng);
-  const lat1 = toRad(a.lat);
-  const lat2 = toRad(b.centroid_lat);
-  const h =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
-  return 2 * earthMiles * Math.asin(Math.sqrt(h));
-}
-
-function zoneWaitDays(z: FreightZoneSummary): number | null {
-  if ('outbound_median_wait_days' in z && typeof z.outbound_median_wait_days === 'number') {
-    return z.outbound_median_wait_days;
-  }
-  return null;
-}
-
-function isViableEntryAnchor(z: FreightZoneSummary, strictness: EntryStrictness): boolean {
-  const config = ENTRY_STRICTNESS[strictness];
-  const wait = zoneWaitDays(z);
-  const waitPasses = wait === null ? strictness === 'flexible' : wait <= config.maxWaitDays;
-  return waitPasses && DATA_SUPPORT_RANK[z.data_support] >= DATA_SUPPORT_RANK[config.minDataSupport];
-}
-
-function findEntryAnchors(
-  zones: FreightZoneSummary[],
-  home: TemporaryHome | null,
-  radiusMiles: number,
-  strictness: EntryStrictness,
-): EntryAnchor[] {
-  if (!home) return [];
-  const allByDistance = zones
-    .map((z) => ({
-      zone: z,
-      distanceMiles: distanceMiles(home, z),
-    }))
-    .sort((a, b) => a.distanceMiles - b.distanceMiles);
-  const candidates = allByDistance.filter(({ zone }) => isViableEntryAnchor(zone, strictness));
-
-  const insideRadius = candidates
-    .filter((c) => c.distanceMiles <= radiusMiles)
-    .map((c) => ({ zoneKey: c.zone.zone_key, distanceMiles: c.distanceMiles, outsideRadius: false }));
-  if (insideRadius.length > 0 || !ENTRY_STRICTNESS[strictness].allowOutsideRadiusFallback) {
-    const fallback = insideRadius.length > 0
-      ? insideRadius
-      : allByDistance.map((c) => ({
-          zoneKey: c.zone.zone_key,
-          distanceMiles: c.distanceMiles,
-          outsideRadius: c.distanceMiles > radiusMiles,
-        }));
-    return fallback.slice(0, 4);
-  }
-  const flexibleFallback = candidates.length > 0 ? candidates : allByDistance;
-  return flexibleFallback
-    .slice(0, 3)
-    .map((c) => ({ zoneKey: c.zone.zone_key, distanceMiles: c.distanceMiles, outsideRadius: c.distanceMiles > radiusMiles }));
-}
-
-function temporaryHomeSummary(
-  lanes: FreightLaneEntry[],
-  zones: FreightZoneSummary[],
-  home: TemporaryHome | null,
-  radiusMiles: number,
-  strictness: EntryStrictness,
-  maxLegs: HomeNetworkMaxLegs,
-): TemporaryHomeSummary | null {
-  if (!home) return null;
-  const laneEndpointZoneKeys = new Set(lanes.flatMap((l) => [l.origin_zone_key, l.destination_zone_key]));
-  const renderableZones = zones.filter((z) => laneEndpointZoneKeys.has(z.zone_key));
-  const zoneByKey = new Map(zones.map((z) => [z.zone_key, z]));
-  const entryAnchors = findEntryAnchors(renderableZones, home, radiusMiles, strictness)
-    .map((anchor) => {
-      const zone = zoneByKey.get(anchor.zoneKey);
-      return zone ? { ...anchor, zone } : null;
-    })
-    .filter((v): v is EntryAnchor & { zone: FreightZoneSummary } => v !== null);
-  const homeNetwork = buildHomeNetworkFromAnchors(lanes, zones, entryAnchors.map((a) => a.zoneKey), maxLegs);
-  return {
-    entryAnchors,
-    networkZoneCount: homeNetwork.size,
-  };
-}
-
-function interpolateColor(
-  a: [number, number, number],
-  b: [number, number, number],
-  t: number,
-): [number, number, number] {
-  const clamped = Math.max(0, Math.min(1, t));
-  return [
-    Math.round(a[0] + (b[0] - a[0]) * clamped),
-    Math.round(a[1] + (b[1] - a[1]) * clamped),
-    Math.round(a[2] + (b[2] - a[2]) * clamped),
-  ];
-}
-
-function homeBaseHeatColor(score: number): [number, number, number] {
-  if (score < 0.5) {
-    return interpolateColor([239, 68, 68], [245, 158, 11], score / 0.5);
-  }
-  return interpolateColor([245, 158, 11], [34, 197, 94], (score - 0.5) / 0.5);
-}
-
-function isSupportedReverseLane(l: FreightLaneEntry): boolean {
-  return l.reverse_strength === 'strong_visible' || l.reverse_strength === 'strong_truncated';
-}
-
-function addEdge(adj: Map<string, Set<string>>, from: string, to: string) {
-  if (!adj.has(from)) adj.set(from, new Set());
-  adj.get(from)!.add(to);
-}
-
-function buildDirectedAdjacency(lanes: FreightLaneEntry[]): Map<string, Set<string>> {
-  const adj = new Map<string, Set<string>>();
-  for (const l of lanes) {
-    addEdge(adj, l.origin_zone_key, l.destination_zone_key);
-    if (isSupportedReverseLane(l)) addEdge(adj, l.destination_zone_key, l.origin_zone_key);
-  }
-  return adj;
-}
-
-function reverseAdjacency(adj: Map<string, Set<string>>): Map<string, Set<string>> {
-  const reversed = new Map<string, Set<string>>();
-  for (const [from, tos] of adj.entries()) {
-    for (const to of tos) addEdge(reversed, to, from);
-  }
-  return reversed;
-}
-
-function bfsDepth(adj: Map<string, Set<string>>, start: string, maxDepth: number): Map<string, number> {
-  const depth = new Map<string, number>([[start, 0]]);
-  const queue = [start];
-  while (queue.length) {
-    const cur = queue.shift()!;
-    const currentDepth = depth.get(cur)!;
-    if (currentDepth >= maxDepth) continue;
-    for (const next of adj.get(cur) ?? []) {
-      if (!depth.has(next)) {
-        depth.set(next, currentDepth + 1);
-        queue.push(next);
-      }
-    }
-  }
-  return depth;
-}
-
-function buildHomeNetwork(
-  lanes: FreightLaneEntry[],
-  zones: FreightZoneSummary[],
-  homeZoneKey: string | null,
-  maxLegs: HomeNetworkMaxLegs,
-): Map<string, HomeNetworkNode> {
-  if (!homeZoneKey) return new Map();
-  return buildHomeNetworkFromAnchors(lanes, zones, [homeZoneKey], maxLegs);
-}
-
-function buildHomeNetworkFromAnchors(
-  lanes: FreightLaneEntry[],
-  zones: FreightZoneSummary[],
-  homeZoneKeys: string[],
-  maxLegs: HomeNetworkMaxLegs,
-): Map<string, HomeNetworkNode> {
-  if (homeZoneKeys.length === 0) return new Map();
-
-  const forward = buildDirectedAdjacency(lanes);
-  const backward = reverseAdjacency(forward);
-  const mergeDepths = (adj: Map<string, Set<string>>) => {
-    const merged = new Map<string, number>();
-    for (const homeZoneKey of homeZoneKeys) {
-      const depths = bfsDepth(adj, homeZoneKey, maxLegs);
-      for (const [zoneKey, depth] of depths.entries()) {
-        const existing = merged.get(zoneKey);
-        if (existing === undefined || depth < existing) merged.set(zoneKey, depth);
-      }
-    }
-    return merged;
-  };
-  const reachableFromHome = mergeDepths(forward);
-  const canReturnHome = mergeDepths(backward);
-  const candidates = zones
-    .map((z) => {
-      const outboundLegs = reachableFromHome.get(z.zone_key);
-      const returnLegs = canReturnHome.get(z.zone_key);
-      if (outboundLegs === undefined || returnLegs === undefined) return null;
-      if (outboundLegs > maxLegs || returnLegs > maxLegs) return null;
-      const volumeScore = Math.min(20, Math.log1p(z.outbound_load_count + z.inbound_load_count) * 4);
-      const optionalityScore = Math.min(12, z.outbound_entropy * 4);
-      const waitPenalty =
-        'outbound_median_wait_days' in z && typeof z.outbound_median_wait_days === 'number'
-          ? Math.min(18, Math.max(0, z.outbound_median_wait_days - 1) * 3)
-          : 0;
-      const score = Math.max(
-        0,
-        100 - outboundLegs * 18 - returnLegs * 18 + volumeScore + optionalityScore - waitPenalty,
-      );
-      return { zoneKey: z.zone_key, score, outboundLegs, returnLegs };
-    })
-    .filter((v): v is { zoneKey: string; score: number; outboundLegs: number; returnLegs: number } => v !== null)
-    .sort((a, b) => a.score - b.score);
-
-  const percentile = (p: number) =>
-    candidates.length === 0 ? 0 : candidates[Math.min(candidates.length - 1, Math.floor(candidates.length * p))].score;
-  const mediumMin = percentile(1 / 3);
-  const highMin = percentile(2 / 3);
-  return new Map(candidates.map((c) => [
-    c.zoneKey,
-    {
-      bucket: c.score >= highMin ? 'high' : c.score >= mediumMin ? 'medium' : 'low',
-      score: c.score,
-      outboundLegs: c.outboundLegs,
-      returnLegs: c.returnLegs,
-    },
-  ]));
-}
-
-function buildHomeBaseQuality(
-  lanes: FreightLaneEntry[],
-  zones: FreightZoneSummary[],
-  maxLegs: HomeNetworkMaxLegs,
-): Map<string, HomeBaseQuality> {
-  const forward = buildDirectedAdjacency(lanes);
-  const backward = reverseAdjacency(forward);
-  const rawScores = zones.map((z) => {
-    const reachableFromHome = bfsDepth(forward, z.zone_key, maxLegs);
-    const canReturnHome = bfsDepth(backward, z.zone_key, maxLegs);
-    const reachableCount = Math.max(0, reachableFromHome.size - 1);
-    let networkCount = 0;
-    for (const zoneKey of reachableFromHome.keys()) {
-      if (canReturnHome.has(zoneKey)) networkCount += 1;
-    }
-    const networkZoneCount = networkCount;
-    const trapCount = Math.max(0, reachableCount - Math.max(0, networkCount - 1));
-    const totalLoads = z.outbound_load_count + z.inbound_load_count;
-    if (networkCount <= 1) {
-      return { zoneKey: z.zone_key, score: 0, networkZoneCount };
-    }
-    const volumeScore = Math.log1p(totalLoads) * 5;
-    const optionalityScore = z.outbound_entropy * 8;
-    const networkScore = networkCount * 8;
-    const returnCoverageScore = reachableCount === 0 ? 0 : (networkCount / (reachableCount + 1)) * 30;
-    const trapPenalty = trapCount * 12;
-    return {
-      zoneKey: z.zone_key,
-      score: Math.max(0, networkScore + returnCoverageScore + volumeScore + optionalityScore - trapPenalty),
-      networkZoneCount,
-    };
-  }).sort((a, b) => a.score - b.score);
-
-  const percentile = (p: number) =>
-    rawScores.length === 0 ? 0 : rawScores[Math.min(rawScores.length - 1, Math.floor(rawScores.length * p))].score;
-  const low = rawScores[0]?.score ?? 0;
-  const high = rawScores[rawScores.length - 1]?.score ?? 0;
-  const mediumMin = percentile(1 / 3);
-  const highMin = percentile(2 / 3);
-
-  return new Map(rawScores.map((s) => [
-    s.zoneKey,
-    {
-      score: s.score,
-      normalizedScore: high === low ? 1 : (s.score - low) / (high - low),
-      bucket: s.score >= highMin ? 'high' : s.score >= mediumMin ? 'medium' : 'low',
-      networkZoneCount: s.networkZoneCount,
-    },
-  ]));
+function makeSetToggler<T>(setter: (fn: (prev: Set<T>) => Set<T>) => void) {
+  return (item: T) => setter((prev) => {
+    const next = new Set(prev);
+    if (next.has(item)) next.delete(item);
+    else next.add(item);
+    return next;
+  });
 }
 
 interface TripDatum {
@@ -475,38 +146,10 @@ export function FreightNetworkMap({ data, period }: Props) {
     return () => { if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current); };
   }, []);
 
-  const toggleFlowType = (type: FlowType) => {
-    setActiveFlowTypes((prev) => {
-      const n = new Set(prev);
-      if (n.has(type)) n.delete(type);
-      else n.add(type);
-      return n;
-    });
-  };
-  const toggleVolumeBucket = (b: VisualBucket) => {
-    setActiveVolumeBuckets((prev) => {
-      const n = new Set(prev);
-      if (n.has(b)) n.delete(b);
-      else n.add(b);
-      return n;
-    });
-  };
-  const toggleOptionalityBucket = (b: VisualBucket) => {
-    setActiveOptionalityBuckets((prev) => {
-      const n = new Set(prev);
-      if (n.has(b)) n.delete(b);
-      else n.add(b);
-      return n;
-    });
-  };
-  const toggleHomeNetworkBucket = (b: VisualBucket) => {
-    setActiveHomeNetworkBuckets((prev) => {
-      const n = new Set(prev);
-      if (n.has(b)) n.delete(b);
-      else n.add(b);
-      return n;
-    });
-  };
+  const toggleFlowType = makeSetToggler<FlowType>(setActiveFlowTypes);
+  const toggleVolumeBucket = makeSetToggler<VisualBucket>(setActiveVolumeBuckets);
+  const toggleOptionalityBucket = makeSetToggler<VisualBucket>(setActiveOptionalityBuckets);
+  const toggleHomeNetworkBucket = makeSetToggler<VisualBucket>(setActiveHomeNetworkBuckets);
 
   const selectedZone = selectedZoneKey
     ? data.zones.find((z) => z.zone_key === selectedZoneKey) ?? null
@@ -534,10 +177,8 @@ export function FreightNetworkMap({ data, period }: Props) {
       .filter((z) => laneEndpointZoneKeys.has(z.zone_key))
       .map((z) => zoneVolumeValue(z, volumeMetric))
       .sort((a, b) => a - b);
-    const percentile = (p: number) =>
-      volumeValues.length === 0 ? 0 : volumeValues[Math.min(volumeValues.length - 1, Math.floor(volumeValues.length * p))];
     const thresholds = volumeValues.length >= 6
-      ? { medium_min: percentile(1 / 3), high_min: percentile(2 / 3) }
+      ? { medium_min: percentileOf(volumeValues, 1 / 3), high_min: percentileOf(volumeValues, 2 / 3) }
       : data.metadata.data_support_thresholds;
     return zoneVolumeBucket(zone, thresholds, volumeMetric);
   }, [data.lanes, data.metadata.data_support_thresholds, data.metadata.zone_radius_miles, data.zones, entryStrictness, homeNetworkMaxLegs, mapMode, selectedZoneKey, temporaryHome, volumeMetric]);
@@ -622,10 +263,8 @@ export function FreightNetworkMap({ data, period }: Props) {
     const volumeValues = renderableZones
       .map((z) => zoneVolumeValue(z, volumeMetric))
       .sort((a, b) => a - b);
-    const percentile = (p: number) =>
-      volumeValues.length === 0 ? 0 : volumeValues[Math.min(volumeValues.length - 1, Math.floor(volumeValues.length * p))];
     const volThresholds = volumeValues.length >= 6
-      ? { medium_min: percentile(1 / 3), high_min: percentile(2 / 3) }
+      ? { medium_min: percentileOf(volumeValues, 1 / 3), high_min: percentileOf(volumeValues, 2 / 3) }
       : apiThresholds;
     const homeNetwork = mapMode === 'homeNetwork'
       ? selectedZoneKey
@@ -634,11 +273,9 @@ export function FreightNetworkMap({ data, period }: Props) {
       : new Map<string, HomeNetworkNode>();
     const zoneVisualBucket = (z: FreightZoneSummary): VisualBucket =>
       mapMode === 'homeNetwork'
-        ? selectedZoneKey
+        ? (selectedZoneKey || temporaryHome)
           ? homeNetwork.get(z.zone_key)?.bucket ?? 'low'
-          : temporaryHome
-            ? homeNetwork.get(z.zone_key)?.bucket ?? (entryAnchorZoneKeys.has(z.zone_key) ? 'low' : 'low')
-            : homeBaseQuality.get(z.zone_key)?.bucket ?? 'low'
+          : homeBaseQuality.get(z.zone_key)?.bucket ?? 'low'
         : mapMode === 'optionality'
         ? z.optionality_bucket === 'high' || z.optionality_bucket === 'medium' ? z.optionality_bucket : 'low'
         : zoneVolumeBucket(z, volThresholds, volumeMetric);
@@ -681,8 +318,6 @@ export function FreightNetworkMap({ data, period }: Props) {
     // Non-bidirectional lanes have a single fixed direction:
     //   origin=selected (outbound) → shown only with source on
     //   dest=selected   (inbound)  → shown only with sink on
-    const isBidirectionalLane = (l: FreightLaneEntry) =>
-      l.reverse_strength === 'strong_visible' || l.reverse_strength === 'strong_truncated';
 
     const sourceOn = activeFlowTypes.has('source');
     const sinkOn = activeFlowTypes.has('sink');
@@ -698,7 +333,7 @@ export function FreightNetworkMap({ data, period }: Props) {
     const inboundDirectLanes: FreightLaneEntry[] = [];  // single inbound comet (other → selected)
 
     for (const l of lanesAtSelected) {
-      const isBi = isBidirectionalLane(l);
+      const isBi = isSupportedReverseLane(l);
       const otherIsOrigin = l.destination_zone_key === selectedZoneKey;
       if (isBi) {
         if (sourceOn && sinkOn) bidirBothLanes.push(l);
@@ -733,13 +368,9 @@ export function FreightNetworkMap({ data, period }: Props) {
     if (expandNetwork && selectedZoneKey) {
       const forwardAdj = new Map<string, Set<string>>();
       const reverseAdj = new Map<string, Set<string>>();
-      const addEdge = (m: Map<string, Set<string>>, a: string, b: string) => {
-        if (!m.has(a)) m.set(a, new Set());
-        m.get(a)!.add(b);
-      };
 
       for (const l of qualityLanes) {
-        if (isBidirectionalLane(l)) {
+        if (isSupportedReverseLane(l)) {
           if (sourceOn) {
             addEdge(forwardAdj, l.origin_zone_key, l.destination_zone_key);
             addEdge(forwardAdj, l.destination_zone_key, l.origin_zone_key);
@@ -754,21 +385,8 @@ export function FreightNetworkMap({ data, period }: Props) {
         }
       }
 
-      const bfsWithDepth = (adj: Map<string, Set<string>>, start: string) => {
-        const depth = new Map<string, number>([[start, 0]]);
-        const queue = [start];
-        while (queue.length) {
-          const cur = queue.shift()!;
-          const d = depth.get(cur)!;
-          for (const nb of adj.get(cur) ?? []) {
-            if (!depth.has(nb)) { depth.set(nb, d + 1); queue.push(nb); }
-          }
-        }
-        return depth;
-      };
-
-      forwardDepth = sourceOn ? bfsWithDepth(forwardAdj, selectedZoneKey) : new Map([[selectedZoneKey, 0]]);
-      reverseDepth = sinkOn ? bfsWithDepth(reverseAdj, selectedZoneKey) : new Map([[selectedZoneKey, 0]]);
+      forwardDepth = sourceOn ? bfsDepth(forwardAdj, selectedZoneKey) : new Map([[selectedZoneKey, 0]]);
+      reverseDepth = sinkOn ? bfsDepth(reverseAdj, selectedZoneKey) : new Map([[selectedZoneKey, 0]]);
 
       componentLanes = qualityLanes.filter((l) => {
         if (l.origin_zone_key === selectedZoneKey || l.destination_zone_key === selectedZoneKey) return false;
@@ -865,8 +483,8 @@ export function FreightNetworkMap({ data, period }: Props) {
     // For non-bidirectional lanes the canonical origin→dest direction already matches
     // BFS depth (reverseAdj puts dest closer, forwardAdj puts origin closer), so a
     // single comet at origin→dest is always correct.
-    const componentBidirLanes = componentLanes.filter(isBidirectionalLane);
-    const componentNonBidirLanes = componentLanes.filter((l) => !isBidirectionalLane(l));
+    const componentBidirLanes = componentLanes.filter(isSupportedReverseLane);
+    const componentNonBidirLanes = componentLanes.filter((l) => !isSupportedReverseLane(l));
 
     const bidirComponentTrips: TripDatum[] = [];
     for (const l of componentBidirLanes) {
@@ -994,7 +612,6 @@ export function FreightNetworkMap({ data, period }: Props) {
       : null;
 
     // Faint static tracks — lane paths always visible between comet sweeps
-    const isDark = resolvedTheme === 'dark';
     const directLanes = directShownLanes;
     const trackLayer = new PathLayer<FreightLaneEntry>({
       id: 'lane-tracks',
@@ -1003,7 +620,7 @@ export function FreightNetworkMap({ data, period }: Props) {
       getWidth: () => 6,
       widthUnits: 'pixels',
       widthMinPixels: 6,
-      getColor: () => (isDark ? [0, 180, 240, 130] : [0, 100, 180, 130]) as [number, number, number, number],
+      getColor: () => (themeRef.current === 'dark' ? [0, 180, 240, 130] : [0, 100, 180, 130]) as [number, number, number, number],
       pickable: false,
     });
     const componentTrackLayer = new PathLayer<FreightLaneEntry>({
@@ -1013,7 +630,7 @@ export function FreightNetworkMap({ data, period }: Props) {
       getWidth: () => 1,
       widthUnits: 'pixels',
       widthMinPixels: 1,
-      getColor: () => (isDark ? [0, 140, 200, 50] : [0, 80, 150, 50]) as [number, number, number, number],
+      getColor: () => (themeRef.current === 'dark' ? [0, 140, 200, 50] : [0, 80, 150, 50]) as [number, number, number, number],
       pickable: false,
     });
     const entryAnchorZones = temporaryHome
@@ -1022,10 +639,10 @@ export function FreightNetworkMap({ data, period }: Props) {
             const zone = zoneMap.get(a.zoneKey);
             return zone ? { anchor: a, zone } : null;
           })
-          .filter((v): v is { anchor: EntryAnchor; zone: FreightZoneSummary } => v !== null)
+          .filter((v): v is { anchor: typeof entryAnchors[0]; zone: FreightZoneSummary } => v !== null)
       : [];
     const deadheadLayer = temporaryHome
-      ? new PathLayer<{ anchor: EntryAnchor; zone: FreightZoneSummary }>({
+      ? new PathLayer<{ anchor: typeof entryAnchors[0]; zone: FreightZoneSummary }>({
           id: 'home-deadhead-connectors',
           data: entryAnchorZones,
           getPath: ({ zone }) => [[temporaryHome.lng, temporaryHome.lat], [zone.centroid_lng, zone.centroid_lat]],
@@ -1061,16 +678,15 @@ export function FreightNetworkMap({ data, period }: Props) {
       trackLayer,
     ];
     aboveLanesRef.current = [nodeLayer, ...(temporaryHomeLayer ? [temporaryHomeLayer] : []), ...(haloLayer ? [haloLayer] : [])];
-  }, [data, selectedZoneKey, temporaryHome, entryStrictness, homeNetworkMaxLegs, mapMode, volumeMetric, activeFlowTypes, activeVolumeBuckets, activeOptionalityBuckets, activeHomeNetworkBuckets, expandNetwork, resolvedTheme]);
+  }, [data, selectedZoneKey, temporaryHome, entryStrictness, homeNetworkMaxLegs, mapMode, volumeMetric, activeFlowTypes, activeVolumeBuckets, activeOptionalityBuckets, activeHomeNetworkBuckets, expandNetwork]);
 
   const noData = data.lanes.length === 0 && data.zones.length === 0;
-  const tempHomeSummary = temporaryHomeSummary(
-    data.lanes,
-    data.zones,
-    temporaryHome,
-    data.metadata.zone_radius_miles,
-    entryStrictness,
-    homeNetworkMaxLegs,
+  const tempHomeSummary = useMemo(
+    () => temporaryHomeSummary(
+      data.lanes, data.zones, temporaryHome,
+      data.metadata.zone_radius_miles, entryStrictness, homeNetworkMaxLegs,
+    ),
+    [data.lanes, data.zones, temporaryHome, data.metadata.zone_radius_miles, entryStrictness, homeNetworkMaxLegs],
   );
   const nearestEntryAnchor = tempHomeSummary?.entryAnchors[0] ?? null;
   const strongestEntryAnchor = tempHomeSummary?.entryAnchors
