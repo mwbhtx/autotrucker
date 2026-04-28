@@ -209,10 +209,15 @@ export function FreightNetworkMap({ data, period }: Props) {
       id: 'zone-nodes',
       data: zones,
       getPosition: (z) => [z.centroid_lng, z.centroid_lat],
-      getRadius: (z) => Math.max(30_000, Math.sqrt(z.outbound_load_count) * 8_000),
+      radiusUnits: 'pixels',
+      getRadius: (z) => {
+        if (z.optionality_bucket === 'low_data') return 4;
+        return Math.max(6, Math.min(20, Math.sqrt(z.outbound_load_count) * 1.8));
+      },
       getFillColor: (z) => {
         const [r, g, b] = NODE_COLOR[z.optionality_bucket];
-        return [r, g, b, Math.round(zoneAlpha(z) * 200)];
+        const alpha = z.optionality_bucket === 'low_data' ? 90 : Math.round(zoneAlpha(z) * 210);
+        return [r, g, b, alpha];
       },
       pickable: true,
       onClick: ({ object }) => {
@@ -227,7 +232,8 @@ export function FreightNetworkMap({ data, period }: Props) {
       },
     });
 
-    const labelZones = zones.filter((z) => z.outbound_load_count >= data.metadata.min_zone_outbound_loads);
+    const laneZoneKeys = new Set(lanes.flatMap((l) => [l.origin_zone_key, l.destination_zone_key]));
+    const labelZones = zones.filter((z) => laneZoneKeys.has(z.zone_key));
     const labelLayer = new TextLayer<FreightZoneSummary>({
       id: 'zone-labels',
       data: labelZones,
