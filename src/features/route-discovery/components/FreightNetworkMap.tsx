@@ -212,6 +212,18 @@ export function FreightNetworkMap({ data, period }: Props) {
     const allCounts = lanes.map((l) => l.load_count);
 
     const volThresholds = data.metadata.data_support_thresholds;
+
+    // Temporary diagnostic — confirm whether mercer prod actually has medium/low
+    // volume zones surviving the low_data filter, or whether everything visible is high.
+    if (typeof window !== 'undefined') {
+      const dist = { low_data: 0, low: 0, medium: 0, high: 0 };
+      for (const z of zones) {
+        if (z.optionality_bucket === 'low_data') { dist.low_data++; continue; }
+        dist[zoneVolumeBucket(z, volThresholds)]++;
+      }
+      // eslint-disable-next-line no-console
+      console.log('[freight-map] volume distribution', dist, 'thresholds', volThresholds, 'total zones', zones.length);
+    }
     // Volume alone controls zone visibility; Traffic filter only affects lane display on click
     const zonePassesFilters = (z: FreightZoneSummary) =>
       z.optionality_bucket !== 'low_data' &&
