@@ -4,7 +4,7 @@ import type { FreightZoneSummary } from '@mwbhtx/haulvisor-core';
 
 interface ZoneTooltipProps {
   zone: FreightZoneSummary;
-  period: '30d' | '90d' | 'all';
+  period: '30d' | '60d' | '90d';
   periodNote: string;
   showClose?: boolean;
   onClose?: () => void;
@@ -26,8 +26,8 @@ const BUCKET_COLOR: Record<FreightZoneSummary['optionality_bucket'], string> = {
 
 const PERIOD_LABEL: Record<string, string> = {
   '30d': 'last 30 days',
+  '60d': 'last 60 days',
   '90d': 'last 90 days',
-  'all': 'all time',
 };
 
 export function ZoneTooltip({ zone, period, periodNote, showClose = false, onClose }: ZoneTooltipProps) {
@@ -69,7 +69,7 @@ export function ZoneTooltip({ zone, period, periodNote, showClose = false, onClo
       </dl>
 
       <p className="text-[10px] text-muted-foreground mt-3">
-        {period === 'all' ? periodNote : `Based on ${PERIOD_LABEL[period]} historical orders`}
+        {`Based on ${PERIOD_LABEL[period]} historical orders`}
       </p>
     </div>
   );

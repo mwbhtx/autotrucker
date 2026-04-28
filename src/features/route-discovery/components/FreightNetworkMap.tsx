@@ -48,7 +48,7 @@ interface ArcTooltipData {
 
 interface Props {
   data: FreightNetworkMapResponse;
-  period: '30d' | '90d' | 'all';
+  period: '30d' | '60d' | '90d';
 }
 
 export function FreightNetworkMap({ data, period }: Props) {
