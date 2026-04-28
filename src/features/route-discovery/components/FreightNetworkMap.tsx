@@ -94,10 +94,9 @@ export function FreightNetworkMap({ data, period }: Props) {
       container: containerRef.current,
       style: protomapsStyle(isDark ? "dark" : "light"),
       bounds: [[-125, 24], [-66, 49]],
-      fitBoundsOptions: { padding: 60 },
-      minZoom: 3,
+      fitBoundsOptions: { padding: 80 },
+      minZoom: 4,
       maxZoom: 12,
-      maxBounds: [[-175, 15], [-50, 72]],
       attributionControl: false,
     });
 
