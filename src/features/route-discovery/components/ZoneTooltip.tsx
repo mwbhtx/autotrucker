@@ -10,20 +10,6 @@ interface ZoneTooltipProps {
   onClose?: () => void;
 }
 
-const BUCKET_LABEL: Record<FreightZoneSummary['optionality_bucket'], string> = {
-  high:     'Many outbound options',
-  medium:   'Some outbound options',
-  low:      'Few outbound options',
-  low_data: 'Not enough historical data',
-};
-
-const BUCKET_COLOR: Record<FreightZoneSummary['optionality_bucket'], string> = {
-  high:     'text-green-500',
-  medium:   'text-amber-500',
-  low:      'text-rose-500',
-  low_data: 'text-slate-400',
-};
-
 const PERIOD_LABEL: Record<string, string> = {
   '30d': 'last 30 days',
   '60d': 'last 60 days',
@@ -38,15 +24,24 @@ const PERIOD_DAYS: Record<string, number> = {
 
 export function ZoneTooltip({ zone, period, periodNote, showClose = false, onClose }: ZoneTooltipProps) {
   const loadsPerDay = (zone.outbound_load_count / PERIOD_DAYS[period]).toFixed(1);
+  const totalLoads = zone.outbound_load_count + zone.inbound_load_count;
+  const outboundPct = totalLoads > 0 ? Math.round((zone.outbound_load_count / totalLoads) * 100) : 0;
+  const inboundPct = totalLoads > 0 ? 100 - outboundPct : 0;
 
   return (
     <div className="bg-background/95 border rounded-lg shadow-lg p-5 min-w-[300px] max-w-[360px] text-base">
       <div className="flex items-start justify-between gap-2 mb-4">
         <div>
           <p className="font-semibold text-base">{zone.display_city}, {zone.display_state}</p>
-          <p className={`text-base mt-1 ${BUCKET_COLOR[zone.optionality_bucket]}`}>
-            {BUCKET_LABEL[zone.optionality_bucket]}
-          </p>
+          {totalLoads > 0 ? (
+            <p className="text-base mt-1 text-muted-foreground">
+              <span className="text-blue-500">Outbound: {outboundPct}%</span>
+              {' · '}
+              <span className="text-red-500">Inbound: {inboundPct}%</span>
+            </p>
+          ) : (
+            <p className="text-base mt-1 text-slate-400">Not enough historical data</p>
+          )}
         </div>
         {showClose && (
           <button
