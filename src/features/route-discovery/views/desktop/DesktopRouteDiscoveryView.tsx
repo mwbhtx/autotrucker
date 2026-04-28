@@ -17,13 +17,15 @@ import type { RoutesQuery } from "../../api";
 
 type TabId = "map" | "search";
 type PeriodId = "30d" | "60d" | "90d";
+type ZoneRadius = 100 | 200 | 300 | 400;
 
 export function DesktopRouteDiscoveryView() {
   const [tab, setTab] = useState<TabId>("map");
   const [period, setPeriod] = useState<PeriodId>("90d");
+  const [zoneRadius, setZoneRadius] = useState<ZoneRadius>(200);
   const [query, setQuery] = useState<RoutesQuery | null>(null);
 
-  const { data: networkData, isLoading: networkLoading } = useFreightNetwork(period);
+  const { data: networkData, isLoading: networkLoading } = useFreightNetwork(period, zoneRadius);
   const { data, isLoading, error } = useDiscoveredRoutes(query);
   const selectedRowIndex = useRouteDiscoveryStore((s) => s.selectedRowIndex);
   const resetSelection = useRouteDiscoveryStore((s) => s.resetSelection);
@@ -88,20 +90,39 @@ export function DesktopRouteDiscoveryView() {
           </TabsList>
 
           {tab === "map" && (
-            <div className="flex gap-1">
-              {(["30d", "60d", "90d"] as const).map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setPeriod(p)}
-                  className={`px-3 py-1 text-xs rounded-md border transition-colors ${
-                    period === p
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-background text-muted-foreground border-border hover:border-foreground/40"
-                  }`}
-                >
-                  {p}
-                </button>
-              ))}
+            <div className="flex items-center gap-3">
+              <div className="flex gap-1">
+                {(["30d", "60d", "90d"] as const).map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => setPeriod(p)}
+                    className={`px-3 py-1 text-xs rounded-md border transition-colors ${
+                      period === p
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background text-muted-foreground border-border hover:border-foreground/40"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+              <div className="w-px h-4 bg-border" />
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-muted-foreground mr-1">Zone</span>
+                {([100, 200, 300, 400] as const).map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => setZoneRadius(r)}
+                    className={`px-3 py-1 text-xs rounded-md border transition-colors ${
+                      zoneRadius === r
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background text-muted-foreground border-border hover:border-foreground/40"
+                    }`}
+                  >
+                    {r}mi
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>

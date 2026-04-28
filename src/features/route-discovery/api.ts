@@ -96,8 +96,9 @@ export async function fetchLegDeadhead(
 export async function fetchFreightNetwork(
   companyId: string,
   period: '30d' | '60d' | '90d',
+  zoneRadius: 100 | 200 | 300 | 400 = 100,
 ): Promise<FreightNetworkMapResponse> {
   return fetchApi<FreightNetworkMapResponse>(
-    `/analytics/${encodeURIComponent(companyId)}/freight-network-map?period=${period}`,
+    `/analytics/${encodeURIComponent(companyId)}/freight-network-map?period=${period}&zone_radius=${zoneRadius}`,
   );
 }
