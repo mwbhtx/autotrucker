@@ -43,9 +43,16 @@ function zoneFlowType(z: FreightZoneSummary): FlowType {
 }
 
 const FLOW_COLOR: Record<FlowType, [number, number, number]> = {
-  source:  [ 59, 130, 246],  // blue-500  — export heavy
-  transit: [163, 230,  53],  // lime-400  — balanced (brand primary)
-  sink:    [239,  68,  68],  // red-500   — import heavy
+  source:  [ 59, 130, 246],  // blue-500   — export heavy
+  transit: [234, 179,   8],  // amber-500  — balanced (color-blind safe alternative to lime)
+  sink:    [239,  68,  68],  // red-500    — import heavy
+};
+
+// Stroke width on zone nodes encodes data_support (confidence in the underlying sample).
+const DATA_SUPPORT_STROKE: Record<FreightZoneSummary['data_support'], number> = {
+  low: 1,
+  medium: 2,
+  high: 3,
 };
 
 interface ArcTooltipData {
@@ -202,25 +209,25 @@ export function FreightNetworkMap({ data, period }: Props) {
       getTargetPosition: (l: FreightLaneEntry) => [l.destination_centroid_lng, l.destination_centroid_lat] as [number, number],
       getWidth: (l: FreightLaneEntry) => arcWidth(l.load_count, allCounts),
       widthUnits: 'pixels' as const,
-      widthMinPixels: 1.5,
+      widthMinPixels: 2,
       pickable: true,
       onHover: ({ object, x, y }: { object?: FreightLaneEntry; x: number; y: number }) => {
         setArcTooltip(object ? { lane: object, x, y } : null);
       },
     };
 
-    // Transit (strong bidirectional): lime
-    const transitLineLayer = new LineLayer<FreightLaneEntry>({ ...lineLayerBase, id: 'transit-lanes', data: transitLanes, getColor: [163, 230, 53, 220] });
+    // Transit (strong bidirectional): amber
+    const transitLineLayer = new LineLayer<FreightLaneEntry>({ ...lineLayerBase, id: 'transit-lanes', data: transitLanes, getColor: [234, 179, 8, 210] });
     // Outbound (one-way out): blue
-    const outboundLineLayer = new LineLayer<FreightLaneEntry>({ ...lineLayerBase, id: 'outbound-lanes', data: pureOutboundLanes, getColor: [59, 130, 246, 200] });
+    const outboundLineLayer = new LineLayer<FreightLaneEntry>({ ...lineLayerBase, id: 'outbound-lanes', data: pureOutboundLanes, getColor: [59, 130, 246, 210] });
     // Inbound (one-way in): red
-    const inboundLineLayer = new LineLayer<FreightLaneEntry>({ ...lineLayerBase, id: 'inbound-lanes', data: pureInboundLanes, getColor: [239, 68, 68, 180] });
+    const inboundLineLayer = new LineLayer<FreightLaneEntry>({ ...lineLayerBase, id: 'inbound-lanes', data: pureInboundLanes, getColor: [239, 68, 68, 210] });
 
     // Arrows at midpoint for outbound + transit (direction signal)
     const arrowData = [...transitLanes, ...pureOutboundLanes];
     const arrowColors: Record<string, [number, number, number, number]> = {};
-    transitLanes.forEach((l) => { arrowColors[l.origin_zone_key + l.destination_zone_key] = [163, 230, 53, 220]; });
-    pureOutboundLanes.forEach((l) => { arrowColors[l.origin_zone_key + l.destination_zone_key] = [59, 130, 246, 200]; });
+    transitLanes.forEach((l) => { arrowColors[l.origin_zone_key + l.destination_zone_key] = [234, 179, 8, 230]; });
+    pureOutboundLanes.forEach((l) => { arrowColors[l.origin_zone_key + l.destination_zone_key] = [59, 130, 246, 230]; });
 
     const arrowLayer = new TextLayer<FreightLaneEntry>({
       id: 'arrowheads',
@@ -236,39 +243,47 @@ export function FreightNetworkMap({ data, period }: Props) {
       getAngle: (l) =>
         90 - bearing(l.origin_centroid_lat, l.origin_centroid_lng, l.destination_centroid_lat, l.destination_centroid_lng),
       getSize: 13,
-      getColor: (l) => arrowColors[l.origin_zone_key + l.destination_zone_key] ?? [163, 230, 53, 220],
+      getColor: (l) => arrowColors[l.origin_zone_key + l.destination_zone_key] ?? [234, 179, 8, 230],
       sizeUnits: 'pixels',
       pickable: false,
     });
 
-    // Zone dots — always visible, small, clickable
+    const nodeRadius = (z: FreightZoneSummary) =>
+      Math.max(6, Math.min(18, (z.outbound_load_count / maxOutbound) * 18));
+
+    // Zone dots — color = flow type, stroke width = data_support (confidence).
     const nodeLayer = new ScatterplotLayer<FreightZoneSummary>({
       id: 'zone-nodes',
       data: activeZones,
       getPosition: (z) => [z.centroid_lng, z.centroid_lat],
       radiusUnits: 'pixels',
-      getRadius: (z) => {
-        const base = Math.max(7, Math.min(20, (z.outbound_load_count / maxOutbound) * 20));
-        return z.zone_key === selectedZoneKey ? base + 4 : base;
-      },
+      getRadius: nodeRadius,
       filled: true,
       stroked: true,
       lineWidthUnits: 'pixels',
-      getLineWidth: (z) => z.zone_key === selectedZoneKey ? 3 : 1.5,
+      getLineWidth: (z) => DATA_SUPPORT_STROKE[z.data_support],
       getFillColor: (z) => {
         const [r, g, b] = FLOW_COLOR[zoneFlowType(z)];
-        return [r, g, b, Math.round(zoneAlpha(z) * 255)];
+        return [r, g, b, Math.round(zoneAlpha(z) * 230)];
       },
       getLineColor: (z) => {
         const [r, g, b] = FLOW_COLOR[zoneFlowType(z)];
-        return [r, g, b, Math.round(zoneAlpha(z) * 255)];
+        // Slightly brighter ring than fill so the data-support encoding is legible.
+        return [Math.min(255, r + 30), Math.min(255, g + 30), Math.min(255, b + 30), Math.round(zoneAlpha(z) * 255)];
       },
       pickable: true,
       onClick: ({ object }) => {
         if (object) {
-          setSelectedZoneKey(object.zone_key === selectedZoneKey ? null : object.zone_key);
+          const next = object.zone_key === selectedZoneKey ? null : object.zone_key;
+          setSelectedZoneKey(next);
           setHoveredZone(null);
           setArcTooltip(null);
+          if (next && mapRef.current) {
+            mapRef.current.easeTo({
+              center: [object.centroid_lng, object.centroid_lat],
+              duration: 600,
+            });
+          }
         }
       },
       onHover: ({ object }) => {
@@ -276,26 +291,41 @@ export function FreightNetworkMap({ data, period }: Props) {
       },
     });
 
-    // Zone radius circle — only when a zone is selected.
+    // Zone radius circle + selection halo — only when a zone is selected.
     // Cells are ~N miles wide (ZONE_CELL_DEGREES); half-width ≈ visual extent from center.
     const zoneRadiusMiles = data.metadata.zone_radius_miles;
     const radiusMeters = (zoneRadiusMiles / 2) * 1609.34;
-    const selectedZone = selectedZoneKey
+    const selectedZoneOnMap = selectedZoneKey
       ? activeZones.find((z) => z.zone_key === selectedZoneKey)
       : null;
-    const radiusLayer = selectedZone
+    const radiusLayer = selectedZoneOnMap
       ? new ScatterplotLayer<FreightZoneSummary>({
           id: 'zone-radius',
-          data: [selectedZone],
+          data: [selectedZoneOnMap],
           getPosition: (z) => [z.centroid_lng, z.centroid_lat],
           getRadius: () => radiusMeters,
           radiusUnits: 'meters',
           filled: true,
           stroked: true,
-          getFillColor: [163, 230, 53, 25],
-          getLineColor: [163, 230, 53, 110],
+          getFillColor: [255, 255, 255, 18],
+          getLineColor: [255, 255, 255, 80],
           lineWidthUnits: 'pixels',
           getLineWidth: 1,
+          pickable: false,
+        })
+      : null;
+    const haloLayer = selectedZoneOnMap
+      ? new ScatterplotLayer<FreightZoneSummary>({
+          id: 'zone-halo',
+          data: [selectedZoneOnMap],
+          getPosition: (z) => [z.centroid_lng, z.centroid_lat],
+          radiusUnits: 'pixels',
+          getRadius: (z) => nodeRadius(z) + 6,
+          filled: false,
+          stroked: true,
+          getLineColor: [255, 255, 255, 220],
+          lineWidthUnits: 'pixels',
+          getLineWidth: 2,
           pickable: false,
         })
       : null;
@@ -304,6 +334,7 @@ export function FreightNetworkMap({ data, period }: Props) {
       ...(radiusLayer ? [radiusLayer] : []),
       inboundLineLayer, transitLineLayer, outboundLineLayer,
       arrowLayer, nodeLayer,
+      ...(haloLayer ? [haloLayer] : []),
     ];
 
     overlayRef.current.setProps({
@@ -398,10 +429,10 @@ export function FreightNetworkMap({ data, period }: Props) {
         {/* Flow type */}
         <p className="font-semibold text-[11px]">Flow type</p>
         {([
-          { type: 'source',  dot: 'bg-blue-500', label: 'Source (export heavy)' },
-          { type: 'transit', dot: 'bg-lime-400', label: 'Transit (balanced)' },
-          { type: 'sink',    dot: 'bg-red-500',  label: 'Sink (import heavy)' },
-        ] as const).map(({ type, dot, label }) => {
+          { type: 'source',  dot: 'bg-blue-500',  label: 'Mostly outbound', sub: 'source' },
+          { type: 'transit', dot: 'bg-amber-500', label: 'Balanced',        sub: 'transit' },
+          { type: 'sink',    dot: 'bg-red-500',   label: 'Mostly inbound',  sub: 'sink' },
+        ] as const).map(({ type, dot, label, sub }) => {
           const active = activeFlowTypes.has(type);
           return (
             <label key={type} className="flex items-center gap-1.5 cursor-pointer select-none">
@@ -409,7 +440,10 @@ export function FreightNetworkMap({ data, period }: Props) {
               <span className={`w-3 h-3 rounded-sm border flex items-center justify-center shrink-0 ${active ? `${dot} border-transparent` : 'border-border'}`}>
                 {active && <svg className="w-2 h-2 text-white" viewBox="0 0 8 8" fill="none"><path d="M1 4l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
               </span>
-              <span className={active ? 'text-foreground' : 'text-muted-foreground/50'}>{label}</span>
+              <span className={active ? 'text-foreground' : 'text-muted-foreground/50'}>
+                {label}
+                <span className="text-muted-foreground/50 ml-1">({sub})</span>
+              </span>
             </label>
           );
         })}
@@ -449,9 +483,30 @@ export function FreightNetworkMap({ data, period }: Props) {
           </p>
         )}
 
+        {/* Node size key */}
+        <div className="space-y-1 text-[10px] text-muted-foreground/70 pt-1 border-t border-border/50">
+          <p className="font-semibold text-[11px] text-foreground">Node size</p>
+          <div className="flex items-center gap-2">
+            <span className="inline-block rounded-full bg-muted-foreground/40" style={{ width: 6, height: 6 }} />
+            <span className="inline-block rounded-full bg-muted-foreground/40" style={{ width: 12, height: 12 }} />
+            <span>= more outbound loads</span>
+          </div>
+        </div>
+
+        {/* Data confidence ring */}
+        <div className="space-y-1 text-[10px] text-muted-foreground/70 pt-1 border-t border-border/50">
+          <p className="font-semibold text-[11px] text-foreground">Ring thickness</p>
+          <div className="flex items-center gap-2">
+            <span className="inline-block rounded-full bg-muted-foreground/30" style={{ width: 12, height: 12, border: '1px solid currentColor' }} />
+            <span className="inline-block rounded-full bg-muted-foreground/30" style={{ width: 12, height: 12, border: '3px solid currentColor' }} />
+            <span>= confidence in data</span>
+          </div>
+        </div>
+
         {/* Lane legend */}
         <div className="space-y-0.5 text-[10px] text-muted-foreground/60 pt-1 border-t border-border/50">
-          <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#a3e635] inline-block" />Transit (both ways)</div>
+          <p className="font-semibold text-[11px] text-foreground">Lane color</p>
+          <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-amber-500 inline-block" />Transit (both ways)</div>
           <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-blue-500 inline-block" />Outbound (one-way)</div>
           <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-red-500 inline-block" />Inbound (one-way)</div>
         </div>
