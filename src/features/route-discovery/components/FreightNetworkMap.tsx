@@ -93,9 +93,9 @@ export function FreightNetworkMap({ data, period }: Props) {
     const map = new maplibregl.Map({
       container: containerRef.current,
       style: protomapsStyle(isDark ? "dark" : "light"),
-      center: [-95, 38],
-      zoom: 3.5,
-      minZoom: 3,
+      center: [-97, 40],
+      zoom: 4,
+      minZoom: 3.5,
       maxZoom: 12,
       maxBounds: [[-175, 15], [-50, 72]],
       attributionControl: false,
