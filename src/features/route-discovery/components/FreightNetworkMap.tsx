@@ -94,7 +94,7 @@ export function FreightNetworkMap({ data, period }: Props) {
   const [selectedZoneKey, setSelectedZoneKey] = useState<string | null>(null);
   const [hoveredZone, setHoveredZone] = useState<FreightZoneSummary | null>(null);
   const [activeFlowTypes, setActiveFlowTypes] = useState<Set<FlowType>>(new Set(['source', 'sink']));
-  const [activeOptBuckets, setActiveOptBuckets] = useState<Set<string>>(new Set(['high']));
+  const [activeOptBuckets, setActiveOptBuckets] = useState<Set<string>>(new Set(['high', 'medium', 'low']));
   const [strictMode, setStrictMode] = useState(false);
   const [expandNetwork, setExpandNetwork] = useState(false);
   const animFrameRef = useRef<number | null>(null);
@@ -421,11 +421,21 @@ export function FreightNetworkMap({ data, period }: Props) {
     const cometOtherToSelected = (l: FreightLaneEntry) =>
       makeTripDatum(l, l.origin_zone_key === selectedZoneKey);
 
+    // Component bidirectional lanes carry flow in both directions; render both comets
+    // so a lane between two upstream/downstream nodes can't be misread as a one-way
+    // dead end (a single canonical-direction comet hid the reverse flow).
+    const componentBidirLanes = componentLanes.filter(isBidirectionalLane);
+    const componentNonBidirLanes = componentLanes.filter((l) => !isBidirectionalLane(l));
+
     tripsDataRef.current = [
       ...bidirBothLanes.flatMap((l) => [cometSelectedToOther(l), cometOtherToSelected(l)]),
       ...outboundDirectLanes.map((l) => cometSelectedToOther(l)),
       ...inboundDirectLanes.map((l) => cometOtherToSelected(l)),
-      ...componentLanes.map((l) => makeTripDatum(l, false, true)),
+      ...componentBidirLanes.flatMap((l) => [
+        makeTripDatum(l, false, true),
+        makeTripDatum(l, true, true),
+      ]),
+      ...componentNonBidirLanes.map((l) => makeTripDatum(l, false, true)),
     ];
 
     const NODE_RADIUS_PX = 10;
