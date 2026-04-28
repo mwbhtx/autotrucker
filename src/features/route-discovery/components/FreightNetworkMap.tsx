@@ -43,9 +43,9 @@ function zoneFlowType(z: FreightZoneSummary): FlowType {
 }
 
 const FLOW_COLOR: Record<FlowType, [number, number, number]> = {
-  source:  [ 59, 130, 246],  // blue-500   — export heavy
-  transit: [234, 179,   8],  // amber-500  — balanced (color-blind safe alternative to lime)
-  sink:    [239,  68,  68],  // red-500    — import heavy
+  source:  [ 59, 130, 246],  // blue-500    — export heavy
+  transit: [ 16, 185, 129],  // emerald-500 — balanced
+  sink:    [239,  68,  68],  // red-500     — import heavy
 };
 
 // Node color now encodes outbound options (the Route Discovery primary signal),
@@ -225,8 +225,8 @@ export function FreightNetworkMap({ data, period }: Props) {
       },
     };
 
-    // Transit (strong bidirectional): amber
-    const transitLineLayer = new LineLayer<FreightLaneEntry>({ ...lineLayerBase, id: 'transit-lanes', data: transitLanes, getColor: [234, 179, 8, 210] });
+    // Transit (strong bidirectional): emerald
+    const transitLineLayer = new LineLayer<FreightLaneEntry>({ ...lineLayerBase, id: 'transit-lanes', data: transitLanes, getColor: [16, 185, 129, 210] });
     // Outbound (one-way out): blue
     const outboundLineLayer = new LineLayer<FreightLaneEntry>({ ...lineLayerBase, id: 'outbound-lanes', data: pureOutboundLanes, getColor: [59, 130, 246, 210] });
     // Inbound (one-way in): red
@@ -235,7 +235,7 @@ export function FreightNetworkMap({ data, period }: Props) {
     // Arrows at midpoint for outbound + transit (direction signal)
     const arrowData = [...transitLanes, ...pureOutboundLanes];
     const arrowColors: Record<string, [number, number, number, number]> = {};
-    transitLanes.forEach((l) => { arrowColors[l.origin_zone_key + l.destination_zone_key] = [234, 179, 8, 230]; });
+    transitLanes.forEach((l) => { arrowColors[l.origin_zone_key + l.destination_zone_key] = [16, 185, 129, 230]; });
     pureOutboundLanes.forEach((l) => { arrowColors[l.origin_zone_key + l.destination_zone_key] = [59, 130, 246, 230]; });
 
     const arrowLayer = new TextLayer<FreightLaneEntry>({
@@ -252,7 +252,7 @@ export function FreightNetworkMap({ data, period }: Props) {
       getAngle: (l) =>
         90 - bearing(l.origin_centroid_lat, l.origin_centroid_lng, l.destination_centroid_lat, l.destination_centroid_lng),
       getSize: 13,
-      getColor: (l) => arrowColors[l.origin_zone_key + l.destination_zone_key] ?? [234, 179, 8, 230],
+      getColor: (l) => arrowColors[l.origin_zone_key + l.destination_zone_key] ?? [16, 185, 129, 230],
       sizeUnits: 'pixels',
       pickable: false,
     });
@@ -438,9 +438,9 @@ export function FreightNetworkMap({ data, period }: Props) {
         {/* Zone Type */}
         <p className="font-semibold text-base">Zone Type</p>
         {([
-          { type: 'source',  dot: 'bg-blue-500',  label: 'Exports' },
-          { type: 'transit', dot: 'bg-amber-500', label: 'Balanced' },
-          { type: 'sink',    dot: 'bg-red-500',   label: 'Imports' },
+          { type: 'source',  dot: 'bg-blue-500',    label: 'Outbound' },
+          { type: 'transit', dot: 'bg-emerald-500', label: 'Transit' },
+          { type: 'sink',    dot: 'bg-red-500',     label: 'Inbound' },
         ] as const).map(({ type, dot, label }) => {
           const active = activeFlowTypes.has(type);
           return (
@@ -511,7 +511,7 @@ export function FreightNetworkMap({ data, period }: Props) {
         {/* Lane legend */}
         <div className="space-y-1.5 text-base text-muted-foreground/80 pt-2 border-t border-border/50">
           <p className="font-semibold text-base text-foreground">Lane Color</p>
-          <div className="flex items-center gap-2.5"><span className="w-6 h-[2px] bg-amber-500 inline-block" />Transit</div>
+          <div className="flex items-center gap-2.5"><span className="w-6 h-[2px] bg-emerald-500 inline-block" />Transit</div>
           <div className="flex items-center gap-2.5"><span className="w-6 h-[2px] bg-blue-500 inline-block" />Outbound</div>
           <div className="flex items-center gap-2.5"><span className="w-6 h-[2px] bg-red-500 inline-block" />Inbound</div>
         </div>
