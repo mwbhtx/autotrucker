@@ -34,11 +34,10 @@ export function ZoneTooltip({ zone, period, periodNote, showClose = false, onClo
         <div>
           <p className="font-semibold text-base">{zone.display_city}, {zone.display_state}</p>
           {totalLoads > 0 ? (
-            <p className="text-base mt-1 text-muted-foreground">
-              <span className="text-blue-500">Outbound: {outboundPct}%</span>
-              {' · '}
-              <span className="text-red-500">Inbound: {inboundPct}%</span>
-            </p>
+            <div className="text-base mt-1 text-white space-y-0.5">
+              <p>Outbound: {outboundPct}%</p>
+              <p>Inbound: {inboundPct}%</p>
+            </div>
           ) : (
             <p className="text-base mt-1 text-slate-400">Not enough historical data</p>
           )}

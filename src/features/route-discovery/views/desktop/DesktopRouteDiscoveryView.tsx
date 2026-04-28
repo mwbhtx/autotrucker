@@ -17,7 +17,7 @@ import type { RoutesQuery } from "../../api";
 
 type TabId = "map" | "search";
 type PeriodId = "30d" | "60d" | "90d";
-type ZoneRadius = 100 | 200 | 300 | 400;
+type ZoneRadius = 100 | 200 | 300;
 
 export function DesktopRouteDiscoveryView() {
   const [tab, setTab] = useState<TabId>("map");
@@ -109,7 +109,7 @@ export function DesktopRouteDiscoveryView() {
               <div className="w-px h-4 bg-border" />
               <div className="flex items-center gap-1">
                 <span className="text-xs text-muted-foreground mr-1">Zone</span>
-                {([100, 200, 300, 400] as const).map((r) => (
+                {([100, 200, 300] as const).map((r) => (
                   <button
                     key={r}
                     onClick={() => setZoneRadius(r)}
