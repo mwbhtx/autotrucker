@@ -205,19 +205,20 @@ export function FreightNetworkMap({ data, period }: Props) {
       pickable: false,
     });
 
+    const laneZoneKeys = new Set(lanes.flatMap((l) => [l.origin_zone_key, l.destination_zone_key]));
+    const activeZones = zones.filter((z) => laneZoneKeys.has(z.zone_key));
+
+    const maxOutbound = Math.max(1, ...activeZones.map((z) => z.outbound_load_count));
+
     const nodeLayer = new ScatterplotLayer<FreightZoneSummary>({
       id: 'zone-nodes',
-      data: zones,
+      data: activeZones,
       getPosition: (z) => [z.centroid_lng, z.centroid_lat],
       radiusUnits: 'pixels',
-      getRadius: (z) => {
-        if (z.optionality_bucket === 'low_data') return 4;
-        return Math.max(6, Math.min(20, Math.sqrt(z.outbound_load_count) * 1.8));
-      },
+      getRadius: (z) => Math.max(5, Math.min(22, (z.outbound_load_count / maxOutbound) * 22)),
       getFillColor: (z) => {
         const [r, g, b] = NODE_COLOR[z.optionality_bucket];
-        const alpha = z.optionality_bucket === 'low_data' ? 90 : Math.round(zoneAlpha(z) * 210);
-        return [r, g, b, alpha];
+        return [r, g, b, Math.round(zoneAlpha(z) * 220)];
       },
       pickable: true,
       onClick: ({ object }) => {
@@ -232,8 +233,7 @@ export function FreightNetworkMap({ data, period }: Props) {
       },
     });
 
-    const laneZoneKeys = new Set(lanes.flatMap((l) => [l.origin_zone_key, l.destination_zone_key]));
-    const labelZones = zones.filter((z) => laneZoneKeys.has(z.zone_key));
+    const labelZones = activeZones;
     const labelLayer = new TextLayer<FreightZoneSummary>({
       id: 'zone-labels',
       data: labelZones,
@@ -334,18 +334,16 @@ export function FreightNetworkMap({ data, period }: Props) {
 
       <div className="absolute bottom-4 right-4 bg-background/90 border rounded-md px-3 py-2 text-xs space-y-1">
         <p className="font-semibold text-[11px] mb-1">Outbound optionality</p>
-        {(["high", "medium", "low", "low_data"] as const).map((bucket) => {
+        {(["high", "medium", "low"] as const).map((bucket) => {
           const colors: Record<string, string> = {
-            high:     "bg-green-500",
-            medium:   "bg-amber-500",
-            low:      "bg-rose-500",
-            low_data: "bg-slate-500",
+            high:   "bg-green-500",
+            medium: "bg-amber-500",
+            low:    "bg-rose-500",
           };
           const labels: Record<string, string> = {
-            high:     `High  (H ≥ ${data.metadata.optionality_thresholds.medium_max} bits)`,
-            medium:   `Medium  (${data.metadata.optionality_thresholds.low_max}–${data.metadata.optionality_thresholds.medium_max} bits)`,
-            low:      `Low  (H < ${data.metadata.optionality_thresholds.low_max} bits)`,
-            low_data: `Thin data (< ${data.metadata.min_zone_outbound_loads} loads)`,
+            high:   `High  (H ≥ ${data.metadata.optionality_thresholds.medium_max} bits)`,
+            medium: `Medium  (${data.metadata.optionality_thresholds.low_max}–${data.metadata.optionality_thresholds.medium_max} bits)`,
+            low:    `Low  (H < ${data.metadata.optionality_thresholds.low_max} bits)`,
           };
           return (
             <div key={bucket} className="flex items-center gap-1.5">
