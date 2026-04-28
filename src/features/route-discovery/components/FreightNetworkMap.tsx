@@ -8,7 +8,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { MapboxOverlay } from "@deck.gl/mapbox";
 import { LineLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
 import type { FreightNetworkMapResponse, FreightLaneEntry, FreightZoneSummary } from "@mwbhtx/haulvisor-core";
-import { arcWidth, bearing } from "../utils/freight-network";
+import { arcWidth, bearing, midpoint } from "../utils/freight-network";
 import { ZoneTooltip } from "./ZoneTooltip";
 
 const PROTOMAPS_API_KEY = process.env.NEXT_PUBLIC_PROTOMAPS_API_KEY ?? "";
@@ -63,7 +63,7 @@ const FREIGHT_DARK_THEME: Theme = {
   major:                   "#0c1018",
   highway:                 "#0c1018",
   railway:                 "#0c1018",
-  boundaries:              "#1e3060",
+  boundaries:              "#000000",
   bridges_other_casing:    "#0c1018",
   bridges_minor_casing:    "#0c1018",
   bridges_link_casing:     "#0c1018",
@@ -108,11 +108,22 @@ function protomapsStyle(): maplibregl.StyleSpecification {
   };
 }
 
-const NODE_COLOR: Record<FreightZoneSummary['optionality_bucket'], [number, number, number]> = {
-  high:     [ 34, 197,  94],  // green-500
-  medium:   [245, 158,  11],  // amber-500
-  low:      [244,  63,  94],  // rose-500
-  low_data: [ 71,  85, 105],  // slate-500
+type FlowType = 'source' | 'transit' | 'sink';
+
+// outbound / (outbound + inbound) ratio thresholds
+function zoneFlowType(z: FreightZoneSummary): FlowType {
+  const total = z.outbound_load_count + z.inbound_load_count;
+  if (total === 0) return 'transit';
+  const ratio = z.outbound_load_count / total;
+  if (ratio > 0.65) return 'source';
+  if (ratio < 0.35) return 'sink';
+  return 'transit';
+}
+
+const FLOW_COLOR: Record<FlowType, [number, number, number]> = {
+  source:  [ 59, 130, 246],  // blue-500  — export heavy
+  transit: [163, 230,  53],  // lime-400  — balanced (brand primary)
+  sink:    [239,  68,  68],  // red-500   — import heavy
 };
 
 interface ArcTooltipData {
@@ -126,8 +137,6 @@ interface Props {
   period: '30d' | '60d' | '90d';
 }
 
-type OptionalityBucket = 'high' | 'medium' | 'low';
-
 export function FreightNetworkMap({ data, period }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -136,13 +145,13 @@ export function FreightNetworkMap({ data, period }: Props) {
   const [selectedZoneKey, setSelectedZoneKey] = useState<string | null>(null);
   const [hoveredZone, setHoveredZone] = useState<FreightZoneSummary | null>(null);
   const [arcTooltip, setArcTooltip] = useState<ArcTooltipData | null>(null);
-  const [activeBuckets, setActiveBuckets] = useState<Set<OptionalityBucket>>(new Set(['high']));
+  const [activeFlowTypes, setActiveFlowTypes] = useState<Set<FlowType>>(new Set(['source', 'transit', 'sink']));
 
-  const toggleBucket = (bucket: OptionalityBucket) => {
-    setActiveBuckets((prev) => {
+  const toggleFlowType = (type: FlowType) => {
+    setActiveFlowTypes((prev) => {
       const next = new Set(prev);
-      if (next.has(bucket)) next.delete(bucket);
-      else next.add(bucket);
+      if (next.has(type)) next.delete(type);
+      else next.add(type);
       return next;
     });
   };
@@ -207,13 +216,12 @@ export function FreightNetworkMap({ data, period }: Props) {
       : null;
 
     // Zones: connected endpoints always shown (bypass filter so lines have visible targets);
-    // idle view filtered by optionality bucket, low_data excluded.
+    // idle view filtered by flow type.
     const laneZoneKeys = new Set(lanes.flatMap((l) => [l.origin_zone_key, l.destination_zone_key]));
     const activeZones = zones.filter((z) => {
       if (!laneZoneKeys.has(z.zone_key)) return false;
       if (connectedZoneKeys?.has(z.zone_key)) return true;
-      return z.optionality_bucket !== 'low_data' &&
-             activeBuckets.has(z.optionality_bucket as OptionalityBucket);
+      return activeFlowTypes.has(zoneFlowType(z));
     });
     const maxOutbound = Math.max(1, ...activeZones.map((z) => z.outbound_load_count));
 
@@ -252,16 +260,22 @@ export function FreightNetworkMap({ data, period }: Props) {
       pickable: false,
     });
 
-    // Arrowheads on outbound lanes only
+    // Arrow at lane midpoint (not endpoint) — cleaner direction signal
     const arrowLayer = new TextLayer<FreightLaneEntry>({
       id: 'arrowheads',
       data: outboundLanes,
-      getPosition: (l) => [l.destination_centroid_lng, l.destination_centroid_lat],
+      getPosition: (l) => {
+        const [midLat, midLng] = midpoint(
+          l.origin_centroid_lat, l.origin_centroid_lng,
+          l.destination_centroid_lat, l.destination_centroid_lng,
+        );
+        return [midLng, midLat];
+      },
       getText: () => '▶',
       getAngle: (l) =>
         90 - bearing(l.origin_centroid_lat, l.origin_centroid_lng, l.destination_centroid_lat, l.destination_centroid_lng),
-      getSize: 11,
-      getColor: [163, 230, 53, 200],
+      getSize: 13,
+      getColor: [163, 230, 53, 220],
       sizeUnits: 'pixels',
       pickable: false,
     });
@@ -281,11 +295,11 @@ export function FreightNetworkMap({ data, period }: Props) {
       lineWidthUnits: 'pixels',
       getLineWidth: (z) => z.zone_key === selectedZoneKey ? 2 : 1,
       getFillColor: (z) => {
-        const [r, g, b] = NODE_COLOR[z.optionality_bucket];
+        const [r, g, b] = FLOW_COLOR[zoneFlowType(z)];
         return [r, g, b, Math.round(zoneAlpha(z) * 160)];
       },
       getLineColor: (z) => {
-        const [r, g, b] = NODE_COLOR[z.optionality_bucket];
+        const [r, g, b] = FLOW_COLOR[zoneFlowType(z)];
         return [r, g, b, Math.round(zoneAlpha(z) * 255)];
       },
       pickable: true,
@@ -326,7 +340,7 @@ export function FreightNetworkMap({ data, period }: Props) {
         }
       },
     });
-  }, [data, selectedZoneKey, arcTooltip, activeBuckets]);
+  }, [data, selectedZoneKey, arcTooltip, activeFlowTypes]);
 
   const noData = data.lanes.length === 0 && data.zones.length === 0;
 
@@ -405,42 +419,31 @@ export function FreightNetworkMap({ data, period }: Props) {
       )}
 
       <div className="absolute bottom-4 right-4 bg-background/90 border rounded-md px-3 py-2 text-xs space-y-1.5">
-        <p className="font-semibold text-[11px] mb-1">Outbound optionality</p>
-        {(["high", "medium", "low"] as const).map((bucket) => {
-          const dot: Record<string, string> = {
-            high:   "bg-green-500",
-            medium: "bg-amber-500",
-            low:    "bg-rose-500",
-          };
-          const label: Record<string, string> = {
-            high:   `High  (H ≥ ${data.metadata.optionality_thresholds.medium_max} bits)`,
-            medium: `Medium  (${data.metadata.optionality_thresholds.low_max}–${data.metadata.optionality_thresholds.medium_max} bits)`,
-            low:    `Low  (H < ${data.metadata.optionality_thresholds.low_max} bits)`,
-          };
-          const active = activeBuckets.has(bucket);
+        <p className="font-semibold text-[11px] mb-1">Zone type</p>
+        {([
+          { type: 'source',  dot: 'bg-blue-500',  label: 'Source  (export heavy)' },
+          { type: 'transit', dot: 'bg-lime-400',  label: 'Transit  (balanced)' },
+          { type: 'sink',    dot: 'bg-red-500',   label: 'Sink  (import heavy)' },
+        ] as const).map(({ type, dot, label }) => {
+          const active = activeFlowTypes.has(type);
           return (
-            <label key={bucket} className="flex items-center gap-1.5 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={active}
-                onChange={() => toggleBucket(bucket)}
-                className="sr-only"
-              />
-              <span className={`w-3 h-3 rounded-sm border flex items-center justify-center shrink-0 transition-colors ${active ? `${dot[bucket].replace('bg-', 'border-').replace('500', '600')} ${dot[bucket]}` : 'border-border bg-transparent'}`}>
+            <label key={type} className="flex items-center gap-1.5 cursor-pointer select-none">
+              <input type="checkbox" checked={active} onChange={() => toggleFlowType(type)} className="sr-only" />
+              <span className={`w-3 h-3 rounded-sm border flex items-center justify-center shrink-0 transition-colors ${active ? `${dot} border-transparent` : 'border-border bg-transparent'}`}>
                 {active && <svg className="w-2 h-2 text-white" viewBox="0 0 8 8" fill="none"><path d="M1 4l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
               </span>
-              <span className={active ? "text-foreground" : "text-muted-foreground/50"}>{label[bucket]}</span>
+              <span className={active ? "text-foreground" : "text-muted-foreground/50"}>{label}</span>
             </label>
           );
         })}
         <div className="pt-1 mt-0.5 border-t border-border/50 space-y-0.5 text-[10px] text-muted-foreground/60">
           <div className="flex items-center gap-1.5">
             <span className="w-4 h-0.5 bg-[#a3e635] inline-block" />
-            Outbound
+            Outbound lanes
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-4 h-0.5 bg-[#63b3ed] inline-block opacity-60" />
-            Inbound
+            Inbound lanes
           </div>
         </div>
       </div>
