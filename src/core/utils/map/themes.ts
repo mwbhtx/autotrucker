@@ -125,7 +125,7 @@ export const DARK_THEME: Theme = {
   beach: "#2c2c2c",
   aerodrome: "#242424",
   runway: "#383838",
-  water: "#e5e5e5",
+  water: "#000000",
   zoo: "#282828",
   military: "#222222",
 

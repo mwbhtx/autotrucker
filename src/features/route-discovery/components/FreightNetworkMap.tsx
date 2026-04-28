@@ -276,24 +276,38 @@ export function FreightNetworkMap({ data, period }: Props) {
       },
     });
 
-    // City labels — only for selected zone's connected endpoints
-    const labelZones = connectedZoneKeys
-      ? activeZones.filter((z) => connectedZoneKeys.has(z.zone_key))
-      : [];
-    const labelLayer = new TextLayer<FreightZoneSummary>({
-      id: 'zone-labels',
-      data: labelZones,
-      getPosition: (z) => [z.centroid_lng, z.centroid_lat],
-      getText: (z) => `${z.display_city}, ${z.display_state}`,
-      getSize: 11,
-      getColor: [255, 255, 255, 200],
-      getPixelOffset: [0, -18],
-      sizeUnits: 'pixels',
-      pickable: false,
-    });
+    // Zone radius circle — only when a zone is selected.
+    // Cells are ~N miles wide (ZONE_CELL_DEGREES); half-width ≈ visual extent from center.
+    const zoneRadiusMiles = data.metadata.zone_radius_miles;
+    const radiusMeters = (zoneRadiusMiles / 2) * 1609.34;
+    const selectedZone = selectedZoneKey
+      ? activeZones.find((z) => z.zone_key === selectedZoneKey)
+      : null;
+    const radiusLayer = selectedZone
+      ? new ScatterplotLayer<FreightZoneSummary>({
+          id: 'zone-radius',
+          data: [selectedZone],
+          getPosition: (z) => [z.centroid_lng, z.centroid_lat],
+          getRadius: () => radiusMeters,
+          radiusUnits: 'meters',
+          filled: true,
+          stroked: true,
+          getFillColor: [163, 230, 53, 25],
+          getLineColor: [163, 230, 53, 110],
+          lineWidthUnits: 'pixels',
+          getLineWidth: 1,
+          pickable: false,
+        })
+      : null;
+
+    const layers = [
+      ...(radiusLayer ? [radiusLayer] : []),
+      inboundLineLayer, transitLineLayer, outboundLineLayer,
+      arrowLayer, nodeLayer,
+    ];
 
     overlayRef.current.setProps({
-      layers: [inboundLineLayer, transitLineLayer, outboundLineLayer, arrowLayer, nodeLayer, labelLayer],
+      layers,
       onClick: (info) => {
         if (!info.picked) {
           setSelectedZoneKey(null);
