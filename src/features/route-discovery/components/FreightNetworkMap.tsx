@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useTheme } from "next-themes";
 import maplibregl from "maplibre-gl";
 import { layersWithCustomTheme } from "protomaps-themes-base";
-import type { Theme } from "protomaps-themes-base";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { MapboxOverlay } from "@deck.gl/mapbox";
+import { MOONLIGHT_THEME, DARK_THEME } from "@/core/utils/map/themes";
 import { LineLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
 import type { FreightNetworkMapResponse, FreightLaneEntry, FreightZoneSummary } from "@mwbhtx/haulvisor-core";
 import { arcWidth, bearing, midpoint } from "../utils/freight-network";
@@ -13,86 +14,7 @@ import { ZoneTooltip } from "./ZoneTooltip";
 
 const PROTOMAPS_API_KEY = process.env.NEXT_PUBLIC_PROTOMAPS_API_KEY ?? "";
 
-// Near-black map: land/ocean nearly identical dark navy, only borders visible.
-// Roads, labels, landuse all match earth → invisible.
-const FREIGHT_DARK_THEME: Theme = {
-  background:              "#07090e",
-  earth:                   "#0c1018",
-  park_a:                  "#0c1018",
-  park_b:                  "#0c1018",
-  hospital:                "#0c1018",
-  industrial:              "#0c1018",
-  school:                  "#0c1018",
-  wood_a:                  "#0c1018",
-  wood_b:                  "#0c1018",
-  pedestrian:              "#0c1018",
-  scrub_a:                 "#0c1018",
-  scrub_b:                 "#0c1018",
-  glacier:                 "#0c1018",
-  sand:                    "#0c1018",
-  beach:                   "#0c1018",
-  aerodrome:               "#0c1018",
-  runway:                  "#0c1018",
-  water:                   "#070a14",
-  zoo:                     "#0c1018",
-  military:                "#0c1018",
-  tunnel_other_casing:     "#0c1018",
-  tunnel_minor_casing:     "#0c1018",
-  tunnel_link_casing:      "#0c1018",
-  tunnel_major_casing:     "#0c1018",
-  tunnel_highway_casing:   "#0c1018",
-  tunnel_other:            "#0c1018",
-  tunnel_minor:            "#0c1018",
-  tunnel_link:             "#0c1018",
-  tunnel_major:            "#0c1018",
-  tunnel_highway:          "#0c1018",
-  pier:                    "#0c1018",
-  buildings:               "#0c1018",
-  minor_service_casing:    "#0c1018",
-  minor_casing:            "#0c1018",
-  link_casing:             "#0c1018",
-  major_casing_late:       "#0c1018",
-  highway_casing_late:     "#0c1018",
-  major_casing_early:      "#0c1018",
-  highway_casing_early:    "#0c1018",
-  other:                   "#0c1018",
-  minor_service:           "#0c1018",
-  minor_a:                 "#0c1018",
-  minor_b:                 "#0c1018",
-  link:                    "#0c1018",
-  major:                   "#0c1018",
-  highway:                 "#0c1018",
-  railway:                 "#0c1018",
-  boundaries:              "#000000",
-  bridges_other_casing:    "#0c1018",
-  bridges_minor_casing:    "#0c1018",
-  bridges_link_casing:     "#0c1018",
-  bridges_major_casing:    "#0c1018",
-  bridges_highway_casing:  "#0c1018",
-  bridges_other:           "#0c1018",
-  bridges_minor:           "#0c1018",
-  bridges_link:            "#0c1018",
-  bridges_major:           "#0c1018",
-  bridges_highway:         "#0c1018",
-  roads_label_minor:       "#0c1018",
-  roads_label_major:       "#0c1018",
-  ocean_label:             "#07090e",
-  subplace_label:          "#0c1018",
-  city_label:              "#0c1018",
-  state_label:             "#0c1018",
-  country_label:           "#0c1018",
-  address_label:           "#0c1018",
-  roads_label_minor_halo:  "#0c1018",
-  roads_label_major_halo:  "#0c1018",
-  subplace_label_halo:     "#0c1018",
-  city_label_halo:         "#0c1018",
-  state_label_halo:        "#0c1018",
-  address_label_halo:      "#0c1018",
-  peak_label:              "#0c1018",
-  waterway_label:          "#07090e",
-};
-
-function protomapsStyle(): maplibregl.StyleSpecification {
+function protomapsStyle(theme: "light" | "dark"): maplibregl.StyleSpecification {
   return {
     version: 8,
     glyphs: "https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf",
@@ -104,7 +26,7 @@ function protomapsStyle(): maplibregl.StyleSpecification {
         attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>',
       },
     },
-    layers: layersWithCustomTheme("protomaps", FREIGHT_DARK_THEME, "en"),
+    layers: layersWithCustomTheme("protomaps", theme === "light" ? MOONLIGHT_THEME : DARK_THEME, "en"),
   };
 }
 
@@ -142,6 +64,8 @@ export function FreightNetworkMap({ data, period }: Props) {
   const mapRef = useRef<maplibregl.Map | null>(null);
   const overlayRef = useRef<MapboxOverlay | null>(null);
 
+  const { resolvedTheme } = useTheme();
+
   const [selectedZoneKey, setSelectedZoneKey] = useState<string | null>(null);
   const [hoveredZone, setHoveredZone] = useState<FreightZoneSummary | null>(null);
   const [arcTooltip, setArcTooltip] = useState<ArcTooltipData | null>(null);
@@ -164,10 +88,11 @@ export function FreightNetworkMap({ data, period }: Props) {
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
+    const isDark = document.documentElement.classList.contains("dark");
 
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: protomapsStyle(),
+      style: protomapsStyle(isDark ? "dark" : "light"),
       center: [-95, 38],
       zoom: 3.5,
       minZoom: 3,
@@ -190,6 +115,11 @@ export function FreightNetworkMap({ data, period }: Props) {
       overlayRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+    mapRef.current.setStyle(protomapsStyle(resolvedTheme === "dark" ? "dark" : "light"));
+  }, [resolvedTheme]);
 
   useEffect(() => {
     setHoveredZone(null);
