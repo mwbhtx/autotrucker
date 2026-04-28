@@ -57,11 +57,13 @@ const OPT_COLOR: Record<FreightZoneSummary['optionality_bucket'], [number, numbe
   low_data: [148, 163, 184],  // slate-400
 };
 
-// Stroke width on zone nodes encodes data_support (confidence in the underlying sample).
-const DATA_SUPPORT_STROKE: Record<FreightZoneSummary['data_support'], number> = {
-  low: 1,
-  medium: 2,
+// Stroke width on zone nodes encodes destination variety (entropy bucket).
+// Thicker ring = more distinct outbound destinations relative to volume.
+const VARIETY_STROKE: Record<FreightZoneSummary['optionality_bucket'], number> = {
   high: 3,
+  medium: 2,
+  low: 1,
+  low_data: 1,
 };
 
 interface ArcTooltipData {
@@ -272,7 +274,7 @@ export function FreightNetworkMap({ data, period }: Props) {
       filled: true,
       stroked: true,
       lineWidthUnits: 'pixels',
-      getLineWidth: (z) => DATA_SUPPORT_STROKE[z.data_support],
+      getLineWidth: (z) => VARIETY_STROKE[z.optionality_bucket],
       getFillColor: (z) => {
         const [r, g, b] = FLOW_COLOR[zoneFlowType(z)];
         return [r, g, b, Math.round(zoneAlpha(z) * 230)];
@@ -506,7 +508,7 @@ export function FreightNetworkMap({ data, period }: Props) {
           <div className="flex items-center gap-2.5">
             <span className="inline-block rounded-full bg-muted-foreground/30" style={{ width: 16, height: 16, border: '1px solid currentColor' }} />
             <span className="inline-block rounded-full bg-muted-foreground/30" style={{ width: 16, height: 16, border: '3px solid currentColor' }} />
-            <span>= confidence in data</span>
+            <span>= destination variety</span>
           </div>
         </div>
 
