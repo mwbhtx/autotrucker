@@ -26,15 +26,8 @@ export function MobileRoutesView() {
   // Search state
   const [origin, setOrigin] = useState<PlaceResult | null>(null);
   const [destination, setDestination] = useState<PlaceResult | null>(null);
-  const tomorrow = useMemo(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 1);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  }, []);
-
   const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>({
     numOrders: DEFAULT_NUM_ORDERS,
-    departureDate: tomorrow,
     daysOut: DEFAULT_MAX_TRIP_DAYS,
   });
 
@@ -85,7 +78,7 @@ export function MobileRoutesView() {
       const params: RouteSearchParams = {
         origin_lat: orig.lat,
         origin_lng: orig.lng,
-        departure_date: filters.departureDate,
+        departure_date: new Date().toISOString().slice(0, 10),
         ...(dest ? { destination_lat: dest.lat, destination_lng: dest.lng } : {}),
         max_trip_days: filters.daysOut,
         num_orders: filters.numOrders,
@@ -135,7 +128,6 @@ export function MobileRoutesView() {
       const dest: PlaceResult = { name: search.destination.label, lat: search.destination.coordinates[0], lng: search.destination.coordinates[1] };
       const filters: AdvancedFilters = {
         numOrders: DEFAULT_NUM_ORDERS,
-        departureDate: tomorrow,
         daysOut: DEFAULT_MAX_TRIP_DAYS,
       };
 
@@ -146,7 +138,7 @@ export function MobileRoutesView() {
       buildAndFireSearch(orig, dest, filters);
       goToResults();
     },
-    [buildAndFireSearch, goToResults, tomorrow],
+    [buildAndFireSearch, goToResults],
   );
 
   const handleFiltersApply = useCallback(

@@ -14,7 +14,6 @@ import { driver } from "driver.js";
 import "driver.js/dist/driver.css";
 import { ChevronDown, LocateIcon, SlidersHorizontal, XIcon, SearchIcon } from "lucide-react";
 import { BorderBeam } from "@/platform/web/components/ui/border-beam";
-import { Calendar } from "@/platform/web/components/ui/calendar";
 import { useSettings, useUpdateSettings } from "@/core/hooks/use-settings";
 import { TRAILER_CATEGORIES, expandTrailerCodes, codesToLabels, DEFAULT_MAX_TRIP_DAYS, DEFAULT_COST_PER_MILE, ORDER_COUNT_OPTIONS, DEFAULT_NUM_ORDERS, DEFAULT_ORIGIN_RADIUS_MILES, DEFAULT_DEST_RADIUS_MILES } from "@mwbhtx/haulvisor-core";
 
@@ -449,7 +448,6 @@ export function SearchFilters({
   const restored = useRef<{
     origin?: PlaceResult | null;
     destination?: PlaceResult | null;
-    departureDate?: string;
     daysOut?: number;
     numOrders?: number;
   } | null>(null);
@@ -461,17 +459,15 @@ export function SearchFilters({
   }
   const r = restored.current ?? {};
 
-  // Compute tomorrow as default departure date
-  const tomorrow = (() => {
+  const today = (() => {
     const d = new Date();
-    d.setDate(d.getDate() + 1);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   })();
 
   const [origin, setOrigin] = useState<PlaceResult | null>(r.origin ?? null);
   const [originPopoverOpen, setOriginPopoverOpen] = useState(false);
   const [destination, setDestination] = useState<PlaceResult | null>(r.destination ?? null);
-  const [departureDate, setDepartureDate] = useState<string>(r.departureDate ?? tomorrow);
+  const [departureDate] = useState<string>(today);
   const [daysOut, setDaysOut] = useState<number>(r.daysOut ?? DEFAULT_MAX_TRIP_DAYS);
   const [numOrders, setNumOrders] = useState<number>(r.numOrders ?? DEFAULT_NUM_ORDERS);
   const [originRadius, setOriginRadius] = useState<number>(DEFAULT_ORIGIN_RADIUS_MILES);
@@ -498,10 +494,10 @@ export function SearchFilters({
     if (compactBar) return;
     try {
       sessionStorage.setItem("hv-route-filters", JSON.stringify({
-        origin, destination, departureDate, daysOut, numOrders,
+        origin, destination, daysOut, numOrders,
       }));
     } catch {}
-  }, [origin, destination, departureDate, daysOut, numOrders, compactBar]);
+  }, [origin, destination, daysOut, numOrders, compactBar]);
 
   // Reset filters when clear is triggered
   useEffect(() => {
@@ -626,31 +622,6 @@ export function SearchFilters({
 
   const showSaveAsHome = !homeMode && destination != null;
 
-  // Shared filter elements
-  const departureDatePill = (
-    <div id="onborda-departure-date">
-      <FilterPill label={compactBar || mobile ? "Dep" : "Departure"} value={departureDate ? formatDateShort(departureDate) : "Tomorrow"}>
-        {(close) => (
-          <div className="p-0">
-            <Calendar
-              mode="single"
-              selected={departureDate ? new Date(departureDate + "T00:00:00") : undefined}
-              disabled={{ before: new Date() }}
-              onSelect={(day: Date | undefined) => {
-                if (day) {
-                  const iso = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
-                  setDepartureDate(iso);
-                  close();
-                }
-              }}
-              defaultMonth={departureDate ? new Date(departureDate + "T00:00:00") : undefined}
-            />
-          </div>
-        )}
-      </FilterPill>
-    </div>
-  );
-
   const originPill = (
     <div id="onborda-origin">
       <LocationPill
@@ -714,11 +685,9 @@ export function SearchFilters({
   if (compactBar) {
     return (
       <div className="flex flex-col gap-1.5">
-        {/* Row 1: origin, destination, departure date */}
         <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none" style={{ scrollbarWidth: "none" }}>
           {originPill}
           {destPill}
-          {departureDatePill}
         </div>
         {/* Row 2: action icons */}
         <div className="flex items-center gap-1.5">
@@ -734,7 +703,6 @@ export function SearchFilters({
       <div className="flex flex-col gap-1.5">
         {originPill}
         {destPill}
-        {departureDatePill}
       </div>
     );
   }
@@ -746,7 +714,6 @@ export function SearchFilters({
         <div className="flex items-center gap-1.5 flex-wrap">
           {originPill}
           {destPill}
-          {departureDatePill}
           <DaysOutPill value={daysOut} onChange={setDaysOut} departureDate={departureDate} />
           <NumOrdersPill value={numOrders} onChange={setNumOrders} />
           {isSearching ? (
@@ -786,7 +753,6 @@ export function SearchFilters({
       <div className="flex flex-wrap items-center gap-2">
         {originPill}
         {destPill}
-        {departureDatePill}
         <div id="onborda-days-out"><DaysOutPill value={daysOut} onChange={setDaysOut} departureDate={departureDate} /></div>
         <NumOrdersPill value={numOrders} onChange={setNumOrders} />
         <div id="onborda-all-filters"><AllFiltersPopover

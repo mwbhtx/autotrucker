@@ -3,14 +3,12 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
-import { Calendar } from "@/platform/web/components/ui/calendar";
 import { Slider } from "@/platform/web/components/ui/slider";
 import { cn } from "@/core/utils";
 import { DEFAULT_MAX_TRIP_DAYS, DEFAULT_NUM_ORDERS, ORDER_COUNT_OPTIONS } from "@mwbhtx/haulvisor-core";
 
 export interface AdvancedFilters {
   numOrders: number;
-  departureDate: string;
   daysOut: number;
 }
 
@@ -18,12 +16,6 @@ interface FiltersSheetProps {
   onBack: () => void;
   onApply: (filters: AdvancedFilters) => void;
   initialFilters?: Partial<AdvancedFilters>;
-}
-
-function formatDate(iso: string): string {
-  if (!iso) return "Tomorrow";
-  const d = new Date(iso + "T00:00:00");
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 function FilterRow({
@@ -65,24 +57,18 @@ function FilterRow({
 }
 
 export function FiltersSheet({ onBack, onApply, initialFilters }: FiltersSheetProps) {
-  const tomorrow = (() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 1);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  })();
   const [numOrders, setNumOrders] = useState(initialFilters?.numOrders ?? DEFAULT_NUM_ORDERS);
-  const [departureDate, setDepartureDate] = useState(initialFilters?.departureDate ?? tomorrow);
   const [daysOut, setDaysOut] = useState(initialFilters?.daysOut ?? DEFAULT_MAX_TRIP_DAYS);
 
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const toggle = (row: string) => setExpandedRow((prev) => (prev === row ? null : row));
 
   const handleBack = () => {
-    onApply({ numOrders, departureDate, daysOut });
+    onApply({ numOrders, daysOut });
   };
 
   const returnLabel = (() => {
-    const d = new Date(departureDate + "T00:00:00");
+    const d = new Date();
     d.setDate(d.getDate() + daysOut);
     return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
   })();
@@ -128,29 +114,6 @@ export function FiltersSheet({ onBack, onApply, initialFilters }: FiltersSheetPr
                 {String(n)}
               </button>
             ))}
-          </div>
-        </FilterRow>
-
-        {/* Departure Date */}
-        <FilterRow
-          label="Departure Date"
-          value={formatDate(departureDate)}
-          expanded={expandedRow === "departure"}
-          onToggle={() => toggle("departure")}
-        >
-          <div className="rounded-lg border border-white/10 overflow-hidden mt-3">
-            <Calendar
-              mode="single"
-              selected={new Date(departureDate + "T00:00:00")}
-              disabled={{ before: new Date() }}
-              onSelect={(day: Date | undefined) => {
-                if (day) {
-                  const iso = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
-                  setDepartureDate(iso);
-                }
-              }}
-              defaultMonth={new Date(departureDate + "T00:00:00")}
-            />
           </div>
         </FilterRow>
 
