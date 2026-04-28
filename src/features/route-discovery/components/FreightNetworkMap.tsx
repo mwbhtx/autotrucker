@@ -95,7 +95,6 @@ export function FreightNetworkMap({ data, period }: Props) {
   const [hoveredZone, setHoveredZone] = useState<FreightZoneSummary | null>(null);
   const [activeFlowTypes, setActiveFlowTypes] = useState<Set<FlowType>>(new Set(['source', 'sink']));
   const [activeOptBuckets, setActiveOptBuckets] = useState<Set<string>>(new Set(['high', 'medium', 'low']));
-  const [strictMode, setStrictMode] = useState(false);
   const [expandNetwork, setExpandNetwork] = useState(false);
   const animFrameRef = useRef<number | null>(null);
   const tripsDataRef = useRef<TripDatum[]>([]);
@@ -243,19 +242,6 @@ export function FreightNetworkMap({ data, period }: Props) {
 
     const laneZoneKeys = new Set(qualityLanes.flatMap((l) => [l.origin_zone_key, l.destination_zone_key]));
 
-    // Strict mode: additionally requires BOTH endpoints to share all active lane filters
-    const visibleLanes = strictMode
-      ? qualityLanes.filter((l) => {
-          const o = zoneMap.get(l.origin_zone_key);
-          const d = zoneMap.get(l.destination_zone_key);
-          return o && d && zonePassesFilters(o) && zonePassesFilters(d);
-        })
-      : qualityLanes;
-
-    const strictLaneZoneKeys = strictMode
-      ? new Set(visibleLanes.flatMap((l) => [l.origin_zone_key, l.destination_zone_key]))
-      : laneZoneKeys;
-
     // Lanes touching the selected zone — both endpoints' perspectives.
     // Bidirectional (transit) lanes contain both an outbound and inbound flow:
     //   source on  → render outbound comet (selected → other endpoint)
@@ -271,7 +257,7 @@ export function FreightNetworkMap({ data, period }: Props) {
     const sinkOn = activeFlowTypes.has('sink');
 
     const lanesAtSelected = selectedZoneKey
-      ? visibleLanes.filter(
+      ? qualityLanes.filter(
           (l) => l.origin_zone_key === selectedZoneKey || l.destination_zone_key === selectedZoneKey,
         )
       : [];
@@ -397,7 +383,7 @@ export function FreightNetworkMap({ data, period }: Props) {
     // Idle view: filter by flow type + optionality.
     const activeZones = zones.filter((z) => {
       if (connectedZoneKeys) return connectedZoneKeys.has(z.zone_key);
-      if (!strictLaneZoneKeys.has(z.zone_key)) return false;
+      if (!laneZoneKeys.has(z.zone_key)) return false;
       return zonePassesFilters(z);
     });
 
@@ -559,7 +545,7 @@ export function FreightNetworkMap({ data, period }: Props) {
     // radius + tracks go below lanes; nodes + halo go above
     belowLanesRef.current = [...(radiusLayer ? [radiusLayer] : []), componentTrackLayer, trackLayer];
     aboveLanesRef.current = [nodeLayer, ...(haloLayer ? [haloLayer] : [])];
-  }, [data, selectedZoneKey, activeFlowTypes, activeOptBuckets, strictMode, expandNetwork, resolvedTheme]);
+  }, [data, selectedZoneKey, activeFlowTypes, activeOptBuckets, expandNetwork, resolvedTheme]);
 
   const noData = data.lanes.length === 0 && data.zones.length === 0;
 
@@ -644,20 +630,6 @@ export function FreightNetworkMap({ data, period }: Props) {
             </label>
           );
         })}
-
-        {/* Strict mode */}
-        <label className="flex items-center gap-2 cursor-pointer select-none pt-2 border-t border-border/50">
-          <input type="checkbox" checked={strictMode} onChange={() => setStrictMode((v) => !v)} className="sr-only" />
-          <span className={`w-4 h-4 rounded-sm border flex items-center justify-center shrink-0 ${strictMode ? 'bg-primary border-transparent' : 'border-border'}`}>
-            {strictMode && <svg className="w-2.5 h-2.5 text-primary-foreground" viewBox="0 0 8 8" fill="none"><path d="M1 4l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-          </span>
-          <span className={strictMode ? 'text-foreground font-medium' : 'text-muted-foreground/70'}>
-            Matching endpoints only
-          </span>
-        </label>
-        <p className="text-base text-muted-foreground/60 -mt-1 pl-[26px]">
-          Lanes where both hubs pass all filters
-        </p>
 
         {/* Expand network */}
         <label className="flex items-center gap-2 cursor-pointer select-none pt-2 border-t border-border/50">
