@@ -211,19 +211,21 @@ export function FreightNetworkMap({ data, period }: Props) {
     const { lanes, zones } = data;
     const allCounts = lanes.map((l) => l.load_count);
 
-    const volThresholds = data.metadata.data_support_thresholds;
-
-    // Temporary diagnostic — confirm whether mercer prod actually has medium/low
-    // volume zones surviving the low_data filter, or whether everything visible is high.
-    if (typeof window !== 'undefined') {
-      const dist = { low_data: 0, low: 0, medium: 0, high: 0 };
-      for (const z of zones) {
-        if (z.optionality_bucket === 'low_data') { dist.low_data++; continue; }
-        dist[zoneVolumeBucket(z, volThresholds)]++;
-      }
-      // eslint-disable-next-line no-console
-      console.log('[freight-map] volume distribution', dist, 'thresholds', volThresholds, 'total zones', zones.length);
-    }
+    // Dynamic volume thresholds — partition non-low_data zones at the 33rd and 66th
+    // percentiles of (outbound + inbound) total. The fixed API thresholds (10/50)
+    // collapsed mercer prod into a single high bucket because most surviving zones
+    // exceed 50; percentile thresholds keep the legend meaningful regardless of
+    // tenant-specific volume scale.
+    const apiThresholds = data.metadata.data_support_thresholds;
+    const totals = zones
+      .filter((z) => z.optionality_bucket !== 'low_data')
+      .map((z) => z.outbound_load_count + z.inbound_load_count)
+      .sort((a, b) => a - b);
+    const percentile = (p: number) =>
+      totals.length === 0 ? 0 : totals[Math.min(totals.length - 1, Math.floor(totals.length * p))];
+    const volThresholds = totals.length >= 6
+      ? { medium_min: percentile(1 / 3), high_min: percentile(2 / 3) }
+      : apiThresholds;
     // Volume alone controls zone visibility; Traffic filter only affects lane display on click
     const zonePassesFilters = (z: FreightZoneSummary) =>
       z.optionality_bucket !== 'low_data' &&
