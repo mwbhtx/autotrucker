@@ -22,15 +22,6 @@ export const tourSteps: DriveStep[] = [
     },
   },
   {
-    element: "#onborda-departure-date",
-    popover: {
-      title: "📅 Departure Date",
-      description: `Set the <strong class="${hl}">date you want to leave</strong>. Routes are simulated starting at your work start hour on this date.`,
-      side: "bottom",
-      align: "center",
-    },
-  },
-  {
     element: "#onborda-days-out",
     popover: {
       title: "🗓️ Days Out",

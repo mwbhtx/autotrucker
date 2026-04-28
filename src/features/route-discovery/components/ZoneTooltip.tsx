@@ -32,18 +32,18 @@ const PERIOD_LABEL: Record<string, string> = {
 
 export function ZoneTooltip({ zone, period, periodNote, showClose = false, onClose }: ZoneTooltipProps) {
   return (
-    <div className="bg-background/95 border rounded-lg shadow-lg p-4 min-w-[220px] max-w-[280px]">
-      <div className="flex items-start justify-between gap-2 mb-3">
+    <div className="bg-background/95 border rounded-lg shadow-lg p-5 min-w-[280px] max-w-[340px]">
+      <div className="flex items-start justify-between gap-2 mb-4">
         <div>
-          <p className="font-semibold text-sm">{zone.display_city}, {zone.display_state}</p>
-          <p className={`text-xs mt-0.5 ${BUCKET_COLOR[zone.optionality_bucket]}`}>
+          <p className="font-semibold text-base">{zone.display_city}, {zone.display_state}</p>
+          <p className={`text-sm mt-1 ${BUCKET_COLOR[zone.optionality_bucket]}`}>
             {BUCKET_LABEL[zone.optionality_bucket]}
           </p>
         </div>
         {showClose && (
           <button
             onClick={onClose}
-            className="text-muted-foreground hover:text-foreground text-lg leading-none mt-0.5"
+            className="text-muted-foreground hover:text-foreground text-2xl leading-none mt-0.5"
             aria-label="Close"
           >
             ×
@@ -51,7 +51,7 @@ export function ZoneTooltip({ zone, period, periodNote, showClose = false, onClo
         )}
       </div>
 
-      <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
         <dt className="text-muted-foreground">Outbound loads</dt>
         <dd className="font-medium">{zone.outbound_load_count.toLocaleString()}</dd>
         <dt className="text-muted-foreground">Inbound loads</dt>
@@ -68,7 +68,7 @@ export function ZoneTooltip({ zone, period, periodNote, showClose = false, onClo
         <dd className="font-medium capitalize">{zone.data_support}</dd>
       </dl>
 
-      <p className="text-[10px] text-muted-foreground mt-3">
+      <p className="text-xs text-muted-foreground mt-4">
         {`Based on ${PERIOD_LABEL[period]} historical orders`}
       </p>
     </div>
