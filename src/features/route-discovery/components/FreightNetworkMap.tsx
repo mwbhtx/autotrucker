@@ -70,14 +70,14 @@ export function FreightNetworkMap({ data, period }: Props) {
   const [hoveredZone, setHoveredZone] = useState<FreightZoneSummary | null>(null);
   const [arcTooltip, setArcTooltip] = useState<ArcTooltipData | null>(null);
   const [activeFlowTypes, setActiveFlowTypes] = useState<Set<FlowType>>(new Set(['source', 'transit', 'sink']));
+  const [activeOptBuckets, setActiveOptBuckets] = useState<Set<string>>(new Set(['high']));
+  const [strictMode, setStrictMode] = useState(false);
 
   const toggleFlowType = (type: FlowType) => {
-    setActiveFlowTypes((prev) => {
-      const next = new Set(prev);
-      if (next.has(type)) next.delete(type);
-      else next.add(type);
-      return next;
-    });
+    setActiveFlowTypes((prev) => { const n = new Set(prev); n.has(type) ? n.delete(type) : n.add(type); return n; });
+  };
+  const toggleOptBucket = (b: string) => {
+    setActiveOptBuckets((prev) => { const n = new Set(prev); n.has(b) ? n.delete(b) : n.add(b); return n; });
   };
 
   const selectedZone = selectedZoneKey
@@ -132,12 +132,34 @@ export function FreightNetworkMap({ data, period }: Props) {
     const { lanes, zones } = data;
     const allCounts = lanes.map((l) => l.load_count);
 
+    // Zone passes both active filters (flow type + optionality bucket)
+    const zonePassesFilters = (z: FreightZoneSummary) =>
+      z.optionality_bucket !== 'low_data' &&
+      activeFlowTypes.has(zoneFlowType(z)) &&
+      activeOptBuckets.has(z.optionality_bucket);
+
+    // Strict mode: lanes only shown when BOTH endpoints pass filters
+    const laneZoneKeys = new Set(lanes.flatMap((l) => [l.origin_zone_key, l.destination_zone_key]));
+    const zoneMap = new Map(zones.map((z) => [z.zone_key, z]));
+
+    const visibleLanes = strictMode
+      ? lanes.filter((l) => {
+          const o = zoneMap.get(l.origin_zone_key);
+          const d = zoneMap.get(l.destination_zone_key);
+          return o && d && zonePassesFilters(o) && zonePassesFilters(d);
+        })
+      : lanes;
+
+    const strictLaneZoneKeys = strictMode
+      ? new Set(visibleLanes.flatMap((l) => [l.origin_zone_key, l.destination_zone_key]))
+      : laneZoneKeys;
+
     // Lines only visible when a zone is selected
     const outboundLanes = selectedZoneKey
-      ? lanes.filter((l) => l.origin_zone_key === selectedZoneKey)
+      ? visibleLanes.filter((l) => l.origin_zone_key === selectedZoneKey)
       : [];
     const inboundLanes = selectedZoneKey
-      ? lanes.filter((l) => l.destination_zone_key === selectedZoneKey && l.origin_zone_key !== selectedZoneKey)
+      ? visibleLanes.filter((l) => l.destination_zone_key === selectedZoneKey && l.origin_zone_key !== selectedZoneKey)
       : [];
 
     // All endpoints of selected zone's lanes — always shown so lines have visible targets
@@ -145,13 +167,12 @@ export function FreightNetworkMap({ data, period }: Props) {
       ? new Set([...outboundLanes, ...inboundLanes].flatMap((l) => [l.origin_zone_key, l.destination_zone_key]))
       : null;
 
-    // Zones: connected endpoints always shown (bypass filter so lines have visible targets);
-    // idle view filtered by flow type.
-    const laneZoneKeys = new Set(lanes.flatMap((l) => [l.origin_zone_key, l.destination_zone_key]));
+    // Zones: connected endpoints always shown so lines have visible targets;
+    // idle view filtered by both flow type + optionality.
     const activeZones = zones.filter((z) => {
-      if (!laneZoneKeys.has(z.zone_key)) return false;
+      if (!strictLaneZoneKeys.has(z.zone_key)) return false;
       if (connectedZoneKeys?.has(z.zone_key)) return true;
-      return activeFlowTypes.has(zoneFlowType(z));
+      return zonePassesFilters(z);
     });
     const maxOutbound = Math.max(1, ...activeZones.map((z) => z.outbound_load_count));
 
@@ -270,7 +291,7 @@ export function FreightNetworkMap({ data, period }: Props) {
         }
       },
     });
-  }, [data, selectedZoneKey, arcTooltip, activeFlowTypes]);
+  }, [data, selectedZoneKey, arcTooltip, activeFlowTypes, activeOptBuckets, strictMode]);
 
   const noData = data.lanes.length === 0 && data.zones.length === 0;
 
@@ -348,33 +369,66 @@ export function FreightNetworkMap({ data, period }: Props) {
         </div>
       )}
 
-      <div className="absolute bottom-4 right-4 bg-background/90 border rounded-md px-3 py-2 text-xs space-y-1.5">
-        <p className="font-semibold text-[11px] mb-1">Zone type</p>
+      <div className="absolute bottom-4 right-4 bg-background/90 border rounded-md px-3 py-2 text-xs space-y-2 min-w-[190px]">
+
+        {/* Flow type */}
+        <p className="font-semibold text-[11px]">Flow type</p>
         {([
-          { type: 'source',  dot: 'bg-blue-500',  label: 'Source  (export heavy)' },
-          { type: 'transit', dot: 'bg-lime-400',  label: 'Transit  (balanced)' },
-          { type: 'sink',    dot: 'bg-red-500',   label: 'Sink  (import heavy)' },
+          { type: 'source',  dot: 'bg-blue-500', label: 'Source (export heavy)' },
+          { type: 'transit', dot: 'bg-lime-400', label: 'Transit (balanced)' },
+          { type: 'sink',    dot: 'bg-red-500',  label: 'Sink (import heavy)' },
         ] as const).map(({ type, dot, label }) => {
           const active = activeFlowTypes.has(type);
           return (
             <label key={type} className="flex items-center gap-1.5 cursor-pointer select-none">
               <input type="checkbox" checked={active} onChange={() => toggleFlowType(type)} className="sr-only" />
-              <span className={`w-3 h-3 rounded-sm border flex items-center justify-center shrink-0 transition-colors ${active ? `${dot} border-transparent` : 'border-border bg-transparent'}`}>
+              <span className={`w-3 h-3 rounded-sm border flex items-center justify-center shrink-0 ${active ? `${dot} border-transparent` : 'border-border'}`}>
                 {active && <svg className="w-2 h-2 text-white" viewBox="0 0 8 8" fill="none"><path d="M1 4l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
               </span>
-              <span className={active ? "text-foreground" : "text-muted-foreground/50"}>{label}</span>
+              <span className={active ? 'text-foreground' : 'text-muted-foreground/50'}>{label}</span>
             </label>
           );
         })}
-        <div className="pt-1 mt-0.5 border-t border-border/50 space-y-0.5 text-[10px] text-muted-foreground/60">
-          <div className="flex items-center gap-1.5">
-            <span className="w-4 h-0.5 bg-[#a3e635] inline-block" />
-            Outbound lanes
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-4 h-0.5 bg-[#63b3ed] inline-block opacity-60" />
-            Inbound lanes
-          </div>
+
+        {/* Optionality */}
+        <p className="font-semibold text-[11px] pt-1 border-t border-border/50">Optionality</p>
+        {([
+          { bucket: 'high',   dot: 'bg-emerald-500', label: `High  (H ≥ ${data.metadata.optionality_thresholds.medium_max} bits)` },
+          { bucket: 'medium', dot: 'bg-amber-500',   label: `Medium  (${data.metadata.optionality_thresholds.low_max}–${data.metadata.optionality_thresholds.medium_max} bits)` },
+          { bucket: 'low',    dot: 'bg-rose-500',    label: `Low  (H < ${data.metadata.optionality_thresholds.low_max} bits)` },
+        ]).map(({ bucket, dot, label }) => {
+          const active = activeOptBuckets.has(bucket);
+          return (
+            <label key={bucket} className="flex items-center gap-1.5 cursor-pointer select-none">
+              <input type="checkbox" checked={active} onChange={() => toggleOptBucket(bucket)} className="sr-only" />
+              <span className={`w-3 h-3 rounded-sm border flex items-center justify-center shrink-0 ${active ? `${dot} border-transparent` : 'border-border'}`}>
+                {active && <svg className="w-2 h-2 text-white" viewBox="0 0 8 8" fill="none"><path d="M1 4l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+              </span>
+              <span className={active ? 'text-foreground' : 'text-muted-foreground/50'}>{label}</span>
+            </label>
+          );
+        })}
+
+        {/* Strict mode */}
+        <label className="flex items-center gap-1.5 cursor-pointer select-none pt-1 border-t border-border/50">
+          <input type="checkbox" checked={strictMode} onChange={() => setStrictMode((v) => !v)} className="sr-only" />
+          <span className={`w-3 h-3 rounded-sm border flex items-center justify-center shrink-0 ${strictMode ? 'bg-primary border-transparent' : 'border-border'}`}>
+            {strictMode && <svg className="w-2 h-2 text-primary-foreground" viewBox="0 0 8 8" fill="none"><path d="M1 4l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+          </span>
+          <span className={strictMode ? 'text-foreground font-medium' : 'text-muted-foreground/70'}>
+            Matching endpoints only
+          </span>
+        </label>
+        {strictMode && (
+          <p className="text-[10px] text-muted-foreground/60 -mt-1 pl-[18px]">
+            Lanes where both hubs pass all filters
+          </p>
+        )}
+
+        {/* Lane legend */}
+        <div className="space-y-0.5 text-[10px] text-muted-foreground/60 pt-1 border-t border-border/50">
+          <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#a3e635] inline-block" />Outbound</div>
+          <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#63b3ed] inline-block opacity-60" />Inbound</div>
         </div>
       </div>
     </div>
