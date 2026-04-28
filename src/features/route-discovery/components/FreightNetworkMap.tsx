@@ -48,6 +48,15 @@ const FLOW_COLOR: Record<FlowType, [number, number, number]> = {
   sink:    [239,  68,  68],  // red-500    — import heavy
 };
 
+// Node color now encodes outbound options (the Route Discovery primary signal),
+// not hub type. Hub type is conveyed via lane colors when a node is selected.
+const OPT_COLOR: Record<FreightZoneSummary['optionality_bucket'], [number, number, number]> = {
+  high:     [ 16, 185, 129],  // emerald-500
+  medium:   [234, 179,   8],  // amber-500
+  low:      [244,  63,  94],  // rose-500
+  low_data: [148, 163, 184],  // slate-400
+};
+
 // Stroke width on zone nodes encodes data_support (confidence in the underlying sample).
 const DATA_SUPPORT_STROKE: Record<FreightZoneSummary['data_support'], number> = {
   low: 1,
@@ -263,11 +272,11 @@ export function FreightNetworkMap({ data, period }: Props) {
       lineWidthUnits: 'pixels',
       getLineWidth: (z) => DATA_SUPPORT_STROKE[z.data_support],
       getFillColor: (z) => {
-        const [r, g, b] = FLOW_COLOR[zoneFlowType(z)];
+        const [r, g, b] = OPT_COLOR[z.optionality_bucket];
         return [r, g, b, Math.round(zoneAlpha(z) * 230)];
       },
       getLineColor: (z) => {
-        const [r, g, b] = FLOW_COLOR[zoneFlowType(z)];
+        const [r, g, b] = OPT_COLOR[z.optionality_bucket];
         // Slightly brighter ring than fill so the data-support encoding is legible.
         return [Math.min(255, r + 30), Math.min(255, g + 30), Math.min(255, b + 30), Math.round(zoneAlpha(z) * 255)];
       },
