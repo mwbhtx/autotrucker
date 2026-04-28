@@ -11,10 +11,10 @@ interface ZoneTooltipProps {
 }
 
 const BUCKET_LABEL: Record<FreightZoneSummary['optionality_bucket'], string> = {
-  high:     'High outbound optionality',
-  medium:   'Moderate outbound optionality',
-  low:      'Low outbound optionality',
-  low_data: 'Insufficient historical data for optionality signal',
+  high:     'Many outbound options',
+  medium:   'Some outbound options',
+  low:      'Few outbound options',
+  low_data: 'Not enough historical data',
 };
 
 const BUCKET_COLOR: Record<FreightZoneSummary['optionality_bucket'], string> = {

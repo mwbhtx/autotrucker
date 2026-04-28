@@ -445,8 +445,8 @@ export function FreightNetworkMap({ data, period }: Props) {
           );
         })}
 
-        {/* Optionality */}
-        <p className="font-semibold text-base pt-2 border-t border-border/50">Optionality</p>
+        {/* Outbound options (entropy of lane distribution) */}
+        <p className="font-semibold text-base pt-2 border-t border-border/50">Outbound options</p>
         {([
           { bucket: 'high',   dot: 'bg-emerald-500', label: 'High' },
           { bucket: 'medium', dot: 'bg-amber-500',   label: 'Medium' },
