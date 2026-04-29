@@ -290,13 +290,6 @@ export function FreightNetworkMap({ data, period }: Props) {
   }, [selectedZoneKey, selectedZone, zoneDetail.data, data.zones]);
 
   // Filtered by activeDestTiers — drives display (dots + arcs).
-  const detailLanes: FreightLaneEntry[] = useMemo(
-    () => allDetailLanes.filter((l) => {
-      const tier = data.zones.find((z) => z.zone_key === l.destination_zone_key)?.quality?.tier ?? 'dim';
-      return activeDestTiers.has(tier);
-    }),
-    [allDetailLanes, data.zones, activeDestTiers],
-  );
 
   // Bucket lookup is now homeNetwork-only. Network mode reads quality.tier directly.
   const zoneBucket = useCallback((zone: FreightZoneSummary): VisualBucket | undefined => {
@@ -450,9 +443,9 @@ export function FreightNetworkMap({ data, period }: Props) {
     // When zone detail is loaded, replace outbound lanes with complete set (no top-75 cap).
     // Inbound lanes (rawLanes filtered to destination=selected) still come from global data.
     const lanePool = (mapMode === 'network' && selectedZoneKey)
-      ? (detailLanes.length > 0
+      ? (allDetailLanes.length > 0
           ? [
-              ...detailLanes,
+              ...visibleDetailLanes,
               ...rawLanes.filter((l) => l.destination_zone_key === selectedZoneKey),
             ]
           : rawLanes)
@@ -520,6 +513,12 @@ export function FreightNetworkMap({ data, period }: Props) {
         });
       }
     }
+
+    // Filter allDetailLanes by activeDestTiers using local tier — done here so
+    // the filter matches the same tier system that drives the visible node colors.
+    const visibleDetailLanes = allDetailLanes.filter(
+      (l) => activeDestTiers.has(localTierByZone.get(l.destination_zone_key) ?? 'bronze'),
+    );
 
     const directShownLanes = mapMode === 'homeNetwork' && (selectedZoneKey || temporaryHome)
       ? qualityLanes
@@ -883,7 +882,7 @@ export function FreightNetworkMap({ data, period }: Props) {
       layers: staticLayersRef.current,
       onClick: overlayClickRef.current,
     });
-  }, [data, selectedZoneKey, temporaryHome, entryStrictness, homeNetworkMaxLegs, mapMode, activePreset, activeZoneTiers, activeDestTiers, activeFlowTypes, activeHomeNetworkBuckets, expandNetwork, allDetailLanes, detailLanes]);
+  }, [data, selectedZoneKey, temporaryHome, entryStrictness, homeNetworkMaxLegs, mapMode, activePreset, activeZoneTiers, activeDestTiers, activeFlowTypes, activeHomeNetworkBuckets, expandNetwork, allDetailLanes]);
 
   // Animation loop: marching dashes flow along arcs, pulse breathes around selected node.
   // Reads from refs only — no React state writes per frame, no full effect re-run.
