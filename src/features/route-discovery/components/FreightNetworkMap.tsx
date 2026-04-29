@@ -26,7 +26,7 @@ import type {
   HomeNetworkMaxLegs, TemporaryHome, HomeNetworkNode, HomeBaseQuality,
   ZoneTier,
 } from "../utils/map-mode-types";
-import { HOME_NETWORK_COLOR, TIER_COLOR, TIER_LABEL, LOCAL_TIER_COLOR, LOCAL_TIER_LABEL } from "../utils/map-mode-types";
+import { HOME_NETWORK_COLOR, TIER_COLOR, TIER_LABEL } from "../utils/map-mode-types";
 import {
   buildHomeNetwork, buildHomeNetworkFromAnchors, buildHomeBaseQuality,
   homeBaseHeatColor,
@@ -652,7 +652,7 @@ export function FreightNetworkMap({ data, period }: Props) {
         // Selected hub itself and unselected global view use global tier color.
         if (selectedZoneKey && z.zone_key !== selectedZoneKey) {
           const localTier = localQualityByDest.get(z.zone_key)?.tier ?? 'dim';
-          return LOCAL_TIER_COLOR[localTier];
+          return TIER_COLOR[localTier];
         }
         return TIER_COLOR[selectedNetworkTierForZone(z, localTierByDest)];
       }
@@ -1026,7 +1026,7 @@ export function FreightNetworkMap({ data, period }: Props) {
                     <p className="text-xs text-muted-foreground -mt-1 mb-2">Hover a node for details</p>
                     {selectedDestinationSummaries.map(({ zoneKey, label, loadCount, quality }) => {
                       const localTier = quality.tier;
-                      const [r, g, b] = LOCAL_TIER_COLOR[localTier];
+                      const [r, g, b] = TIER_COLOR[localTier];
                       const lane = laneByDest.get(zoneKey);
                       const destZone = zoneByKey.get(zoneKey);
                       return (
@@ -1046,7 +1046,7 @@ export function FreightNetworkMap({ data, period }: Props) {
                               className="shrink-0 inline-flex rounded-sm px-2 py-0.5 text-xs font-medium"
                               style={{ backgroundColor: `rgba(${r}, ${g}, ${b}, 0.18)`, color: `rgb(${r}, ${g}, ${b})` }}
                             >
-                              {LOCAL_TIER_LABEL[localTier]}
+                              {TIER_LABEL[localTier]}
                             </span>
                           </div>
                           <p className="text-xs text-muted-foreground">
@@ -1250,32 +1250,16 @@ export function FreightNetworkMap({ data, period }: Props) {
             <p className="text-sm text-muted-foreground/60 -mt-2">
               {selectedZoneKey ? 'Best next moves from this hub' : 'Best outbound zones inside this dataset'}
             </p>
-            {selectedZoneKey ? ([
-              { tier: 'gold',   dot: 'bg-emerald-400', label: 'Top pick (best 10%)' },
-              { tier: 'silver', dot: 'bg-sky-400',      label: 'Strong (next 15%)' },
-              { tier: 'bronze', dot: 'bg-violet-400',   label: 'Fair (next 25%)' },
-              { tier: 'dim',    dot: 'bg-slate-600',    label: 'Weak' },
-            ] as const).map(({ tier, dot, label }) => {
-              const active = activeDestTiers.has(tier);
-              return (
-                <label key={tier} className="flex items-center gap-1.5 cursor-pointer select-none">
-                  <input type="checkbox" checked={active} onChange={() => toggleDestTier(tier)} className="sr-only" />
-                  <span className={`w-4 h-4 rounded-sm border flex items-center justify-center shrink-0 ${active ? `${dot} border-transparent` : 'border-border'}`}>
-                    {active && <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 8 8" fill="none"><path d="M1 4l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-                  </span>
-                  <span className={active ? 'text-foreground' : 'text-muted-foreground/50'}>{label}</span>
-                </label>
-              );
-            }) : ([
+            {([
               { tier: 'gold',   dot: 'bg-amber-400',  label: 'Gold (top 10%)' },
               { tier: 'silver', dot: 'bg-slate-300',  label: 'Silver (next 15%)' },
               { tier: 'bronze', dot: 'bg-amber-700',  label: 'Bronze (next 25%)' },
               { tier: 'dim',    dot: 'bg-slate-600',  label: 'Below tier' },
             ] as const).map(({ tier, dot, label }) => {
-              const active = activeZoneTiers.has(tier);
+              const active = selectedZoneKey ? activeDestTiers.has(tier) : activeZoneTiers.has(tier);
               return (
                 <label key={tier} className="flex items-center gap-1.5 cursor-pointer select-none">
-                  <input type="checkbox" checked={active} onChange={() => toggleZoneTier(tier)} className="sr-only" />
+                  <input type="checkbox" checked={active} onChange={() => selectedZoneKey ? toggleDestTier(tier) : toggleZoneTier(tier)} className="sr-only" />
                   <span className={`w-4 h-4 rounded-sm border flex items-center justify-center shrink-0 ${active ? `${dot} border-transparent` : 'border-border'}`}>
                     {active && <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 8 8" fill="none"><path d="M1 4l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                   </span>

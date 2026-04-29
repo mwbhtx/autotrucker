@@ -60,16 +60,3 @@ export const TIER_LABEL: Record<ZoneTier, string> = {
   dim:    'Below tier',
 };
 
-// Local tier — opportunity ranking relative to the selected hub's option set.
-export const LOCAL_TIER_COLOR: Record<ZoneTier, [number, number, number]> = {
-  gold:   [ 52, 211, 153],  // emerald-400
-  silver: [ 56, 189, 248],  // sky-400
-  bronze: [167, 139, 250],  // violet-400
-  dim:    [ 71,  85, 105],  // slate-600
-};
-export const LOCAL_TIER_LABEL: Record<ZoneTier, string> = {
-  gold:   'Top pick',
-  silver: 'Strong',
-  bronze: 'Fair',
-  dim:    'Weak',
-};
