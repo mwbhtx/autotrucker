@@ -219,7 +219,8 @@ export function FreightNetworkMap({ data, period }: Props) {
   // Network mode state — preset gates which zones pass quality thresholds, tiers
   // gate which scored zones render. Default = balanced + show gold + silver.
   const [activePreset, setActivePreset] = useState<ScorePreset>('balanced');
-  const [activeTiers, setActiveTiers] = useState<Set<ZoneTier>>(new Set(['gold', 'silver']));
+  const [activeZoneTiers, setActiveZoneTiers] = useState<Set<ZoneTier>>(new Set(['gold', 'silver']));
+  const [activeDestTiers, setActiveDestTiers] = useState<Set<ZoneTier>>(new Set(['gold', 'silver']));
   const [activeHomeNetworkBuckets, setActiveHomeNetworkBuckets] = useState<Set<VisualBucket>>(new Set(['high', 'medium', 'low']));
   const [expandNetwork, setExpandNetwork] = useState(false);
   const themeRef = useRef(resolvedTheme);
@@ -242,7 +243,8 @@ export function FreightNetworkMap({ data, period }: Props) {
   useEffect(() => { themeRef.current = resolvedTheme; }, [resolvedTheme]);
 
   const toggleFlowType = makeSetToggler<FlowType>(setActiveFlowTypes);
-  const toggleTier = makeSetToggler<ZoneTier>(setActiveTiers);
+  const toggleZoneTier = makeSetToggler<ZoneTier>(setActiveZoneTiers);
+  const toggleDestTier = makeSetToggler<ZoneTier>(setActiveDestTiers);
   const toggleHomeNetworkBucket = makeSetToggler<VisualBucket>(setActiveHomeNetworkBuckets);
 
   const selectedZone = selectedZoneKey
@@ -260,7 +262,7 @@ export function FreightNetworkMap({ data, period }: Props) {
     return zoneDetail.data.outbound_lanes
       .filter((dl) => {
         const tier = zoneByKey.get(dl.destination_zone_key)?.quality?.tier ?? 'dim';
-        return activeTiers.has(tier);
+        return activeDestTiers.has(tier);
       })
       .map((dl) => {
         const destZone = zoneByKey.get(dl.destination_zone_key);
@@ -288,7 +290,7 @@ export function FreightNetworkMap({ data, period }: Props) {
               : 'none',
         };
       });
-  }, [selectedZoneKey, selectedZone, zoneDetail.data, data.zones, activeTiers]);
+  }, [selectedZoneKey, selectedZone, zoneDetail.data, data.zones, activeDestTiers]);
 
   // Bucket lookup is now homeNetwork-only. Network mode reads quality.tier directly.
   const zoneBucket = useCallback((zone: FreightZoneSummary): VisualBucket | undefined => {
@@ -420,7 +422,7 @@ export function FreightNetworkMap({ data, period }: Props) {
       // tier must be in the user's active visibility set.
       if (!z.quality) return false;
       if (!filterPassByZone.get(z.zone_key)) return false;
-      return activeTiers.has(z.quality.tier);
+      return activeZoneTiers.has(z.quality.tier);
     };
 
     // Quality lanes: tier-filtered, drives the unselected global map view only.
@@ -875,7 +877,7 @@ export function FreightNetworkMap({ data, period }: Props) {
       layers: staticLayersRef.current,
       onClick: overlayClickRef.current,
     });
-  }, [data, selectedZoneKey, temporaryHome, entryStrictness, homeNetworkMaxLegs, mapMode, activePreset, activeTiers, activeFlowTypes, activeHomeNetworkBuckets, expandNetwork, detailLanes]);
+  }, [data, selectedZoneKey, temporaryHome, entryStrictness, homeNetworkMaxLegs, mapMode, activePreset, activeZoneTiers, activeDestTiers, activeFlowTypes, activeHomeNetworkBuckets, expandNetwork, detailLanes]);
 
   // Animation loop: marching dashes flow along arcs, pulse breathes around selected node.
   // Reads from refs only — no React state writes per frame, no full effect re-run.
@@ -1141,7 +1143,7 @@ export function FreightNetworkMap({ data, period }: Props) {
               })}
             </div>
 
-            <p className="font-semibold text-base pt-2 border-t border-border/50">{selectedZoneKey ? 'Node tiers' : 'Tiers'}</p>
+            <p className="font-semibold text-base pt-2 border-t border-border/50">{selectedZoneKey ? 'Destination Tiers' : 'Zone Tiers'}</p>
             <p className="text-sm text-muted-foreground/60 -mt-2">{selectedZoneKey ? 'Filter destination nodes by quality tier' : 'Composite score grouped by percentile band'}</p>
             {([
               { tier: 'gold',   dot: 'bg-amber-400',  label: 'Gold (top 10%)' },
@@ -1149,10 +1151,12 @@ export function FreightNetworkMap({ data, period }: Props) {
               { tier: 'bronze', dot: 'bg-amber-700',  label: 'Bronze (next 25%)' },
               { tier: 'dim',    dot: 'bg-slate-600',  label: 'Below tier' },
             ] as const).map(({ tier, dot, label }) => {
+              const activeTiers = selectedZoneKey ? activeDestTiers : activeZoneTiers;
+              const toggle = selectedZoneKey ? toggleDestTier : toggleZoneTier;
               const active = activeTiers.has(tier);
               return (
                 <label key={tier} className="flex items-center gap-1.5 cursor-pointer select-none">
-                  <input type="checkbox" checked={active} onChange={() => toggleTier(tier)} className="sr-only" />
+                  <input type="checkbox" checked={active} onChange={() => toggle(tier)} className="sr-only" />
                   <span className={`w-4 h-4 rounded-sm border flex items-center justify-center shrink-0 ${active ? `${dot} border-transparent` : 'border-border'}`}>
                     {active && <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 8 8" fill="none"><path d="M1 4l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                   </span>
