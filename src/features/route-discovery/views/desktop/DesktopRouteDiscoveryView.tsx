@@ -72,8 +72,78 @@ export function DesktopRouteDiscoveryView() {
         }
       : null;
 
+  // Map tab uses fixed positioning to escape any parent scroll container in the
+  // global app shell — the map fills viewport below the navbar exactly, controls
+  // float over the map. Search tab keeps the standard scrollable container layout.
+  if (tab === "map") {
+    return (
+      <Tabs value={tab} onValueChange={handleTabChange}>
+        <div className="absolute inset-0 overflow-hidden">
+          {networkLoading && (
+            <Skeleton className="absolute inset-0 w-full h-full rounded-none" />
+          )}
+
+          {!networkLoading && networkData && (
+            <FreightNetworkMap data={networkData} period={period} />
+          )}
+
+          {/* Floating tab toggle — top-left over map */}
+          <div className="absolute top-4 left-4 z-20">
+            <TabsList
+              variant="line"
+              className="bg-background/95 border rounded-md shadow-md backdrop-blur px-1"
+            >
+              <TabsTrigger value="map">Map</TabsTrigger>
+              <TabsTrigger value="search">Search</TabsTrigger>
+            </TabsList>
+          </div>
+
+          {/* Floating period + zone selector — top-center over map */}
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 bg-background/95 border rounded-md shadow-md backdrop-blur px-3 py-2 flex items-center gap-3">
+            <div className="flex gap-1">
+              {(["30d", "60d", "90d"] as const).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setPeriod(p)}
+                  className={`px-3 py-1 text-xs rounded-md border transition-colors ${
+                    period === p
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background text-muted-foreground border-border hover:border-foreground/40"
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+            <div className="w-px h-4 bg-border" />
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-muted-foreground mr-1">Zone</span>
+              {([100, 200, 300] as const).map((r) => (
+                <button
+                  key={r}
+                  onClick={() => setZoneRadius(r)}
+                  className={`px-3 py-1 text-xs rounded-md border transition-colors ${
+                    zoneRadius === r
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background text-muted-foreground border-border hover:border-foreground/40"
+                  }`}
+                >
+                  {r}mi
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Map tab does not render TabsContent for the search tab — switching
+              tabs swaps to the other return branch entirely. */}
+          <TabsContent value="map" className="hidden" />
+        </div>
+      </Tabs>
+    );
+  }
+
   return (
-    <div className={tab === "map" ? "py-4 space-y-4" : "container mx-auto py-6 space-y-6 max-w-7xl"}>
+    <div className="container mx-auto py-6 space-y-6 max-w-7xl">
       <header>
         <h1 className="text-2xl font-semibold">Route Discovery</h1>
         <p className="text-sm text-muted-foreground mt-1">
@@ -82,61 +152,12 @@ export function DesktopRouteDiscoveryView() {
       </header>
 
       <Tabs value={tab} onValueChange={handleTabChange}>
-        {/* Tab triggers + period toggle share the same row */}
         <div className="flex items-center justify-between">
           <TabsList variant="line">
             <TabsTrigger value="map">Map</TabsTrigger>
             <TabsTrigger value="search">Search</TabsTrigger>
           </TabsList>
-
-          {tab === "map" && (
-            <div className="flex items-center gap-3">
-              <div className="flex gap-1">
-                {(["30d", "60d", "90d"] as const).map((p) => (
-                  <button
-                    key={p}
-                    onClick={() => setPeriod(p)}
-                    className={`px-3 py-1 text-xs rounded-md border transition-colors ${
-                      period === p
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-background text-muted-foreground border-border hover:border-foreground/40"
-                    }`}
-                  >
-                    {p}
-                  </button>
-                ))}
-              </div>
-              <div className="w-px h-4 bg-border" />
-              <div className="flex items-center gap-1">
-                <span className="text-xs text-muted-foreground mr-1">Zone</span>
-                {([100, 200, 300] as const).map((r) => (
-                  <button
-                    key={r}
-                    onClick={() => setZoneRadius(r)}
-                    className={`px-3 py-1 text-xs rounded-md border transition-colors ${
-                      zoneRadius === r
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-background text-muted-foreground border-border hover:border-foreground/40"
-                    }`}
-                  >
-                    {r}mi
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
-
-        {/* ── Map tab ── */}
-        <TabsContent value="map" className="mt-4">
-          {networkLoading && (
-            <Skeleton className="h-[calc(100vh-22rem)] min-h-[400px] w-full rounded-lg" />
-          )}
-
-          {!networkLoading && networkData && (
-            <FreightNetworkMap data={networkData} period={period} />
-          )}
-        </TabsContent>
 
         {/* ── Search tab ── */}
         <TabsContent value="search" className="mt-6 space-y-6">

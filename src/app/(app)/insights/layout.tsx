@@ -45,7 +45,11 @@ export default function InsightsLayout({ children }: { children: React.ReactNode
           </TabsList>
         </Tabs>
       </div>
-      <div className="flex-1 overflow-y-auto px-6 pt-8 pb-6">{children}</div>
+      <div className={
+        pathname.startsWith('/insights/route-discovery')
+          ? 'flex-1 relative overflow-hidden'
+          : 'flex-1 overflow-y-auto px-6 pt-8 pb-6'
+      }>{children}</div>
     </div>
   );
 }
