@@ -257,33 +257,38 @@ export function FreightNetworkMap({ data, period }: Props) {
   const detailLanes: FreightLaneEntry[] = useMemo(() => {
     if (!selectedZoneKey || !zoneDetail.data || !selectedZone) return [];
     const zoneByKey = new Map(data.zones.map((z) => [z.zone_key, z]));
-    return zoneDetail.data.outbound_lanes.map((dl) => {
-      const destZone = zoneByKey.get(dl.destination_zone_key);
-      return {
-        origin_zone_key: selectedZoneKey,
-        origin_display_city: selectedZone.display_city,
-        origin_display_state: selectedZone.display_state,
-        origin_centroid_lat: selectedZone.centroid_lat,
-        origin_centroid_lng: selectedZone.centroid_lng,
-        destination_zone_key: dl.destination_zone_key,
-        destination_display_city: dl.destination_display_city,
-        destination_display_state: dl.destination_display_state,
-        destination_centroid_lat: destZone?.centroid_lat ?? dl.destination_centroid_lat,
-        destination_centroid_lng: destZone?.centroid_lng ?? dl.destination_centroid_lng,
-        load_count: dl.load_count,
-        loads_per_day: dl.loads_per_day,
-        median_gross_rate_per_loaded_mile: dl.median_rate_per_mile,
-        reverse_load_count: dl.reverse_load_count,
-        reverse_loads_per_day: 0,
-        reverse_strength:
-          dl.reverse_load_count >= 5
-            ? 'strong_truncated'
-            : dl.reverse_load_count > 0
-            ? 'weak'
-            : 'none',
-      };
-    });
-  }, [selectedZoneKey, selectedZone, zoneDetail.data, data.zones]);
+    return zoneDetail.data.outbound_lanes
+      .filter((dl) => {
+        const tier = zoneByKey.get(dl.destination_zone_key)?.quality?.tier ?? 'dim';
+        return activeTiers.has(tier);
+      })
+      .map((dl) => {
+        const destZone = zoneByKey.get(dl.destination_zone_key);
+        return {
+          origin_zone_key: selectedZoneKey,
+          origin_display_city: selectedZone.display_city,
+          origin_display_state: selectedZone.display_state,
+          origin_centroid_lat: selectedZone.centroid_lat,
+          origin_centroid_lng: selectedZone.centroid_lng,
+          destination_zone_key: dl.destination_zone_key,
+          destination_display_city: dl.destination_display_city,
+          destination_display_state: dl.destination_display_state,
+          destination_centroid_lat: destZone?.centroid_lat ?? dl.destination_centroid_lat,
+          destination_centroid_lng: destZone?.centroid_lng ?? dl.destination_centroid_lng,
+          load_count: dl.load_count,
+          loads_per_day: dl.loads_per_day,
+          median_gross_rate_per_loaded_mile: dl.median_rate_per_mile,
+          reverse_load_count: dl.reverse_load_count,
+          reverse_loads_per_day: 0,
+          reverse_strength:
+            dl.reverse_load_count >= 5
+              ? 'strong_truncated'
+              : dl.reverse_load_count > 0
+              ? 'weak'
+              : 'none',
+        };
+      });
+  }, [selectedZoneKey, selectedZone, zoneDetail.data, data.zones, activeTiers]);
 
   // Bucket lookup is now homeNetwork-only. Network mode reads quality.tier directly.
   const zoneBucket = useCallback((zone: FreightZoneSummary): VisualBucket | undefined => {
@@ -1134,8 +1139,8 @@ export function FreightNetworkMap({ data, period }: Props) {
               })}
             </div>
 
-            <p className="font-semibold text-base pt-2 border-t border-border/50">Tiers</p>
-            <p className="text-sm text-muted-foreground/60 -mt-2">Composite score grouped by percentile band</p>
+            <p className="font-semibold text-base pt-2 border-t border-border/50">{selectedZoneKey ? 'Node tiers' : 'Tiers'}</p>
+            <p className="text-sm text-muted-foreground/60 -mt-2">{selectedZoneKey ? 'Filter destination nodes by quality tier' : 'Composite score grouped by percentile band'}</p>
             {([
               { tier: 'gold',   dot: 'bg-amber-400',  label: 'Gold (top 10%)' },
               { tier: 'silver', dot: 'bg-slate-300',  label: 'Silver (next 15%)' },
