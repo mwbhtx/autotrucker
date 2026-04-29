@@ -1,6 +1,7 @@
 "use client";
 
 import type { FreightZoneSummary } from '@mwbhtx/haulvisor-core';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/platform/web/components/ui/tooltip';
 import type { MapMode, VisualBucket } from '../utils/map-mode-types';
 import { TIER_COLOR, TIER_LABEL } from '../utils/map-mode-types';
 
@@ -13,6 +14,21 @@ interface ZoneTooltipProps {
   showClose?: boolean;
   onClose?: () => void;
 }
+
+type QualityConfidence = {
+  score: number;
+  level: 'high' | 'medium' | 'low';
+  subscores?: {
+    volumeSupport?: number;
+    laneSupport?: number;
+    activeDaySupport?: number;
+    rateSupport?: number;
+  };
+};
+
+type ZoneQualityWithConfidence = NonNullable<FreightZoneSummary['quality']> & {
+  confidence?: QualityConfidence;
+};
 
 const PERIOD_LABEL: Record<string, string> = {
   '30d': 'last 30 days',
@@ -35,10 +51,12 @@ function homeNetworkRead(bucketLabel: string | undefined, homeSelected: boolean)
 
 function networkRead(zone: FreightZoneSummary): string {
   const tier = zone.quality?.tier;
-  if (!tier || tier === 'dim') return 'Below the active tier filter — limited freight history or weaker scoring signals.';
-  if (tier === 'gold')   return 'Top-tier delivery target — strong volume, options, freshness, and pay history.';
-  if (tier === 'silver') return 'Strong delivery target — most signals favorable, a couple of weaker spots.';
-  return 'Solid delivery target — viable, but watch the weaker subscores below before chasing.';
+  const confidence = (zone.quality as ZoneQualityWithConfidence | undefined)?.confidence;
+  if (!tier || tier === 'dim') return 'Lower internal opportunity — weaker outbound signals in this dataset.';
+  if (tier === 'gold' && confidence?.level === 'low') return 'Gold potential inside this dataset, but the supporting history is thin.';
+  if (tier === 'gold') return 'Top internal opportunity — strong outbound signals relative to this dataset.';
+  if (tier === 'silver') return 'Strong internal opportunity — most outbound signals rank well here.';
+  return 'Solid internal opportunity — useful, but check the weaker subscores before chasing.';
 }
 
 function formatDays(value: number | null | undefined): string {
@@ -76,6 +94,24 @@ const SUBSCORE_LABEL = {
   rate:           'Outbound $/mi',
 } satisfies Partial<Record<keyof NonNullable<FreightZoneSummary['quality']>['subscores'], string>>;
 
+function confidenceLabel(confidence: QualityConfidence | undefined, fallback: FreightZoneSummary['data_support']): string {
+  if (!confidence) return `${fallback} support`;
+  return `${confidence.level} confidence`;
+}
+
+function confidenceExplanation(confidence: QualityConfidence | undefined): string {
+  if (!confidence) {
+    return 'Confidence is based on how much history we have for this zone.';
+  }
+  if (confidence.level === 'high') {
+    return 'High confidence means this rank is backed by plenty of loads, active shipping days, outbound lanes, and rate history.';
+  }
+  if (confidence.level === 'medium') {
+    return 'Medium confidence means we have usable history, but one or two evidence checks are thinner than stronger zones.';
+  }
+  return 'Low confidence means there is limited history here. Treat the tier as a lead, not a proven pattern yet.';
+}
+
 export function ZoneTooltip({
   zone,
   period,
@@ -86,7 +122,9 @@ export function ZoneTooltip({
   onClose,
 }: ZoneTooltipProps) {
   const bucketLabel = visualBucket ? BUCKET_LABEL[visualBucket] : undefined;
-  const tier = zone.quality?.tier ?? 'dim';
+  const quality = zone.quality as ZoneQualityWithConfidence | undefined;
+  const tier = quality?.tier ?? 'dim';
+  const confidence = quality?.confidence;
   const tierColor = TIER_COLOR[tier];
 
   return (
@@ -112,19 +150,32 @@ export function ZoneTooltip({
       {mode === 'network' ? (
         <>
           <div className="mb-4 flex items-baseline gap-3">
-            <p className="text-3xl font-semibold tabular-nums">{zone.quality?.composite ?? '—'}</p>
+            <p className="text-3xl font-semibold tabular-nums">{quality?.composite ?? '—'}</p>
             <span
               className="text-sm font-medium px-2 py-0.5 rounded-sm"
               style={{ backgroundColor: rgbToCss(tierColor, 0.18), color: rgbToCss(tierColor, 1) }}
             >
               {TIER_LABEL[tier]}
             </span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span
+                  tabIndex={0}
+                  className="text-sm font-medium px-2 py-0.5 rounded-sm bg-muted text-muted-foreground cursor-help"
+                >
+                  {confidenceLabel(confidence, zone.data_support)}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-[260px] text-pretty">
+                {confidenceExplanation(confidence)}
+              </TooltipContent>
+            </Tooltip>
           </div>
 
-          {zone.quality && (
+          {quality && (
             <div className="mb-4 space-y-1.5">
               {(Object.keys(SUBSCORE_LABEL) as Array<keyof typeof SUBSCORE_LABEL>).map((key) => {
-                const value = zone.quality!.subscores[key];
+                const value = quality.subscores[key];
                 return (
                   <div key={key} className="flex items-center gap-3">
                     <span className="text-sm text-muted-foreground w-32 shrink-0">{SUBSCORE_LABEL[key]}</span>

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { FreightZoneSummary } from '@mwbhtx/haulvisor-core';
 import {
+  buildLocalDestinationQualityMap,
   buildLocalDestinationTierMap,
   selectedNetworkLanePassesTier,
   tierForRankIndex,
@@ -74,5 +75,58 @@ describe('network tiering', () => {
     expect(
       selectedNetworkLanePassesTier(laneToSelected, 'selected', zones, new Set<ZoneTier>(['gold']), localTiers),
     ).toBe(false);
+  });
+
+  it('keeps opportunity tier separate from confidence evidence', () => {
+    const zones = new Map<string, FreightZoneSummary>([
+      ['selected', zone('selected', 1)],
+      ['thin', zone('thin', 95)],
+      ['steady', zone('steady', 80)],
+      ['weak', zone('weak', 10)],
+      ['stale', zone('stale', 20)],
+      ['missing-rate', zone('missing-rate', 40)],
+    ]);
+    const qualities = buildLocalDestinationQualityMap([
+      {
+        destination_zone_key: 'thin',
+        load_count: 4,
+        active_days: 1,
+        median_gross_rate_per_loaded_mile: 4.2,
+        days_since_last_load: 1,
+      },
+      {
+        destination_zone_key: 'steady',
+        load_count: 40,
+        active_days: 20,
+        median_gross_rate_per_loaded_mile: 1.1,
+        days_since_last_load: 20,
+        median_wait_days: 2,
+      },
+      {
+        destination_zone_key: 'weak',
+        load_count: 10,
+        active_days: 8,
+        median_gross_rate_per_loaded_mile: 1.4,
+        days_since_last_load: 4,
+      },
+      {
+        destination_zone_key: 'stale',
+        load_count: 12,
+        active_days: 6,
+        median_gross_rate_per_loaded_mile: 1.8,
+        days_since_last_load: 30,
+      },
+      {
+        destination_zone_key: 'missing-rate',
+        load_count: 8,
+        active_days: 5,
+        median_gross_rate_per_loaded_mile: null,
+        days_since_last_load: 3,
+      },
+    ], zones);
+
+    expect(qualities.get('thin')?.tier).toBe('gold');
+    expect(qualities.get('thin')?.confidence.level).not.toBe('high');
+    expect(qualities.get('steady')?.confidence.level).toBe('high');
   });
 });

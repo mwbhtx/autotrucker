@@ -23,7 +23,7 @@ import type {
   HomeNetworkMaxLegs, TemporaryHome, HomeNetworkNode, HomeBaseQuality,
   ZoneTier,
 } from "../utils/map-mode-types";
-import { HOME_NETWORK_COLOR, TIER_COLOR } from "../utils/map-mode-types";
+import { HOME_NETWORK_COLOR, TIER_COLOR, TIER_LABEL } from "../utils/map-mode-types";
 import {
   addEdge, bfsDepth,
   buildHomeNetwork, buildHomeNetworkFromAnchors, buildHomeBaseQuality,
@@ -31,13 +31,8 @@ import {
   findEntryAnchors, temporaryHomeSummary,
 } from "../utils/home-network-graph";
 import {
-  PRESET_THRESHOLDS,
-  applyZoneFilters,
-  type ScorePreset,
-  type ZoneFilterThresholds,
-} from "@mwbhtx/haulvisor-core";
-import {
-  buildLocalDestinationTierMap,
+  buildLocalDestinationQualityMap,
+  type LocalDestinationQuality,
   selectedNetworkLanePassesTier,
   selectedNetworkTierForZone,
   selectedNetworkZonePassesTier,
@@ -220,6 +215,21 @@ type NetworkLaneEntry = Pick<
   | 'median_gross_rate_per_loaded_mile'
 >;
 
+type NetworkLaneEvidence = {
+  days_since_last_load?: number | null;
+  active_days?: number | null;
+  median_wait_days?: number | null;
+};
+
+type NetworkLane = NetworkLaneEntry & NetworkLaneEvidence;
+
+type DestinationSummary = {
+  zoneKey: string;
+  label: string;
+  loadCount: number;
+  quality: LocalDestinationQuality;
+};
+
 export function FreightNetworkMap({ data, period }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -233,11 +243,10 @@ export function FreightNetworkMap({ data, period }: Props) {
   const [temporaryHome, setTemporaryHome] = useState<TemporaryHome | null>(null);
   const [entryStrictness, setEntryStrictness] = useState<EntryStrictness>('balanced');
   const [homeNetworkMaxLegs, setHomeNetworkMaxLegs] = useState<HomeNetworkMaxLegs>(3);
-  // Network mode state — preset gates which zones pass quality thresholds, tiers
-  // gate which scored zones render. Default = balanced + show gold + silver.
-  const [activePreset, setActivePreset] = useState<ScorePreset>('balanced');
+  // Network mode state: tiers gate visibility, confidence explains evidence
+  // without hiding the best available opportunities behind fixed load-count floors.
   const [activeZoneTiers, setActiveZoneTiers] = useState<Set<ZoneTier>>(new Set(['gold', 'silver']));
-  const [activeDestTiers, setActiveDestTiers] = useState<Set<ZoneTier>>(new Set(['gold', 'silver']));
+  const [activeDestTiers, setActiveDestTiers] = useState<Set<ZoneTier>>(new Set(['gold', 'silver', 'bronze']));
   const [activeHomeNetworkBuckets, setActiveHomeNetworkBuckets] = useState<Set<VisualBucket>>(new Set(['high', 'medium', 'low']));
   const [expandNetwork, setExpandNetwork] = useState(false);
   const themeRef = useRef(resolvedTheme);
@@ -266,6 +275,7 @@ export function FreightNetworkMap({ data, period }: Props) {
   const selectedZone = selectedZoneKey
     ? data.zones.find((z) => z.zone_key === selectedZoneKey) ?? null
     : null;
+  const zoneByKey = useMemo(() => new Map(data.zones.map((z) => [z.zone_key, z])), [data.zones]);
 
   const zoneDetail = useZoneDetail(
     mapMode === 'network' ? selectedZoneKey : null,
@@ -274,10 +284,10 @@ export function FreightNetworkMap({ data, period }: Props) {
 
   // Unfiltered — all outbound lanes for the selected zone. Used for local tier
   // scoring so percentile ranks are stable regardless of the destination tier filter.
-  const allDestLanes: NetworkLaneEntry[] = useMemo(() => {
+  const allDestLanes: NetworkLane[] = useMemo(() => {
     if (!selectedZoneKey || !zoneDetail.data || !selectedZone) return [];
-    const zoneByKey = new Map(data.zones.map((z) => [z.zone_key, z]));
     return zoneDetail.data.outbound_lanes.map((dl) => {
+      const laneEvidence = dl as typeof dl & NetworkLaneEvidence;
       const destZone = zoneByKey.get(dl.destination_zone_key);
       return {
         origin_zone_key: selectedZoneKey,
@@ -293,9 +303,50 @@ export function FreightNetworkMap({ data, period }: Props) {
         load_count: dl.load_count,
         loads_per_day: dl.loads_per_day,
         median_gross_rate_per_loaded_mile: dl.median_rate_per_mile,
+        days_since_last_load: dl.days_since_last_load,
+        active_days: laneEvidence.active_days ?? null,
+        median_wait_days: laneEvidence.median_wait_days ?? null,
       };
     });
-  }, [selectedZoneKey, selectedZone, zoneDetail.data, data.zones]);
+  }, [selectedZoneKey, selectedZone, zoneDetail.data, zoneByKey]);
+
+  const selectedOutboundLanePool = useMemo<NetworkLane[]>(() => {
+    if (!selectedZoneKey) return [];
+    if (allDestLanes.length > 0) return allDestLanes;
+    return data.lanes.filter((l) => (
+      l.origin_zone_key === selectedZoneKey
+      && zoneByKey.has(l.destination_zone_key)
+    ));
+  }, [allDestLanes, data.lanes, selectedZoneKey, zoneByKey]);
+
+  const selectedDestinationQualityByKey = useMemo(
+    () => selectedZoneKey
+      ? buildLocalDestinationQualityMap(selectedOutboundLanePool, zoneByKey)
+      : new Map<string, LocalDestinationQuality>(),
+    [selectedOutboundLanePool, selectedZoneKey, zoneByKey],
+  );
+
+  const selectedDestinationSummaries = useMemo<DestinationSummary[]>(() => {
+    const loadCountByDest = new Map<string, number>();
+    for (const lane of selectedOutboundLanePool) {
+      loadCountByDest.set(
+        lane.destination_zone_key,
+        (loadCountByDest.get(lane.destination_zone_key) ?? 0) + lane.load_count,
+      );
+    }
+    return [...selectedDestinationQualityByKey.entries()]
+      .map(([zoneKey, quality]) => {
+        const zone = zoneByKey.get(zoneKey);
+        return {
+          zoneKey,
+          label: zone ? `${zone.display_city}, ${zone.display_state}` : zoneKey,
+          loadCount: loadCountByDest.get(zoneKey) ?? 0,
+          quality,
+        };
+      })
+      .sort((a, b) => b.quality.composite - a.quality.composite || b.loadCount - a.loadCount || a.label.localeCompare(b.label))
+      .slice(0, 5);
+  }, [selectedDestinationQualityByKey, selectedOutboundLanePool, zoneByKey]);
 
   // Bucket lookup is now homeNetwork-only. Network mode reads quality.tier directly.
   const zoneBucket = useCallback((zone: FreightZoneSummary): VisualBucket | undefined => {
@@ -389,24 +440,6 @@ export function FreightNetworkMap({ data, period }: Props) {
         : buildHomeNetworkFromAnchors(lanes, zones, entryAnchors.map((a) => a.zoneKey), homeNetworkMaxLegs)
       : new Map<string, HomeNetworkNode>();
 
-    // Network mode: apply preset thresholds via core's applyZoneFilters, then gate
-    // by tier visibility. Re-uses the same filter primitives that downstream
-    // routes-search will use, so insights map and order ranking stay aligned.
-    const presetThresholds: ZoneFilterThresholds = PRESET_THRESHOLDS[activePreset];
-    const networkSignals = mapMode === 'network' ? renderableZones.map((z) => ({
-      zoneKey: z.zone_key,
-      outboundLoadCount: z.outbound_load_count,
-      outboundEntropy: z.outbound_entropy,
-      outboundLaneCount: z.outbound_lane_count,
-      daysSinceLastOutbound: z.outbound_days_since_last_load ?? null,
-      outboundActiveDays: z.outbound_active_days ?? 0,
-      outboundMedianWaitDays: z.outbound_median_wait_days ?? null,
-      outboundMedianRatePerMile: z.outbound_median_rate_per_mile ?? null,
-    })) : [];
-    const filterPassByZone = mapMode === 'network'
-      ? new Map(applyZoneFilters(networkSignals as Parameters<typeof applyZoneFilters>[0], presetThresholds).map((r) => [r.zoneKey, r.passes]))
-      : new Map<string, boolean>();
-
     // Map mode controls zone visibility and color.
     const zonePassesFilters = (z: FreightZoneSummary) => {
       if (mapMode === 'homeNetwork') {
@@ -421,10 +454,9 @@ export function FreightNetworkMap({ data, period }: Props) {
         const homeNode = homeNetwork.get(z.zone_key);
         return !!homeNode && activeHomeNetworkBuckets.has(homeNode.bucket);
       }
-      // Network mode: must have a quality score, must pass preset thresholds,
-      // tier must be in the user's active visibility set.
+      // Network mode: must have a quality score and tier must be in the
+      // visibility set. Confidence is displayed, not used as a hard gate.
       if (!z.quality) return false;
-      if (!filterPassByZone.get(z.zone_key)) return false;
       return activeZoneTiers.has(z.quality.tier);
     };
 
@@ -435,10 +467,10 @@ export function FreightNetworkMap({ data, period }: Props) {
       return o && d && zonePassesFilters(o) && zonePassesFilters(d);
     });
 
-    // Raw lanes: both zones exist in data, no tier/preset filter.
+    // Raw lanes: both zones exist in data, no tier filter.
     // Used for the selected-zone view so all historical outbound lanes are shown,
     // independent of what the tier toggle is set to.
-    const rawLanes: NetworkLaneEntry[] = lanes.filter(
+    const rawLanes: NetworkLane[] = lanes.filter(
       (l) => zoneMap.has(l.origin_zone_key) && zoneMap.has(l.destination_zone_key)
     );
 
@@ -446,15 +478,16 @@ export function FreightNetworkMap({ data, period }: Props) {
     // historical outbound destinations from this hub relative to each other.
     // Scored from rawLanes (not quality-filtered) so tier toggle doesn't affect
     // which destinations exist or how they rank.
-    // Score = lane.load_count × dest optionality subscore.
+    // Score uses lane volume, recency, cadence, rate, and destination onward opportunity.
     // Rank order mirrors global tiers: gold / silver / bronze / dim by percentile.
     const selectedOutboundLanes = mapMode === 'network' && selectedZoneKey
-      ? allDestLanes.length > 0
-        ? allDestLanes
+      ? selectedOutboundLanePool.length > 0
+        ? selectedOutboundLanePool
         : rawLanes.filter((l) => l.origin_zone_key === selectedZoneKey)
       : [];
+    const localQualityByDest = selectedZoneKey ? selectedDestinationQualityByKey : new Map<string, LocalDestinationQuality>();
     const localTierByDest = selectedZoneKey
-      ? buildLocalDestinationTierMap(selectedOutboundLanes, zoneMap)
+      ? new Map([...localQualityByDest].map(([zoneKey, quality]) => [zoneKey, quality.tier]))
       : new Map<string, ZoneTier>();
     const visibleSelectedOutboundLanes = selectedZoneKey
       ? selectedOutboundLanes.filter((l) => (
@@ -779,7 +812,7 @@ export function FreightNetworkMap({ data, period }: Props) {
       layers: staticLayersRef.current,
       onClick: overlayClickRef.current,
     });
-  }, [data, selectedZoneKey, temporaryHome, entryStrictness, homeNetworkMaxLegs, mapMode, activePreset, activeZoneTiers, activeDestTiers, activeHomeNetworkBuckets, expandNetwork, allDestLanes]);
+  }, [data, selectedZoneKey, temporaryHome, entryStrictness, homeNetworkMaxLegs, mapMode, activeZoneTiers, activeDestTiers, activeHomeNetworkBuckets, expandNetwork, selectedOutboundLanePool, selectedDestinationQualityByKey]);
 
   // Animation loop: marching dashes flow along arcs, pulse breathes around selected node.
   // Reads from refs only — no React state writes per frame, no full effect re-run.
@@ -906,6 +939,38 @@ export function FreightNetworkMap({ data, period }: Props) {
             showClose
             onClose={handleCloseZonePanel}
           />
+          {mapMode === 'network' && selectedDestinationSummaries.length > 0 && (
+            <div className="mt-3 bg-background/95 border rounded-lg shadow-lg p-4 min-w-[320px] max-w-[420px] text-sm">
+              <div className="mb-3">
+                <p className="font-semibold text-base">Top outbound options</p>
+                <p className="text-sm text-muted-foreground">Ranked inside this hub history</p>
+              </div>
+              <div className="space-y-2">
+                {selectedDestinationSummaries.map(({ zoneKey, label, loadCount, quality }) => {
+                  const [r, g, b] = TIER_COLOR[quality.tier];
+                  return (
+                    <div key={zoneKey} className="grid grid-cols-[1fr_auto] gap-3 rounded-md border bg-background/70 px-3 py-2">
+                      <div className="min-w-0">
+                        <p className="truncate font-medium">{label}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {loadCount.toLocaleString()} loads - {quality.confidence.level} confidence
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <span
+                          className="inline-flex rounded-sm px-2 py-0.5 text-xs font-medium"
+                          style={{ backgroundColor: `rgba(${r}, ${g}, ${b}, 0.18)`, color: `rgb(${r}, ${g}, ${b})` }}
+                        >
+                          {TIER_LABEL[quality.tier]}
+                        </span>
+                        <p className="mt-1 text-xs tabular-nums text-muted-foreground">{quality.composite}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -998,35 +1063,10 @@ export function FreightNetworkMap({ data, period }: Props) {
 
         {mapMode === 'network' ? (
           <>
-            <p className="font-semibold text-base pt-2 border-t border-border/50">Quality preset</p>
-            <p className="text-sm text-muted-foreground/60 -mt-2">Threshold gate before tier ranking</p>
-            <div className="grid grid-cols-3 gap-1 rounded-md border bg-muted/30 p-1">
-              {([
-                { value: 'aggressive',   label: 'Loose'   },
-                { value: 'balanced',     label: 'Balanced' },
-                { value: 'conservative', label: 'Strict'   },
-              ] as const).map(({ value, label }) => {
-                const active = activePreset === value;
-                return (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setActivePreset(value)}
-                    aria-pressed={active}
-                    className={`h-8 rounded-sm border px-2 text-sm font-medium transition-colors ${
-                      active
-                        ? 'border-primary bg-primary text-primary-foreground shadow-sm'
-                        : 'border-transparent text-muted-foreground hover:bg-background/70 hover:text-foreground'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-
             <p className="font-semibold text-base pt-2 border-t border-border/50">{selectedZoneKey ? 'Destination Tiers' : 'Zone Tiers'}</p>
-            <p className="text-sm text-muted-foreground/60 -mt-2">{selectedZoneKey ? 'Filter destination nodes by quality tier' : 'Composite score grouped by percentile band'}</p>
+            <p className="text-sm text-muted-foreground/60 -mt-2">
+              {selectedZoneKey ? 'Best outbound options from this hub' : 'Best outbound zones inside this dataset'}
+            </p>
             {([
               { tier: 'gold',   dot: 'bg-amber-400',  label: 'Gold (top 10%)' },
               { tier: 'silver', dot: 'bg-slate-300',  label: 'Silver (next 15%)' },

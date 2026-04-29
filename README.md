@@ -13,7 +13,7 @@ Haulvisor analyzes thousands of available loads and builds the most profitable m
 - **Animations:** Framer Motion, Shader Gradient
 - **UI:** shadcn/ui, Radix UI primitives
 - **Testing:** Vitest, Testing Library
-- **Core:** [`@mwbhtx/haulvisor-core`](https://github.com/mwbhtx/haulvisor-core) — shared types, constants, cost model, and search defaults
+- **Core:** — shared types, constants, cost model, and search defaults
 
 ## Key Features
 
