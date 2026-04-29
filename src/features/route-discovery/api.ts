@@ -5,6 +5,7 @@ import type {
   LaneDensityResult,
   LegDeadheadResult,
   FreightNetworkMapResponse,
+  ZoneDetailResponse,
 } from "@/core/types";
 
 export interface RoutesQuery {
@@ -100,5 +101,15 @@ export async function fetchFreightNetwork(
 ): Promise<FreightNetworkMapResponse> {
   return fetchApi<FreightNetworkMapResponse>(
     `/analytics/${encodeURIComponent(companyId)}/freight-network-map?period=${period}&zone_radius=${zoneRadius}`,
+  );
+}
+
+export async function fetchZoneDetail(
+  companyId: string,
+  zoneKey: string,
+  period: '30d' | '60d' | '90d',
+): Promise<ZoneDetailResponse> {
+  return fetchApi<ZoneDetailResponse>(
+    `/analytics/${encodeURIComponent(companyId)}/freight-network-map/zone/${encodeURIComponent(zoneKey)}?period=${period}`,
   );
 }

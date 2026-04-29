@@ -118,6 +118,7 @@ export type {
   RegionAnchor,
   LaneDensityDay,
   FreightNetworkMapResponse,
+  ZoneDetailResponse,
 } from "@mwbhtx/haulvisor-core";
 
 // Frontend-only types (not shared with backend)
