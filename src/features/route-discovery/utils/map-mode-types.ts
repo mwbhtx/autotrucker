@@ -45,6 +45,8 @@ export const HOME_NETWORK_COLOR: Record<VisualBucket, [number, number, number]> 
 
 // Tier palette for the unified Network mode. Mirrors haulvisor-core's ZoneTier.
 export type ZoneTier = 'gold' | 'silver' | 'bronze' | 'dim';
+
+// Global tier — hub quality across the full dataset.
 export const TIER_COLOR: Record<ZoneTier, [number, number, number]> = {
   gold:   [250, 204,  21],  // amber-400
   silver: [203, 213, 225],  // slate-300
@@ -56,4 +58,18 @@ export const TIER_LABEL: Record<ZoneTier, string> = {
   silver: 'Silver',
   bronze: 'Bronze',
   dim:    'Below tier',
+};
+
+// Local tier — opportunity ranking relative to the selected hub's option set.
+export const LOCAL_TIER_COLOR: Record<ZoneTier, [number, number, number]> = {
+  gold:   [ 52, 211, 153],  // emerald-400
+  silver: [ 56, 189, 248],  // sky-400
+  bronze: [167, 139, 250],  // violet-400
+  dim:    [ 71,  85, 105],  // slate-600
+};
+export const LOCAL_TIER_LABEL: Record<ZoneTier, string> = {
+  gold:   'Top pick',
+  silver: 'Strong',
+  bronze: 'Fair',
+  dim:    'Weak',
 };

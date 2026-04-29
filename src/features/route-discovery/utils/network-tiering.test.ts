@@ -47,7 +47,8 @@ describe('network tiering', () => {
     const lanes = Array.from({ length: 20 }, (_, index) => {
       const destKey = index === 0 ? 'gold-dest' : index === 3 ? 'silver-dest' : `dest-${index}`;
       const optionality = 100 - index;
-      zones.set(destKey, zone(destKey, optionality));
+      const globalTier: ZoneTier = index === 0 ? 'gold' : index === 3 ? 'silver' : 'dim';
+      zones.set(destKey, zone(destKey, optionality, globalTier));
       return { origin_zone_key: 'selected', destination_zone_key: destKey, load_count: optionality };
     });
     const localTiers = buildLocalDestinationTierMap(lanes, zones);

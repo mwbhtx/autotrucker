@@ -140,7 +140,7 @@ function buildDestinationSignals(
       weightedRateLoads: 0,
       weightedWaitTotal: 0,
       weightedWaitLoads: 0,
-      onwardScore: destZone?.quality?.composite ?? destZone?.quality?.subscores.optionality ?? null,
+      onwardScore: destZone?.quality?.subscores.optionality ?? null,
     };
     current.loadCount += lane.load_count;
     current.loadsPerDay += lane.loads_per_day ?? 0;
@@ -184,7 +184,6 @@ export function buildLocalDestinationQualityMap(
   const rankActiveDays = rankSignal(signals.map((s) => s.activeDays));
   const rankMedianWait = rankSignalInverse(signals.map((s) => s.medianWaitDays));
   const rankRate = rankSignal(signals.map((s) => s.medianRatePerMile));
-  const rankOnward = rankSignal(signals.map((s) => s.onwardScore));
   const volumeReference = percentileValue(signals.map((s) => s.loadCount), 0.75);
   const activeDayReference = percentileValue(signals.map((s) => s.activeDays), 0.75);
 
@@ -194,19 +193,24 @@ export function buildLocalDestinationQualityMap(
     const cadence = activeDayScore > 0 && waitScore > 0
       ? Math.round(activeDayScore * 0.65 + waitScore * 0.35)
       : Math.max(activeDayScore, waitScore);
+    // onward uses quality.composite directly — already a weighted percentile score
+    // across all zones in the dataset. Re-ranking within this hub's destination set
+    // would collapse the global distribution signal (a dead-end zone would rank high
+    // if all of this hub's destinations are mediocre).
+    const onward = Math.round(signal.onwardScore ?? 0);
     const subscores: LocalDestinationQuality['subscores'] = {
       volume: rankVolume(signal.loadCount),
       recency: rankRecency(signal.daysSinceLastLoad),
       cadence,
       rate: rankRate(signal.medianRatePerMile),
-      onward: rankOnward(signal.onwardScore),
+      onward,
     };
     const composite = Math.round(
       (subscores.volume * 1.0
         + subscores.recency * 0.8
         + subscores.cadence * 0.7
         + subscores.rate * 1.0
-        + subscores.onward * 0.9) / 4.4,
+        + subscores.onward * 1.8) / 5.3,
     );
     const volumeSupport = evidenceScore(signal.loadCount, volumeReference);
     const activeDaySupport = evidenceScore(signal.activeDays, activeDayReference);
@@ -253,7 +257,10 @@ export function selectedNetworkTierForZone(
   zone: FreightZoneSummary,
   localTierByDest: ReadonlyMap<string, ZoneTier>,
 ): ZoneTier {
-  return localTierByDest.get(zone.zone_key) ?? zone.quality?.tier ?? 'dim';
+  // Global tier answers "how good is this hub?" for dot color.
+  // Local tier is only a fallback for zones without quality data.
+  if (zone.quality?.tier) return zone.quality.tier;
+  return localTierByDest.get(zone.zone_key) ?? 'dim';
 }
 
 export function selectedNetworkTierForZoneKey(
@@ -261,7 +268,7 @@ export function selectedNetworkTierForZoneKey(
   zoneByKey: ReadonlyMap<string, FreightZoneSummary>,
   localTierByDest: ReadonlyMap<string, ZoneTier>,
 ): ZoneTier {
-  return localTierByDest.get(zoneKey) ?? zoneByKey.get(zoneKey)?.quality?.tier ?? 'dim';
+  return zoneByKey.get(zoneKey)?.quality?.tier ?? localTierByDest.get(zoneKey) ?? 'dim';
 }
 
 export function selectedNetworkZonePassesTier(
