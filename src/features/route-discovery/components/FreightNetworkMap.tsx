@@ -1011,7 +1011,7 @@ export function FreightNetworkMap({ data, period }: Props) {
                   onClick={() => setOutboundOptionsExpanded((v) => !v)}
                 >
                   <div>
-                    <p className="font-semibold text-base">Top outbound options</p>
+                    <p className="font-semibold text-base">Top Lanes</p>
                     {!outboundOptionsExpanded && (
                       <p className="text-xs text-muted-foreground">{selectedDestinationSummaries.length} destinations</p>
                     )}
