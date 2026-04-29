@@ -256,41 +256,47 @@ export function FreightNetworkMap({ data, period }: Props) {
     period,
   );
 
-  const detailLanes: FreightLaneEntry[] = useMemo(() => {
+  // Unfiltered — all outbound lanes for the selected zone. Used for local tier
+  // scoring so percentile ranks are stable regardless of the destination tier filter.
+  const allDetailLanes: FreightLaneEntry[] = useMemo(() => {
     if (!selectedZoneKey || !zoneDetail.data || !selectedZone) return [];
     const zoneByKey = new Map(data.zones.map((z) => [z.zone_key, z]));
-    return zoneDetail.data.outbound_lanes
-      .filter((dl) => {
-        const tier = zoneByKey.get(dl.destination_zone_key)?.quality?.tier ?? 'dim';
-        return activeDestTiers.has(tier);
-      })
-      .map((dl) => {
-        const destZone = zoneByKey.get(dl.destination_zone_key);
-        return {
-          origin_zone_key: selectedZoneKey,
-          origin_display_city: selectedZone.display_city,
-          origin_display_state: selectedZone.display_state,
-          origin_centroid_lat: selectedZone.centroid_lat,
-          origin_centroid_lng: selectedZone.centroid_lng,
-          destination_zone_key: dl.destination_zone_key,
-          destination_display_city: dl.destination_display_city,
-          destination_display_state: dl.destination_display_state,
-          destination_centroid_lat: destZone?.centroid_lat ?? dl.destination_centroid_lat,
-          destination_centroid_lng: destZone?.centroid_lng ?? dl.destination_centroid_lng,
-          load_count: dl.load_count,
-          loads_per_day: dl.loads_per_day,
-          median_gross_rate_per_loaded_mile: dl.median_rate_per_mile,
-          reverse_load_count: dl.reverse_load_count,
-          reverse_loads_per_day: 0,
-          reverse_strength:
-            dl.reverse_load_count >= 5
-              ? 'strong_truncated'
-              : dl.reverse_load_count > 0
-              ? 'weak'
-              : 'none',
-        };
-      });
-  }, [selectedZoneKey, selectedZone, zoneDetail.data, data.zones, activeDestTiers]);
+    return zoneDetail.data.outbound_lanes.map((dl) => {
+      const destZone = zoneByKey.get(dl.destination_zone_key);
+      return {
+        origin_zone_key: selectedZoneKey,
+        origin_display_city: selectedZone.display_city,
+        origin_display_state: selectedZone.display_state,
+        origin_centroid_lat: selectedZone.centroid_lat,
+        origin_centroid_lng: selectedZone.centroid_lng,
+        destination_zone_key: dl.destination_zone_key,
+        destination_display_city: dl.destination_display_city,
+        destination_display_state: dl.destination_display_state,
+        destination_centroid_lat: destZone?.centroid_lat ?? dl.destination_centroid_lat,
+        destination_centroid_lng: destZone?.centroid_lng ?? dl.destination_centroid_lng,
+        load_count: dl.load_count,
+        loads_per_day: dl.loads_per_day,
+        median_gross_rate_per_loaded_mile: dl.median_rate_per_mile,
+        reverse_load_count: dl.reverse_load_count,
+        reverse_loads_per_day: 0,
+        reverse_strength:
+          dl.reverse_load_count >= 5
+            ? 'strong_truncated'
+            : dl.reverse_load_count > 0
+            ? 'weak'
+            : 'none',
+      };
+    });
+  }, [selectedZoneKey, selectedZone, zoneDetail.data, data.zones]);
+
+  // Filtered by activeDestTiers — drives display (dots + arcs).
+  const detailLanes: FreightLaneEntry[] = useMemo(
+    () => allDetailLanes.filter((l) => {
+      const tier = data.zones.find((z) => z.zone_key === l.destination_zone_key)?.quality?.tier ?? 'dim';
+      return activeDestTiers.has(tier);
+    }),
+    [allDetailLanes, data.zones, activeDestTiers],
+  );
 
   // Bucket lookup is now homeNetwork-only. Network mode reads quality.tier directly.
   const zoneBucket = useCallback((zone: FreightZoneSummary): VisualBucket | undefined => {
@@ -496,8 +502,8 @@ export function FreightNetworkMap({ data, period }: Props) {
     // Rank order: gold (best) → silver(s) → bronze (weakest).
     const localTierByZone = new Map<string, ZoneTier>();
     if (mapMode === 'network' && selectedZoneKey) {
-      const allRawOutbound = detailLanes.length > 0
-        ? detailLanes
+      const allRawOutbound = allDetailLanes.length > 0
+        ? allDetailLanes
         : rawLanes.filter((l) => l.origin_zone_key === selectedZoneKey);
       const scored = allRawOutbound.map((l) => {
         const dest = zoneMap.get(l.destination_zone_key);
@@ -877,7 +883,7 @@ export function FreightNetworkMap({ data, period }: Props) {
       layers: staticLayersRef.current,
       onClick: overlayClickRef.current,
     });
-  }, [data, selectedZoneKey, temporaryHome, entryStrictness, homeNetworkMaxLegs, mapMode, activePreset, activeZoneTiers, activeDestTiers, activeFlowTypes, activeHomeNetworkBuckets, expandNetwork, detailLanes]);
+  }, [data, selectedZoneKey, temporaryHome, entryStrictness, homeNetworkMaxLegs, mapMode, activePreset, activeZoneTiers, activeDestTiers, activeFlowTypes, activeHomeNetworkBuckets, expandNetwork, allDetailLanes, detailLanes]);
 
   // Animation loop: marching dashes flow along arcs, pulse breathes around selected node.
   // Reads from refs only — no React state writes per frame, no full effect re-run.
