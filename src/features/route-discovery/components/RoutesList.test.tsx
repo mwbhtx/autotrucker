@@ -3,6 +3,7 @@ import { render, screen, cleanup, fireEvent } from "@testing-library/react";
 import { RoutesList } from "./RoutesList";
 import { useRouteDiscoveryStore } from "../store";
 import type { DiscoveredRoute } from "@/core/types";
+import { TooltipProvider } from "@/platform/web/components/ui/tooltip";
 
 const makeRoute = (id: string): DiscoveredRoute => ({
   route_id: id,
@@ -28,6 +29,14 @@ const makeRoute = (id: string): DiscoveredRoute => ({
   estimated_days: 1,
 });
 
+function renderRoutesList(routes: DiscoveredRoute[]) {
+  return render(
+    <TooltipProvider>
+      <RoutesList routes={routes} />
+    </TooltipProvider>,
+  );
+}
+
 describe("RoutesList", () => {
   beforeEach(() => {
     useRouteDiscoveryStore.setState({ selectedRowIndex: null, activeOrderIndex: 0 });
@@ -36,13 +45,13 @@ describe("RoutesList", () => {
 
   it("renders one button per route", () => {
     const routes = [makeRoute("a"), makeRoute("b"), makeRoute("c")];
-    render(<RoutesList routes={routes} />);
+    renderRoutesList(routes);
     expect(screen.getAllByRole("button").length).toBe(3);
   });
 
   it("auto-selects index 0 when routes load", () => {
     const routes = [makeRoute("a"), makeRoute("b")];
-    render(<RoutesList routes={routes} />);
+    renderRoutesList(routes);
     const buttons = screen.getAllByRole("button");
     expect(buttons[0]).toHaveAttribute("aria-current", "true");
     expect(buttons[1]).not.toHaveAttribute("aria-current");
@@ -50,7 +59,7 @@ describe("RoutesList", () => {
 
   it("ArrowDown moves selection forward", () => {
     const routes = [makeRoute("a"), makeRoute("b"), makeRoute("c")];
-    const { container } = render(<RoutesList routes={routes} />);
+    const { container } = renderRoutesList(routes);
     // After auto-select, current is 0
     const list = container.querySelector("ul")!;
     fireEvent.keyDown(list, { key: "ArrowDown" });

@@ -19,7 +19,7 @@ import {
 } from "@/platform/web/components/ui/select";
 import { ZoneTooltip } from "./ZoneTooltip";
 import type {
-  FlowType, MapMode, VisualBucket, EntryStrictness,
+  MapMode, VisualBucket, EntryStrictness,
   HomeNetworkMaxLegs, TemporaryHome, HomeNetworkNode, HomeBaseQuality,
   ZoneTier,
 } from "../utils/map-mode-types";
@@ -27,7 +27,7 @@ import { HOME_NETWORK_COLOR, TIER_COLOR } from "../utils/map-mode-types";
 import {
   addEdge, bfsDepth,
   buildHomeNetwork, buildHomeNetworkFromAnchors, buildHomeBaseQuality,
-  homeBaseHeatColor, isSupportedReverseLane,
+  homeBaseHeatColor,
   findEntryAnchors, temporaryHomeSummary,
 } from "../utils/home-network-graph";
 import {
@@ -35,8 +35,13 @@ import {
   applyZoneFilters,
   type ScorePreset,
   type ZoneFilterThresholds,
-  type ZoneSignals,
 } from "@mwbhtx/haulvisor-core";
+import {
+  buildLocalDestinationTierMap,
+  selectedNetworkLanePassesTier,
+  selectedNetworkTierForZone,
+  selectedNetworkZonePassesTier,
+} from "../utils/network-tiering";
 
 const PROTOMAPS_API_KEY = process.env.NEXT_PUBLIC_PROTOMAPS_API_KEY ?? "";
 
@@ -92,16 +97,12 @@ function bezierArc(
   return pts;
 }
 
-type ArcKind = 'outbound' | 'inbound' | 'forwardChain' | 'reverseChain';
+type ArcKind = 'outbound' | 'forwardChain';
 
-// Continuation chains share semantics + palette with their direct counterparts:
-// forwardChain (downstream of selected) reads as outbound flow extension.
-// reverseChain (upstream of selected) reads as inbound flow extension.
+// Continuation chains share semantics + palette with direct outbound flow.
 const ARC_COLOR: Record<ArcKind, [number, number, number]> = {
   outbound:     [ 96, 165, 250],  // blue-400
-  inbound:      [248, 113, 113],  // red-400
   forwardChain: [ 96, 165, 250],
-  reverseChain: [248, 113, 113],
 };
 
 type LaneArc = {
@@ -202,6 +203,23 @@ interface Props {
   period: '30d' | '60d' | '90d';
 }
 
+type NetworkLaneEntry = Pick<
+  FreightLaneEntry,
+  | 'origin_zone_key'
+  | 'origin_display_city'
+  | 'origin_display_state'
+  | 'origin_centroid_lat'
+  | 'origin_centroid_lng'
+  | 'destination_zone_key'
+  | 'destination_display_city'
+  | 'destination_display_state'
+  | 'destination_centroid_lat'
+  | 'destination_centroid_lng'
+  | 'load_count'
+  | 'loads_per_day'
+  | 'median_gross_rate_per_loaded_mile'
+>;
+
 export function FreightNetworkMap({ data, period }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -215,7 +233,6 @@ export function FreightNetworkMap({ data, period }: Props) {
   const [temporaryHome, setTemporaryHome] = useState<TemporaryHome | null>(null);
   const [entryStrictness, setEntryStrictness] = useState<EntryStrictness>('balanced');
   const [homeNetworkMaxLegs, setHomeNetworkMaxLegs] = useState<HomeNetworkMaxLegs>(3);
-  const [activeFlowTypes, setActiveFlowTypes] = useState<Set<FlowType>>(new Set(['source']));
   // Network mode state — preset gates which zones pass quality thresholds, tiers
   // gate which scored zones render. Default = balanced + show gold + silver.
   const [activePreset, setActivePreset] = useState<ScorePreset>('balanced');
@@ -242,7 +259,6 @@ export function FreightNetworkMap({ data, period }: Props) {
 
   useEffect(() => { themeRef.current = resolvedTheme; }, [resolvedTheme]);
 
-  const toggleFlowType = makeSetToggler<FlowType>(setActiveFlowTypes);
   const toggleZoneTier = makeSetToggler<ZoneTier>(setActiveZoneTiers);
   const toggleDestTier = makeSetToggler<ZoneTier>(setActiveDestTiers);
   const toggleHomeNetworkBucket = makeSetToggler<VisualBucket>(setActiveHomeNetworkBuckets);
@@ -258,7 +274,7 @@ export function FreightNetworkMap({ data, period }: Props) {
 
   // Unfiltered — all outbound lanes for the selected zone. Used for local tier
   // scoring so percentile ranks are stable regardless of the destination tier filter.
-  const allDetailLanes: FreightLaneEntry[] = useMemo(() => {
+  const allDestLanes: NetworkLaneEntry[] = useMemo(() => {
     if (!selectedZoneKey || !zoneDetail.data || !selectedZone) return [];
     const zoneByKey = new Map(data.zones.map((z) => [z.zone_key, z]));
     return zoneDetail.data.outbound_lanes.map((dl) => {
@@ -277,19 +293,9 @@ export function FreightNetworkMap({ data, period }: Props) {
         load_count: dl.load_count,
         loads_per_day: dl.loads_per_day,
         median_gross_rate_per_loaded_mile: dl.median_rate_per_mile,
-        reverse_load_count: dl.reverse_load_count,
-        reverse_loads_per_day: 0,
-        reverse_strength:
-          dl.reverse_load_count >= 5
-            ? 'strong_truncated'
-            : dl.reverse_load_count > 0
-            ? 'weak'
-            : 'none',
       };
     });
   }, [selectedZoneKey, selectedZone, zoneDetail.data, data.zones]);
-
-  // Filtered by activeDestTiers — drives display (dots + arcs).
 
   // Bucket lookup is now homeNetwork-only. Network mode reads quality.tier directly.
   const zoneBucket = useCallback((zone: FreightZoneSummary): VisualBucket | undefined => {
@@ -387,23 +393,21 @@ export function FreightNetworkMap({ data, period }: Props) {
     // by tier visibility. Re-uses the same filter primitives that downstream
     // routes-search will use, so insights map and order ranking stay aligned.
     const presetThresholds: ZoneFilterThresholds = PRESET_THRESHOLDS[activePreset];
-    const networkSignals: ZoneSignals[] = mapMode === 'network' ? renderableZones.map((z) => ({
+    const networkSignals = mapMode === 'network' ? renderableZones.map((z) => ({
       zoneKey: z.zone_key,
       outboundLoadCount: z.outbound_load_count,
-      inboundLoadCount: z.inbound_load_count,
       outboundEntropy: z.outbound_entropy,
       outboundLaneCount: z.outbound_lane_count,
       daysSinceLastOutbound: z.outbound_days_since_last_load ?? null,
       outboundActiveDays: z.outbound_active_days ?? 0,
       outboundMedianWaitDays: z.outbound_median_wait_days ?? null,
       outboundMedianRatePerMile: z.outbound_median_rate_per_mile ?? null,
-      outboundReturnStrength: z.outbound_return_strength ?? 0,
     })) : [];
     const filterPassByZone = mapMode === 'network'
-      ? new Map(applyZoneFilters(networkSignals, presetThresholds).map((r) => [r.zoneKey, r.passes]))
+      ? new Map(applyZoneFilters(networkSignals as Parameters<typeof applyZoneFilters>[0], presetThresholds).map((r) => [r.zoneKey, r.passes]))
       : new Map<string, boolean>();
 
-    // Map mode controls zone visibility and color; Traffic filter only affects lane display on click.
+    // Map mode controls zone visibility and color.
     const zonePassesFilters = (z: FreightZoneSummary) => {
       if (mapMode === 'homeNetwork') {
         if (temporaryHome && !selectedZoneKey) {
@@ -432,152 +436,70 @@ export function FreightNetworkMap({ data, period }: Props) {
     });
 
     // Raw lanes: both zones exist in data, no tier/preset filter.
-    // Used for the selected-zone view so ALL historical connections are shown,
+    // Used for the selected-zone view so all historical outbound lanes are shown,
     // independent of what the tier toggle is set to.
-    const rawLanes = lanes.filter(
+    const rawLanes: NetworkLaneEntry[] = lanes.filter(
       (l) => zoneMap.has(l.origin_zone_key) && zoneMap.has(l.destination_zone_key)
     );
-
-    const laneZoneKeys = new Set(qualityLanes.flatMap((l) => [l.origin_zone_key, l.destination_zone_key]));
-
-    // When zone detail is loaded, replace outbound lanes with complete set (no top-75 cap).
-    // Inbound lanes (rawLanes filtered to destination=selected) still come from global data.
-    const lanePool = (mapMode === 'network' && selectedZoneKey)
-      ? (allDetailLanes.length > 0
-          ? [
-              ...visibleDetailLanes,
-              ...rawLanes.filter((l) => l.destination_zone_key === selectedZoneKey),
-            ]
-          : rawLanes)
-      : qualityLanes;
-
-    // Lanes touching the selected zone — both endpoints' perspectives.
-    // Bidirectional (transit) lanes contain both an outbound and inbound flow:
-    //   source on  → render outbound comet (selected → other endpoint)
-    //   sink on    → render inbound comet (other endpoint → selected)
-    //   both on    → render both comets (legacy "transit" appearance)
-    // Non-bidirectional lanes have a single fixed direction:
-    //   origin=selected (outbound) → shown only with source on
-    //   dest=selected   (inbound)  → shown only with sink on
-
-    const sourceOn = activeFlowTypes.has('source');
-    const sinkOn = activeFlowTypes.has('sink');
-
-    const lanesAtSelected = selectedZoneKey
-      ? lanePool.filter(
-          (l) => l.origin_zone_key === selectedZoneKey || l.destination_zone_key === selectedZoneKey
-        )
-      : [];
-
-    const bidirBothLanes: FreightLaneEntry[] = [];   // bidirectional + both filters → both comets
-    const outboundDirectLanes: FreightLaneEntry[] = []; // single outbound comet (selected → other)
-    const inboundDirectLanes: FreightLaneEntry[] = [];  // single inbound comet (other → selected)
-
-    for (const l of lanesAtSelected) {
-      const isBi = isSupportedReverseLane(l);
-      const otherIsOrigin = l.destination_zone_key === selectedZoneKey;
-      if (isBi) {
-        if (sourceOn && sinkOn) bidirBothLanes.push(l);
-        else if (sourceOn) outboundDirectLanes.push(l);
-        else if (sinkOn) inboundDirectLanes.push(l);
-      } else if (otherIsOrigin) {
-        if (sinkOn) inboundDirectLanes.push(l);
-      } else {
-        if (sourceOn) outboundDirectLanes.push(l);
-      }
-    }
 
     // Local tier re-rank: when a zone is selected in network mode, score ALL
     // historical outbound destinations from this hub relative to each other.
     // Scored from rawLanes (not quality-filtered) so tier toggle doesn't affect
     // which destinations exist or how they rank.
     // Score = lane.load_count × dest optionality subscore.
-    // Rank order: gold (best) → silver(s) → bronze (weakest).
-    const localTierByZone = new Map<string, ZoneTier>();
-    if (mapMode === 'network' && selectedZoneKey) {
-      const allRawOutbound = allDetailLanes.length > 0
-        ? allDetailLanes
-        : rawLanes.filter((l) => l.origin_zone_key === selectedZoneKey);
-      const scored = allRawOutbound.map((l) => {
-        const dest = zoneMap.get(l.destination_zone_key);
-        const score = l.load_count * (dest?.quality?.subscores.optionality ?? 0);
-        return { destKey: l.destination_zone_key, score };
-      });
-      if (scored.length > 0) {
-        const sorted = [...scored].sort((a, b) => b.score - a.score);
-        const n = scored.length;
-        sorted.forEach(({ destKey }, i) => {
-          const pct = n === 1 ? 0 : i / (n - 1);
-          const tier: ZoneTier = pct < 0.34 ? 'gold' : pct < 0.67 ? 'silver' : 'bronze';
-          localTierByZone.set(destKey, tier);
-        });
-      }
-    }
+    // Rank order mirrors global tiers: gold / silver / bronze / dim by percentile.
+    const selectedOutboundLanes = mapMode === 'network' && selectedZoneKey
+      ? allDestLanes.length > 0
+        ? allDestLanes
+        : rawLanes.filter((l) => l.origin_zone_key === selectedZoneKey)
+      : [];
+    const localTierByDest = selectedZoneKey
+      ? buildLocalDestinationTierMap(selectedOutboundLanes, zoneMap)
+      : new Map<string, ZoneTier>();
+    const visibleSelectedOutboundLanes = selectedZoneKey
+      ? selectedOutboundLanes.filter((l) => (
+          selectedNetworkLanePassesTier(l, selectedZoneKey, zoneMap, activeDestTiers, localTierByDest)
+        ))
+      : [];
 
-    // Filter allDetailLanes by activeDestTiers using local tier — done here so
-    // the filter matches the same tier system that drives the visible node colors.
-    const visibleDetailLanes = allDetailLanes.filter(
-      (l) => activeDestTiers.has(localTierByZone.get(l.destination_zone_key) ?? 'bronze'),
-    );
+    // Network selected view is outbound-only: show destinations from the selected hub.
+    const lanePool = (mapMode === 'network' && selectedZoneKey)
+      ? visibleSelectedOutboundLanes
+      : qualityLanes;
+
+    // Lanes touching the selected zone: outbound only.
+    const outboundDirectLanes = selectedZoneKey
+      ? lanePool.filter((l) => l.origin_zone_key === selectedZoneKey)
+      : [];
 
     const directShownLanes = mapMode === 'homeNetwork' && (selectedZoneKey || temporaryHome)
       ? qualityLanes
-      : [...bidirBothLanes, ...outboundDirectLanes, ...inboundDirectLanes];
+      : outboundDirectLanes;
 
     // Directed transitive reachability from selected node:
-    //   sink (inbound) on    → reverse-BFS: zones with directed path X→…→selected
-    //   source (outbound) on → forward-BFS: zones reachable via selected→…→X
-    //   both on              → union of upstream and downstream sets
-    // Bidirectional lanes carry both inbound and outbound flow; they contribute:
-    //   forward edges in both directions when 'source' is on
-    //   reverse edges in both directions when 'sink' is on
-    // Non-bidirectional lane origin→dest contributes:
-    //   forward edge origin→dest when 'source' active
-    //   reverse edge dest→origin when 'sink' active
-    let componentLanes: FreightLaneEntry[] = [];
-    // Per-zone BFS depth from selected; lets us draw bidir component-lane comets
-    // along the shortest-path direction instead of the canonical origin→dest order.
+    // zones reachable via selected→…→X.
+    let componentLanes: NetworkLaneEntry[] = [];
+    // Per-zone BFS depth from selected; lets us draw component-lane comets
+    // along the shortest-path direction.
     let forwardDepth: Map<string, number> = new Map();
-    let reverseDepth: Map<string, number> = new Map();
     if (expandNetwork && selectedZoneKey) {
       const forwardAdj = new Map<string, Set<string>>();
-      const reverseAdj = new Map<string, Set<string>>();
 
       for (const l of qualityLanes) {
-        if (isSupportedReverseLane(l)) {
-          if (sourceOn) {
-            addEdge(forwardAdj, l.origin_zone_key, l.destination_zone_key);
-            addEdge(forwardAdj, l.destination_zone_key, l.origin_zone_key);
-          }
-          if (sinkOn) {
-            addEdge(reverseAdj, l.origin_zone_key, l.destination_zone_key);
-            addEdge(reverseAdj, l.destination_zone_key, l.origin_zone_key);
-          }
-        } else {
-          if (sourceOn) addEdge(forwardAdj, l.origin_zone_key, l.destination_zone_key);
-          if (sinkOn) addEdge(reverseAdj, l.destination_zone_key, l.origin_zone_key);
-        }
+        addEdge(forwardAdj, l.origin_zone_key, l.destination_zone_key);
       }
 
-      forwardDepth = sourceOn ? bfsDepth(forwardAdj, selectedZoneKey) : new Map([[selectedZoneKey, 0]]);
-      reverseDepth = sinkOn ? bfsDepth(reverseAdj, selectedZoneKey) : new Map([[selectedZoneKey, 0]]);
+      forwardDepth = bfsDepth(forwardAdj, selectedZoneKey);
 
       componentLanes = qualityLanes.filter((l) => {
         if (l.origin_zone_key === selectedZoneKey || l.destination_zone_key === selectedZoneKey) return false;
-        if (sourceOn
-          && forwardDepth.has(l.origin_zone_key)
-          && forwardDepth.has(l.destination_zone_key)) return true;
-        if (sinkOn
-          && reverseDepth.has(l.origin_zone_key)
-          && reverseDepth.has(l.destination_zone_key)) return true;
-        return false;
+        return forwardDepth.has(l.origin_zone_key) && forwardDepth.has(l.destination_zone_key);
       });
     }
 
     const allShownLanes = [...directShownLanes, ...componentLanes];
 
-    // BFS through traffic-filtered lanes only — zones reachable from selection
-    // Prevents disconnected clusters that pass traffic filter from appearing
+    // BFS through shown lanes only, preventing disconnected clusters from appearing.
     const connectedZoneKeys = selectedZoneKey && mapMode !== 'homeNetwork'
       ? (() => {
           const fadj = new Map<string, Set<string>>();
@@ -611,8 +533,17 @@ export function FreightNetworkMap({ data, period }: Props) {
     const activeZones = zones.filter((z) => {
       if (mapMode === 'homeNetwork' && temporaryHome && !selectedZoneKey) return zonePassesFilters(z);
       if (mapMode === 'homeNetwork' && selectedZoneKey) return zonePassesFilters(z);
-      if (connectedZoneKeys) return connectedZoneKeys.has(z.zone_key);
-      if (!laneZoneKeys.has(z.zone_key)) return false;
+      if (connectedZoneKeys) {
+        if (!connectedZoneKeys.has(z.zone_key)) return false;
+        if (z.zone_key === selectedZoneKey) return true;
+        // In selected Network mode, every non-selected node is filtered by the
+        // same tier that will color it. Direct destinations use local tier;
+        // expanded downstream nodes fall back to their global tier.
+        return selectedNetworkZonePassesTier(z, activeDestTiers, localTierByDest);
+      }
+      // Global (no selection): gate on laneEndpointZoneKeys so a zone's own
+      // tier score drives visibility, not its lane partners' tiers.
+      if (!laneEndpointZoneKeys.has(z.zone_key)) return false;
       return zonePassesFilters(z);
     });
 
@@ -627,48 +558,24 @@ export function FreightNetworkMap({ data, period }: Props) {
       return 0.35; // component nodes beyond direct connections
     };
 
-    // Build bezier-arc geometry for every lane that needs animated dash flow.
-    // Direct lanes touch selected (outbound = leaves selected, inbound = enters selected).
-    // Chain lanes are component-expansion lanes (transitive forward/reverse hops).
-    // Inbound uses side=+1 (matching outbound) so bulge lands on opposite physical side
-    // from outbound — without the flip, direction reversal cancels with side=-1 and
-    // the two arcs of a bidirectional lane render on the exact same path.
+    // Build bezier-arc geometry for every outbound lane that needs animated flow.
     const laneArcs: LaneArc[] = [];
 
-    const outboundFromTo = (l: FreightLaneEntry): [[number, number], [number, number]] => {
-      const rev = l.destination_zone_key === selectedZoneKey;
+    const outboundFromTo = (l: NetworkLaneEntry): [[number, number], [number, number]] => {
       return [
-        rev ? [l.destination_centroid_lng, l.destination_centroid_lat] : [l.origin_centroid_lng, l.origin_centroid_lat],
-        rev ? [l.origin_centroid_lng, l.origin_centroid_lat] : [l.destination_centroid_lng, l.destination_centroid_lat],
-      ];
-    };
-    const inboundFromTo = (l: FreightLaneEntry): [[number, number], [number, number]] => {
-      const rev = l.origin_zone_key === selectedZoneKey;
-      return [
-        rev ? [l.destination_centroid_lng, l.destination_centroid_lat] : [l.origin_centroid_lng, l.origin_centroid_lat],
-        rev ? [l.origin_centroid_lng, l.origin_centroid_lat] : [l.destination_centroid_lng, l.destination_centroid_lat],
+        [l.origin_centroid_lng, l.origin_centroid_lat],
+        [l.destination_centroid_lng, l.destination_centroid_lat],
       ];
     };
 
-    for (const l of [...bidirBothLanes, ...outboundDirectLanes]) {
+    for (const l of outboundDirectLanes) {
       const [from, to] = outboundFromTo(l);
       laneArcs.push(buildLaneArc(from, to, 1, 'outbound', true));
     }
-    for (const l of [...bidirBothLanes, ...inboundDirectLanes]) {
-      const [from, to] = inboundFromTo(l);
-      laneArcs.push(buildLaneArc(from, to, 1, 'inbound', true));
-    }
 
-    // Component (full network) lanes: direction follows BFS depth so dashes flow
-    // away from selected for forward chain, toward selected for reverse chain.
+    // Component lanes: direction follows BFS depth so dashes flow away from selected.
     for (const l of componentLanes) {
-      const inForward = sourceOn
-        && forwardDepth.has(l.origin_zone_key)
-        && forwardDepth.has(l.destination_zone_key);
-      const inReverse = sinkOn
-        && reverseDepth.has(l.origin_zone_key)
-        && reverseDepth.has(l.destination_zone_key);
-      if (inForward) {
+      if (forwardDepth.has(l.origin_zone_key) && forwardDepth.has(l.destination_zone_key)) {
         const od = forwardDepth.get(l.origin_zone_key)!;
         const dd = forwardDepth.get(l.destination_zone_key)!;
         // Lower depth → higher depth: continuation of outbound flow
@@ -676,14 +583,6 @@ export function FreightNetworkMap({ data, period }: Props) {
           ? [[l.origin_centroid_lng, l.origin_centroid_lat], [l.destination_centroid_lng, l.destination_centroid_lat]]
           : [[l.destination_centroid_lng, l.destination_centroid_lat], [l.origin_centroid_lng, l.origin_centroid_lat]];
         laneArcs.push(buildLaneArc(from, to, 1, 'forwardChain', false));
-      } else if (inReverse) {
-        const od = reverseDepth.get(l.origin_zone_key)!;
-        const dd = reverseDepth.get(l.destination_zone_key)!;
-        // Lower reverse depth = closer to selected; flow goes deeper-depth → selected
-        const [from, to]: [[number, number], [number, number]] = od >= dd
-          ? [[l.origin_centroid_lng, l.origin_centroid_lat], [l.destination_centroid_lng, l.destination_centroid_lat]]
-          : [[l.destination_centroid_lng, l.destination_centroid_lat], [l.origin_centroid_lng, l.origin_centroid_lat]];
-        laneArcs.push(buildLaneArc(from, to, 1, 'reverseChain', false));
       }
     }
 
@@ -698,8 +597,7 @@ export function FreightNetworkMap({ data, period }: Props) {
       if (mapMode === 'network') {
         // When a hub is selected, destination nodes show local tier (rank among THIS hub's
         // options) rather than global tier, so the user sees relative quality from here.
-        const localTier = localTierByZone.get(z.zone_key);
-        return TIER_COLOR[localTier ?? z.quality?.tier ?? 'dim'];
+        return TIER_COLOR[selectedNetworkTierForZone(z, localTierByDest)];
       }
       if (!selectedZoneKey && !temporaryHome) {
         return homeBaseHeatColor(homeBaseQuality.get(z.zone_key)?.normalizedScore ?? 0);
@@ -791,12 +689,11 @@ export function FreightNetworkMap({ data, period }: Props) {
       ? [selectedZoneOnMap.centroid_lng, selectedZoneOnMap.centroid_lat]
       : null;
 
-    // homeNetwork mode shows wider topology lanes that don't carry an outbound/inbound
-    // semantic relative to the selected zone — render them as straight dim connectors
-    // distinct from the animated dash treatment.
-    const directConnectionSet = new Set<FreightLaneEntry>([...bidirBothLanes, ...outboundDirectLanes, ...inboundDirectLanes]);
+    // Home mode can show wider topology lanes; render non-direct connectors as
+    // straight dim tracks distinct from animated outbound flow.
+    const directConnectionSet = new Set<NetworkLaneEntry>(outboundDirectLanes);
     const remainingNetworkLanes = directShownLanes.filter((l) => !directConnectionSet.has(l));
-    const networkTrackLayer = remainingNetworkLanes.length > 0 && !!selectedZoneKey ? new PathLayer<FreightLaneEntry>({
+    const networkTrackLayer = remainingNetworkLanes.length > 0 && !!selectedZoneKey ? new PathLayer<NetworkLaneEntry>({
       id: 'network-tracks',
       data: remainingNetworkLanes,
       getPath: (l) => [[l.origin_centroid_lng, l.origin_centroid_lat], [l.destination_centroid_lng, l.destination_centroid_lat]],
@@ -882,7 +779,7 @@ export function FreightNetworkMap({ data, period }: Props) {
       layers: staticLayersRef.current,
       onClick: overlayClickRef.current,
     });
-  }, [data, selectedZoneKey, temporaryHome, entryStrictness, homeNetworkMaxLegs, mapMode, activePreset, activeZoneTiers, activeDestTiers, activeFlowTypes, activeHomeNetworkBuckets, expandNetwork, allDetailLanes]);
+  }, [data, selectedZoneKey, temporaryHome, entryStrictness, homeNetworkMaxLegs, mapMode, activePreset, activeZoneTiers, activeDestTiers, activeHomeNetworkBuckets, expandNetwork, allDestLanes]);
 
   // Animation loop: marching dashes flow along arcs, pulse breathes around selected node.
   // Reads from refs only — no React state writes per frame, no full effect re-run.
@@ -965,7 +862,7 @@ export function FreightNetworkMap({ data, period }: Props) {
   const nearestEntryAnchor = tempHomeSummary?.entryAnchors[0] ?? null;
   const strongestEntryAnchor = tempHomeSummary?.entryAnchors
     .slice()
-    .sort((a, b) => (b.zone.outbound_load_count + b.zone.inbound_load_count) - (a.zone.outbound_load_count + a.zone.inbound_load_count))[0] ?? null;
+    .sort((a, b) => b.zone.outbound_load_count - a.zone.outbound_load_count)[0] ?? null;
 
   return (
     <div className="relative h-full">
@@ -1098,26 +995,6 @@ export function FreightNetworkMap({ data, period }: Props) {
             })}
           </div>
         </div>
-
-        {/* Traffic filter — controls lanes shown on zone click. Always visible in
-            Network and Home modes since both can render bidirectional flow. */}
-        <p className="font-semibold text-base pt-2 border-t border-border/50">Traffic</p>
-        <p className="text-sm text-muted-foreground/60 -mt-2">Filters lanes shown when a hub is selected</p>
-        {([
-          { type: 'source', dot: 'bg-blue-500', label: 'Outbound' },
-          { type: 'sink',   dot: 'bg-red-500',  label: 'Inbound' },
-        ] as const).map(({ type, dot, label }) => {
-          const active = activeFlowTypes.has(type);
-          return (
-            <label key={type} className="flex items-center gap-1.5 cursor-pointer select-none">
-              <input type="checkbox" checked={active} onChange={() => toggleFlowType(type)} className="sr-only" />
-              <span className={`w-4 h-4 rounded-sm border flex items-center justify-center shrink-0 ${active ? `${dot} border-transparent` : 'border-border'}`}>
-                {active && <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 8 8" fill="none"><path d="M1 4l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-              </span>
-              <span className={active ? 'text-foreground' : 'text-muted-foreground/50'}>{label}</span>
-            </label>
-          );
-        })}
 
         {mapMode === 'network' ? (
           <>

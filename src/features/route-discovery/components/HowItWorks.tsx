@@ -23,7 +23,7 @@ export function HowItWorks() {
           )}
           <Route className="h-4 w-4 text-muted-foreground" />
           <h2 className="text-sm font-semibold">
-            Discover round-trip routes that bring you home
+            Discover outbound routes from where you are
           </h2>
         </button>
 
@@ -32,13 +32,12 @@ export function HowItWorks() {
             <p>
               Route Discovery looks across your historical orders and surfaces
               high-frequency lane chains — sequences of 2–4 loads where each
-              leg picks up near where the previous one dropped off, and the
-              whole loop returns to your home base.
+              leg picks up near where the previous one dropped off.
             </p>
             <p>
-              Enter your home city and a search radius. We&rsquo;ll rank up to
+              Enter a starting city and a search radius. We&rsquo;ll rank up to
               5 candidate routes by all-in gross rate per mile, accounting for
-              empty miles between legs and the deadhead back home.
+              empty miles between legs.
             </p>
             <p>
               The <span className="font-medium text-foreground">Engine

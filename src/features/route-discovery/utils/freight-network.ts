@@ -1,23 +1,3 @@
-import type { FreightZoneSummary } from '@mwbhtx/haulvisor-core';
-import type { VisualBucket, VolumeMetric } from './map-mode-types';
-
-export function zoneVolumeValue(z: FreightZoneSummary, metric: VolumeMetric): number {
-  if (metric === 'outbound') return z.outbound_load_count;
-  if (metric === 'inbound') return z.inbound_load_count;
-  return z.outbound_load_count + z.inbound_load_count;
-}
-
-export function zoneVolumeBucket(
-  z: FreightZoneSummary,
-  thresholds: { medium_min: number; high_min: number },
-  metric: VolumeMetric,
-): VisualBucket {
-  const value = zoneVolumeValue(z, metric);
-  if (value >= thresholds.high_min) return 'high';
-  if (value >= thresholds.medium_min) return 'medium';
-  return 'low';
-}
-
 /** Normalize load_count to arc width in pixels [1, 6]. */
 export function arcWidth(loadCount: number, allCounts: number[]): number {
   if (allCounts.length === 0) return 1;

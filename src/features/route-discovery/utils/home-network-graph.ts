@@ -5,6 +5,8 @@ import type {
   HomeNetworkNode, TemporaryHome, VisualBucket,
 } from './map-mode-types';
 
+type OutboundLane = Pick<FreightLaneEntry, 'origin_zone_key' | 'destination_zone_key'>;
+
 export type TemporaryHomeSummary = {
   entryAnchors: Array<EntryAnchor & { zone: FreightZoneSummary }>;
   networkZoneCount: number;
@@ -47,30 +49,17 @@ export function homeBaseHeatColor(score: number): [number, number, number] {
   return interpolateColor([245, 158, 11], [34, 197, 94], (score - 0.5) / 0.5);
 }
 
-export function isSupportedReverseLane(l: FreightLaneEntry): boolean {
-  return l.reverse_strength === 'strong_visible' || l.reverse_strength === 'strong_truncated';
-}
-
 export function addEdge(adj: Map<string, Set<string>>, from: string, to: string): void {
   if (!adj.has(from)) adj.set(from, new Set());
   adj.get(from)!.add(to);
 }
 
-export function buildDirectedAdjacency(lanes: FreightLaneEntry[]): Map<string, Set<string>> {
+export function buildDirectedAdjacency(lanes: OutboundLane[]): Map<string, Set<string>> {
   const adj = new Map<string, Set<string>>();
   for (const l of lanes) {
     addEdge(adj, l.origin_zone_key, l.destination_zone_key);
-    if (isSupportedReverseLane(l)) addEdge(adj, l.destination_zone_key, l.origin_zone_key);
   }
   return adj;
-}
-
-export function reverseAdjacency(adj: Map<string, Set<string>>): Map<string, Set<string>> {
-  const reversed = new Map<string, Set<string>>();
-  for (const [from, tos] of adj.entries()) {
-    for (const to of tos) addEdge(reversed, to, from);
-  }
-  return reversed;
 }
 
 export function bfsDepth(
@@ -96,42 +85,34 @@ export function bfsDepth(
 }
 
 export function buildHomeNetworkFromAnchors(
-  lanes: FreightLaneEntry[],
+  lanes: OutboundLane[],
   zones: FreightZoneSummary[],
   homeZoneKeys: string[],
   maxLegs: HomeNetworkMaxLegs,
 ): Map<string, HomeNetworkNode> {
   if (homeZoneKeys.length === 0) return new Map();
   const forward = buildDirectedAdjacency(lanes);
-  const backward = reverseAdjacency(forward);
-  const mergeDepths = (adj: Map<string, Set<string>>) => {
-    const merged = new Map<string, number>();
-    for (const homeZoneKey of homeZoneKeys) {
-      for (const [zoneKey, d] of bfsDepth(adj, homeZoneKey, maxLegs).entries()) {
-        const existing = merged.get(zoneKey);
-        if (existing === undefined || d < existing) merged.set(zoneKey, d);
-      }
+  const reachableFromHome = new Map<string, number>();
+  for (const homeZoneKey of homeZoneKeys) {
+    for (const [zoneKey, d] of bfsDepth(forward, homeZoneKey, maxLegs).entries()) {
+      const existing = reachableFromHome.get(zoneKey);
+      if (existing === undefined || d < existing) reachableFromHome.set(zoneKey, d);
     }
-    return merged;
-  };
-  const reachableFromHome = mergeDepths(forward);
-  const canReturnHome = mergeDepths(backward);
+  }
   const candidates = zones
     .map((z) => {
-      const outboundLegs = reachableFromHome.get(z.zone_key);
-      const returnLegs = canReturnHome.get(z.zone_key);
-      if (outboundLegs === undefined || returnLegs === undefined) return null;
-      if (outboundLegs > maxLegs || returnLegs > maxLegs) return null;
-      const volumeScore = Math.min(20, Math.log1p(z.outbound_load_count + z.inbound_load_count) * 4);
+      const legs = reachableFromHome.get(z.zone_key);
+      if (legs === undefined || legs > maxLegs) return null;
+      const volumeScore = Math.min(20, Math.log1p(z.outbound_load_count) * 4);
       const optionalityScore = Math.min(12, z.outbound_entropy * 4);
       const waitPenalty =
         'outbound_median_wait_days' in z && typeof z.outbound_median_wait_days === 'number'
           ? Math.min(18, Math.max(0, z.outbound_median_wait_days - 1) * 3)
           : 0;
-      const score = Math.max(0, 100 - outboundLegs * 18 - returnLegs * 18 + volumeScore + optionalityScore - waitPenalty);
-      return { zoneKey: z.zone_key, score, outboundLegs, returnLegs };
+      const score = Math.max(0, 100 - legs * 18 + volumeScore + optionalityScore - waitPenalty);
+      return { zoneKey: z.zone_key, score, legs };
     })
-    .filter((v): v is { zoneKey: string; score: number; outboundLegs: number; returnLegs: number } => v !== null)
+    .filter((v): v is { zoneKey: string; score: number; legs: number } => v !== null)
     .sort((a, b) => a.score - b.score);
   const scores = candidates.map((c) => c.score);
   const mediumMin = percentileOf(scores, 1 / 3);
@@ -141,14 +122,13 @@ export function buildHomeNetworkFromAnchors(
     {
       bucket: (c.score >= highMin ? 'high' : c.score >= mediumMin ? 'medium' : 'low') as VisualBucket,
       score: c.score,
-      outboundLegs: c.outboundLegs,
-      returnLegs: c.returnLegs,
+      legs: c.legs,
     },
   ]));
 }
 
 export function buildHomeNetwork(
-  lanes: FreightLaneEntry[],
+  lanes: OutboundLane[],
   zones: FreightZoneSummary[],
   homeZoneKey: string | null,
   maxLegs: HomeNetworkMaxLegs,
@@ -158,31 +138,22 @@ export function buildHomeNetwork(
 }
 
 export function buildHomeBaseQuality(
-  lanes: FreightLaneEntry[],
+  lanes: OutboundLane[],
   zones: FreightZoneSummary[],
   maxLegs: HomeNetworkMaxLegs,
 ): Map<string, HomeBaseQuality> {
   const forward = buildDirectedAdjacency(lanes);
-  const backward = reverseAdjacency(forward);
   const rawScores = zones.map((z) => {
     const reachableFromHome = bfsDepth(forward, z.zone_key, maxLegs);
-    const canReturnHome = bfsDepth(backward, z.zone_key, maxLegs);
     const reachableCount = Math.max(0, reachableFromHome.size - 1);
-    let networkCount = 0;
-    for (const zoneKey of reachableFromHome.keys()) {
-      if (canReturnHome.has(zoneKey)) networkCount++;
-    }
-    const trapCount = Math.max(0, reachableCount - Math.max(0, networkCount - 1));
-    const totalLoads = z.outbound_load_count + z.inbound_load_count;
+    const networkCount = reachableFromHome.size;
     if (networkCount <= 1) return { zoneKey: z.zone_key, score: 0, networkZoneCount: networkCount };
-    const volumeScore = Math.log1p(totalLoads) * 5;
+    const volumeScore = Math.log1p(z.outbound_load_count) * 5;
     const optionalityScore = z.outbound_entropy * 8;
     const networkScore = networkCount * 8;
-    const returnCoverageScore = reachableCount === 0 ? 0 : (networkCount / (reachableCount + 1)) * 30;
-    const trapPenalty = trapCount * 12;
     return {
       zoneKey: z.zone_key,
-      score: Math.max(0, networkScore + returnCoverageScore + volumeScore + optionalityScore - trapPenalty),
+      score: Math.max(0, networkScore + reachableCount * 4 + volumeScore + optionalityScore),
       networkZoneCount: networkCount,
     };
   }).sort((a, b) => a.score - b.score);
@@ -247,7 +218,7 @@ export function findEntryAnchors(
 }
 
 export function temporaryHomeSummary(
-  lanes: FreightLaneEntry[],
+  lanes: OutboundLane[],
   zones: FreightZoneSummary[],
   home: TemporaryHome | null,
   radiusMiles: number,

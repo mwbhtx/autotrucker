@@ -134,8 +134,8 @@ export function DesktopRouteDiscoveryView() {
             </div>
           </div>
 
-          {/* Map tab does not render TabsContent for the search tab — switching
-              tabs swaps to the other return branch entirely. */}
+          {/* Map tab does not render TabsContent for the search tab; switching
+              tabs swaps to the other branch entirely. */}
           <TabsContent value="map" className="hidden" />
         </div>
       </Tabs>
