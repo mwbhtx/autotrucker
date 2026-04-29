@@ -29,7 +29,7 @@ export default function InsightsLayout({ children }: { children: React.ReactNode
 
   return (
     <div className="-m-6 flex h-[calc(100%+3rem)] flex-col overflow-hidden">
-      <div className="shrink-0 border-b border-border/50 bg-sidebar px-6 py-2">
+      <div className="shrink-0 border-b border-border/50 bg-sidebar px-6 py-2 relative z-30">
         <Tabs value={activeTab} className="w-fit">
           <TabsList variant="line" className="bg-transparent gap-6" asChild>
             <nav>
