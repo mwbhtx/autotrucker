@@ -317,6 +317,8 @@ export function FreightNetworkMap({ data, period }: Props) {
       fitBoundsOptions: { padding: 80 },
       minZoom: 4,
       maxZoom: 12,
+      maxBounds: [[-168, 15], [-52, 72]],
+      renderWorldCopies: false,
       attributionControl: false,
       dragRotate: false,
       pitchWithRotate: false,
