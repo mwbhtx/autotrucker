@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '@/core/services/auth-provider';
-import { fetchZoneDetail } from '../api';
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/core/services/auth-provider";
+import { fetchZoneDetail } from "../api";
 
 export function useZoneDetail(zoneKey: string | null, period: '30d' | '60d' | '90d') {
   const { activeCompanyId } = useAuth();
